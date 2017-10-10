@@ -1,4 +1,7 @@
 #include "parser.h"
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
 
 parser :: parser()
 {

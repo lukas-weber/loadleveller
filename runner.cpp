@@ -1,11 +1,31 @@
 #include "runner.h"
+#include "merge.h"
 
-runner::runner(int argc, char *argv[])
+runner::runner()
 {
+}
+
+runner :: ~runner()
+{
+	STATUS.close();
+	delete sys;
+}
+
+int runner :: start(int argc, char *argv[], function<mc* (string &)> mccreator)
+{
+
+	if(argc > 1 && string(argv[1]) == "merge") {
+		return merge(mccreator, argc-1, argv+1);
+	}
+	if(argc < 2) {
+		cerr << "Usage: " << argv[0] <<" jobfile [walltime] [checkpointtime] "<< endl;
+		return -1;
+	}
 	MPI_Init(&argc,&argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
-	sys = NULL;
+	
+	my_mccreator=mccreator;
 	jobfile = argv[1];
 	parser parsedfile(jobfile);
 	if (argc>2) walltime=atof(argv[2]);
@@ -22,28 +42,20 @@ runner::runner(int argc, char *argv[])
 			chktime*=60;
 		}
 	}
+
 	taskfiles= parsedfile.return_vector< string >("@taskfiles");		
 	time_start = MPI_Wtime();
 	time_last_chkpt = time_start;
 	statusfile = parsedfile.value_or_default<string>("statusfile",jobfile+".status");
 	masterfile = parsedfile.value_or_default<string>("masterfile",jobfile+".master");
-	STATUS = new std::ofstream (statusfile.c_str(), std::ios::out|std::ios::app);
-}
+	STATUS.open(statusfile.c_str(), std::ios::out|std::ios::app);
 
-runner :: ~runner()
-{
-	(*STATUS).close();
-	delete STATUS;
-	delete sys;
-}
-
-void runner :: start()
-{
 	if(my_rank == MASTER) {
 		M_read();
 		M_wait();
 	}
 	else what_is_next(S_IDLE);
+	return 0;
 }
 
 bool runner :: is_chkpt_time()
@@ -76,7 +88,7 @@ void runner :: M_update(int node)
 	int node_status;
 	MPI_Status stat;
 	MPI_Recv(&node_status, 1, MPI_INT, node, T_STATUS, MPI_COMM_WORLD, &stat);
-	//(*STATUS) << my_rank << ": Status " << node_status << " from " << node << "\n";
+	//STATUS << my_rank << ": Status " << node_status << " from " << node << "\n";
 	if (node_status == S_IDLE) {
 		if(time_is_up()) M_send_action(A_EXIT,node);
 		else {
@@ -111,7 +123,7 @@ void runner :: M_update(int node)
 
 void runner :: M_send_action(int action, int to)
 {
-	//(*STATUS) << my_rank << ": Action "<<action<<" to " << to << "\n";
+	//STATUS << my_rank << ": Action "<<action<<" to " << to << "\n";
 	MPI_Send(&action, 1, MPI_INT, to, T_ACTION, MPI_COMM_WORLD);
 	if(action == A_EXIT) N_exit ++;
 }
@@ -187,24 +199,24 @@ void runner :: M_end_of_run()
 		std::ofstream rfile(rfilename.c_str());
 		rfile << "restart me\n";
 		rfile.close();
-		(*STATUS) << my_rank << ": Restart needed" << "\n";
+		STATUS << my_rank << ": Restart needed" << "\n";
 	}
 	M_report();
  	MPI_Finalize();
-	(*STATUS) << my_rank << ": MPI finalized" << "\n";
+	STATUS << my_rank << ": MPI finalized" << "\n";
 	exit(0);
 }
 
 void runner :: M_report() 
 {
 	for(uint i = 0; i < tasks.size(); i ++) {
-		(*STATUS) 	
+		STATUS 	
 		<< tasks[i].task_id << "\t" 
 		<< int(tasks[i].mes_done/(double)(tasks[i].n_steps)*100)<<"%\t"
 		<< tasks[i].steps_done << "\t"
 		<< tasks[i].mes_done << "\n";	
 	}
-	(*STATUS) << "\n";
+	STATUS << "\n";
 }
 
 void runner :: what_is_next(int status)
@@ -251,12 +263,13 @@ void runner :: run()
 	my_task.steps_done = 0;	
 	delete sys;
 	std::string taskfile = taskfiles[my_task.task_id];
-	sys = new mc(taskfile);
+	sys = my_mccreator(taskfile);
 	if ((*sys).measure.read(my_rundir) && (*sys).read(my_rundir)) {
-		(*STATUS) << my_rank << ": L " << my_rundir  << "\n";
+		STATUS << my_rank << ": L " << my_rundir  << "\n";
 	}
 	else {
-		(*STATUS) << my_rank << ": I " << my_rundir << "\n";
+		STATUS << my_rank << ": I " << my_rundir << "\n";
+		(*sys).random_init();
 		(*sys).init();
 		checkpointing();
 	}
@@ -282,7 +295,7 @@ void runner :: run()
 			my_task.steps_done = 0;	
 		}
 	}
-	(*STATUS) << my_rank << ": F " << my_rundir << "\n";
+	STATUS << my_rank << ": F " << my_rundir << "\n";
 	checkpointing();
 	what_is_next(S_FINISHED);	
 }
@@ -291,7 +304,7 @@ void runner :: checkpointing()
 {
 	(*sys).write(my_rundir);
 	(*sys).measure.write(my_rundir);
-	(*STATUS) << my_rank << ": C " << my_rundir << "\n";
+	STATUS << my_rank << ": C " << my_rundir << "\n";
 }
 
 void runner :: merge_measurements()
@@ -303,19 +316,19 @@ void runner :: merge_measurements()
 			stringstream b;b<<my_taskdir<<"/run"<<run_counter<<".";
 			success=(*sys).measure.merge(b.str());
 			if (success)
-				(*STATUS) <<my_rank<<": M "<<b.str()<<"\n";
+				STATUS <<my_rank<<": M "<<b.str()<<"\n";
 		}
 		++run_counter;
 	}
 	std::string mf=my_taskdir+".out";
 	(*sys).write_output(mf);
-	(*STATUS) << my_rank << ": M " << my_taskdir << "\n";
+	STATUS << my_rank << ": M " << my_taskdir << "\n";
 }
 
 void runner :: end_of_run()
 {
  	MPI_Finalize();
-	(*STATUS) << my_rank << ": MPI finalized" << "\n";
+	STATUS << my_rank << ": MPI finalized" << "\n";
 	exit(0);
 }
 

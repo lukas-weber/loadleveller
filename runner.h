@@ -1,12 +1,8 @@
 #ifndef MCL_RUNNER_H
 #define MCL_RUNNER_H
 
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <ctime>
 #include <vector>
+#include <functional>
 
 #include <mpi.h>
 
@@ -49,13 +45,14 @@ class runner
 		/*! The current taskdir. */
 		std::string my_taskdir;
 
+		function<mc* (string&)> my_mccreator;
 		//! System
 		/*! Pointer to the system class where all the magic happens.*/
-		mc * sys;
+		mc * sys = 0;
 		
-		int my_count;		
-		int do_next;
-		
+		int my_count = 0;
+		int do_next = 0;
+
 		std::string jobfile;
 		std::string statusfile;
 		std::string masterfile;
@@ -63,7 +60,7 @@ class runner
 		std::vector<one_task> tasks;
 		std::vector<string> taskfiles;
 		
-		std::ofstream * STATUS;
+		std::ofstream STATUS;
 		
 		double chktime, walltime, time_start, time_last_chkpt;		
 
@@ -92,10 +89,10 @@ class runner
 		
 	public:
 		int my_rank, world_size;
-		runner(int argc, char *argv[]);
+		runner();
 		~runner();
 
-		void start();
+		int start(int argc, char *argv[], function<mc* (string &)> mccreator);
 
 };
 

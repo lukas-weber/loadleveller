@@ -1,9 +1,6 @@
 #ifndef MCL_VECTOREVALABLE_H
 #define MCL_VECTOREVALABLE_H
 
-#include <iostream>
-#include <sstream>
-#include <cmath>
 #include <string>
 #include <vector>
 #include <valarray>

@@ -1,4 +1,5 @@
 #include "evalable.h"
+#include <sstream>
 
 void evalable :: mean(valarray<double>& v) {
 	v=mean_v[0];

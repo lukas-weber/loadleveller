@@ -5,12 +5,6 @@
 #define MCL_DUMP_BUFFER 0 
 #endif
 
-#if MCL_DUMP_BUFFER
-#warning MCL_DUMP_BUFFER=1: dump uses buffered writeout
-#else
-#warning MCL_DUMP_BUFFER=0: no buffering in dump writeout
-#endif
-
 #define DUMP_APPEND 0
 
 #include <iostream>
@@ -18,9 +12,6 @@
 #include <cstring>
 #include <string>
 #include <vector>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
 #include "types.h"
 
 class odump

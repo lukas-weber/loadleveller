@@ -7,7 +7,6 @@
 #define MCL_RNG_MT
 
 #ifdef MCL_RNG_MT
-#warning using RNG: MT (MersenneTwistor)
 #include "MersenneTwister.h"
 class randomnumbergenerator
 {
@@ -29,7 +28,6 @@ private:
 #endif
 
 #ifdef MCL_RNG_SPRNG_4
-#warning using RNG: SPRNG 4
 #include "sprng_cpp.h"
 class randomnumbergenerator
 {
@@ -52,7 +50,6 @@ private:
 
 
 #ifdef MCL_RNG_BOOST
-#warning RNG: BOOST
 #include <boost/random.hpp>
 class randomnumbergenerator
 {

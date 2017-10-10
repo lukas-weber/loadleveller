@@ -5,15 +5,6 @@
 #define MCL_MEASUREMENTS_APPEND 0
 #endif
 
-#if MCL_MEASUREMENTS_APPEND 
-#warning MCL_MEASUREMENTS_APPEND=1: measurements will be written in append mode 
-#else 
-#warning MCL_MEASUREMENTS_APPEND=0: observable I/O involve full data sets 
-#endif
-
-#include <iostream>
-#include <fstream>
-#include <cmath>
 #include <string>
 #include <vector>
 #include <map>

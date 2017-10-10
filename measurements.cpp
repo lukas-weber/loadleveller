@@ -1,4 +1,5 @@
 #include "measurements.h"
+#include <sstream>
 
 void measurements :: add_observable(std::string name) 
 {
