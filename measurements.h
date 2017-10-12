@@ -22,11 +22,11 @@ class measurements
 		measurements() {chunks=0;}
 		~measurements() {clear();}
 
-		observable* get_observable(std::string name) {return obs_v[eo[name]];}
-		observable* get_vectorobservable(std::string name) {return obs_v[eo[name]];}
-		evalable* get_evaluable(std::string name) {return eva_v[eo[name]];}
-		evalable* get_vectorevalable(std::string name) {return eva_v[eo[name]];} 
-		void extract_observable(std::string name, int i, observable& os) {obs_v[eo[name]]->extract(i,os);}
+		observable* get_observable(std::string name) {return obs_v[eo.at(name)];}
+		observable* get_vectorobservable(std::string name) {return obs_v[eo.at(name)];}
+		evalable* get_evaluable(std::string name) {return eva_v[eo.at(name)];}
+		evalable* get_vectorevalable(std::string name) {return eva_v[eo.at(name)];} 
+		void extract_observable(std::string name, int i, observable& os) {obs_v[eo.at(name)]->extract(i,os);}
 
 		//! Adds scalar observable
 		/*! Adds a new observable with specified name and default bin length*/
@@ -52,8 +52,8 @@ class measurements
 
 		//! (Re)Set bin length for all observables
 		void set_bin_length(luint bl) {for (uint i=0;i<obs_v.size();++i) obs_v[i]->set_bin_length(bl);}
-		void set_bin_length(std::string name, luint bl) {obs_v[eo[name]]->set_bin_length(bl);}
-		void set_vector_length(std::string name, luint nl) {obs_v[eo[name]]->set_vector_length(nl);}
+		void set_bin_length(std::string name, luint bl) {obs_v[eo.at(name)]->set_bin_length(bl);}
+		void set_vector_length(std::string name, luint nl) {obs_v[eo.at(name)]->set_vector_length(nl);}
 
  		void add_evalable(std::string, std::vector<std::string>&, 
 			void (*f) (double&, std::vector <std::valarray<double>* >&)); 
@@ -124,49 +124,49 @@ class measurements
 
 		//! Add measurment to observable
 		template <class T> 
-		void add(std::string name, const T& value) {obs_v[eo[name]]->add(value);}
+		void add(std::string name, const T& value) {obs_v[eo.at(name)]->add(value);}
 		template <class T> 
-		void add(std::string name, T* value) {obs_v[eo[name]]->add(value);}
+		void add(std::string name, T* value) {obs_v[eo.at(name)]->add(value);}
 		template <class T> 
-		void add(std::string name, const vector<T>& value) {obs_v[eo[name]]->add(value);}
- 		void add(std::string name, const std::valarray<double>& value) {obs_v[eo[name]]->add(value);}
+		void add(std::string name, const vector<T>& value) {obs_v[eo.at(name)]->add(value);}
+ 		void add(std::string name, const std::valarray<double>& value) {obs_v[eo.at(name)]->add(value);}
 
  		void mean(std::string name,std::valarray<double>& v) 
-			{(tag[name]) ? obs_v[eo[name]]->mean(v) : eva_v[eo[name]]->mean(v);}
+			{(tag[name]) ? obs_v[eo.at(name)]->mean(v) : eva_v[eo.at(name)]->mean(v);}
  		void error(std::string name,std::valarray<double>& v) 
-			{(tag[name]) ? obs_v[eo[name]]->error(v) : eva_v[eo[name]]->error(v);}
+			{(tag[name]) ? obs_v[eo.at(name)]->error(v) : eva_v[eo.at(name)]->error(v);}
 		void variance(string name, std::valarray<double>& v) 
-			{(tag[name]) ? obs_v[eo[name]]->variance(v) : obs_v[eo[name]]->variance(v);}
+			{(tag[name]) ? obs_v[eo.at(name)]->variance(v) : obs_v[eo.at(name)]->variance(v);}
  		void autocorrelationtime(std::string name,std::valarray<double>& v) 
-			{(tag[name]) ? obs_v[eo[name]]->autocorrelationtime(v) : eva_v[eo[name]]->autocorrelationtime(v);}
+			{(tag[name]) ? obs_v[eo.at(name)]->autocorrelationtime(v) : eva_v[eo.at(name)]->autocorrelationtime(v);}
 		
 		//! Mean
 		double mean(std::string name,uint j=0)  
-			{return (tag[name]) ? obs_v[eo[name]]->mean(j) : eva_v[eo[name]]->mean(j);}
+			{return (tag[name]) ? obs_v[eo.at(name)]->mean(j) : eva_v[eo.at(name)]->mean(j);}
 		//! Error
 		double error(std::string name,uint j=0) 
-			{return (tag[name]) ? obs_v[eo[name]]->error(j) : eva_v[eo[name]]->error(j);}
+			{return (tag[name]) ? obs_v[eo.at(name)]->error(j) : eva_v[eo.at(name)]->error(j);}
 		//! Variance
 		double variance(std::string name,uint j=0) 
-			{return (tag[name]) ? obs_v[eo[name]]->variance(j) : eva_v[eo[name]]->variance(j);}
+			{return (tag[name]) ? obs_v[eo.at(name)]->variance(j) : eva_v[eo.at(name)]->variance(j);}
 		//! Autocorrelation time
 		/*! Extract the integrated autocorrelation time obtained from a binning analysis. */
 		double autocorrelationtime(std::string name,uint j=0)  
-			{return (tag[name]) ? obs_v[eo[name]]->autocorrelationtime(j) : eva_v[eo[name]]->autocorrelationtime(j);}
+			{return (tag[name]) ? obs_v[eo.at(name)]->autocorrelationtime(j) : eva_v[eo.at(name)]->autocorrelationtime(j);}
 		//! Vector length
                 double vector_length(std::string name)
-                        {return (tag[name]) ? obs_v[eo[name]]->vector_length() : eva_v[eo[name]]->vector_length();}
+                        {return (tag[name]) ? obs_v[eo.at(name)]->vector_length() : eva_v[eo.at(name)]->vector_length();}
                 //! Naive Error
                 /*! Extract the naive error (assuming no correlations) of observable.*/
                 double naiveerror(std::string name,uint j=0)
-                        {return (tag[name]) ? obs_v[eo[name]]->naiveerror(j) : eva_v[eo[name]]->naiveerror(j);}
+                        {return (tag[name]) ? obs_v[eo.at(name)]->naiveerror(j) : eva_v[eo.at(name)]->naiveerror(j);}
 		//! Number of Bins
 		int bins(std::string name,uint j=0)
-			{return (tag[name]) ? obs_v[eo[name]]->bins() : eva_v[eo[name]]->bins();}
+			{return (tag[name]) ? obs_v[eo.at(name)]->bins() : eva_v[eo.at(name)]->bins();}
 
 
-		void timeseries(std::string name, uint j, std::valarray<double>& v) {obs_v[eo[name]]->timeseries(j,v);} 
-		void timeseries(std::string name, std::valarray<double>& v) {obs_v[eo[name]]->timeseries(0,v);}
+		void timeseries(std::string name, uint j, std::valarray<double>& v) {obs_v[eo.at(name)]->timeseries(j,v);} 
+		void timeseries(std::string name, std::valarray<double>& v) {obs_v[eo.at(name)]->timeseries(0,v);}
 
 		//! Get statistics
 		/*! Pipe the statiscial information for one observable/evalable to a stream.*/
