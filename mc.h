@@ -14,6 +14,7 @@ class mc
 {
 	private:
                 bool have_random = false;
+                randomnumbergenerator * rng = 0;
 
                 void param_init(string dir);
                 void random_clear();
@@ -26,9 +27,8 @@ class mc
 		parser param;
 	public:	
                 double random01();
-		int sweep;
-                randomnumbergenerator * rng;
-                
+		//int sweep;
+
 		void random_init();
 
 		virtual void init() = 0;
