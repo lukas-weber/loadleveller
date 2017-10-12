@@ -1,6 +1,7 @@
 #ifndef MY_PARSER_H
 #define MY_PARSER_H
 
+#include <iostream>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -50,7 +51,7 @@ class parser
 				std::cerr<<"#PARSER: NO VARIABLE WITH NAME "<<name<<" FOUND!"<< std::endl;
 				return Type();
 			}
-		};
+		}
 		
 		template <class Type>
 		Type value_of(std::string name) {return return_value_of<Type>(name);}
@@ -73,7 +74,7 @@ class parser
 				readVals.push_back(name);
 				return ret;
 			} else return defa;
-		};
+		}
 
 
 		template <class Type>
@@ -82,7 +83,7 @@ class parser
 			std::stringstream b;
 			b<<value;
 			vars[name]=b.str();
-		};
+		}
 
 		template <class Type>
 		std::vector< Type > return_vector(std::string name)
@@ -103,7 +104,7 @@ class parser
 			}
 			readVals.push_back(name);
 			return ret;
-		};
+		}
 
 		template <class Type>
 		std::vector< Type > vector(std::string name) {return return_vector<Type>(name);}
