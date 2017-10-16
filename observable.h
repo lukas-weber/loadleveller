@@ -18,7 +18,7 @@ class observable
 	public:	
 
 		uint binning_base() { return 2; }	
-		uint min_number_of_bins() { return 8; }
+		uint min_number_of_bins() { return 32; }
 
 		observable();
 		observable(string);
