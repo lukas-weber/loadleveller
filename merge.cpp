@@ -13,6 +13,7 @@
 using namespace std;
 
 int merge(function<mc* (string&)> mccreator, int argc, char* argv[]) {
+	MPI_Init(&argc,&argv);
         if (argc==1) {
                 cout << " usage: "<< argv[0] <<" jobfilename [-s number_of_bins_to_be_skipped] [-t min_task max_task] [-r min_run max_run]" << endl;
                 exit(1);

@@ -85,9 +85,9 @@ void measurements :: add_evalable(std::string name, std::vector<std::string>& n,
 		if (eo.find(n[i]) == eo.end()) {
 			stringstream s;
 			s << "No observable with name " << n[i];
-			throw s.str();
+			throw std::runtime_error(s.str());
 		}
-		v.push_back(obs_v[eo[n[i]]]);
+		v.push_back(obs_v[eo.at(n[i])]);
 	}
  	e->jackknife(v,f);
  	eva_v.push_back(e);
@@ -299,7 +299,7 @@ void measurements :: add_evalable(std::string name, std::vector<std::string>& n,
 		if (eo.find(n[i]) == eo.end()) {
 			stringstream s;
 			s << "No observable with name " << n[i];
-			throw s.str();
+			throw std::runtime_error(s.str());
 		}
 		v.push_back(obs_v[eo[n[i]]]);
 	}
