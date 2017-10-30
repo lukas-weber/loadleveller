@@ -12,7 +12,7 @@
 
 using namespace std;
 
-int merge(function<mc* (string&)> mccreator, int argc, char* argv[]) {
+int merge(function<abstract_mc* (string&)> mccreator, int argc, char* argv[]) {
 	MPI_Init(&argc,&argv);
         if (argc==1) {
                 cout << " usage: "<< argv[0] <<" jobfilename [-s number_of_bins_to_be_skipped] [-t min_task max_task] [-r min_run max_run]" << endl;
@@ -77,8 +77,8 @@ int merge(function<mc* (string&)> mccreator, int argc, char* argv[]) {
                 std::string taskdir = cfg.value_of("taskdir");
                 std::stringstream rb; rb << taskdir << "/run" << run_min << ".";
                 std::string rundir = rb.str();
-                mc* sys = mccreator(taskfile);
-                if ((*sys).read(rundir)) {
+                abstract_mc* sys = mccreator(taskfile);
+                if ((*sys)._read(rundir)) {
                         if ((*sys).measure.merge(rundir,skipbins)) cout << rundir <<endl;
                         if (1) {
                                 int run_counter=run_min+1;
@@ -103,7 +103,7 @@ int merge(function<mc* (string&)> mccreator, int argc, char* argv[]) {
                                 }
                                 if (skipbins) mfb <<"s"<<skipbins<<".";
                                 mfb <<"out";
-                                (*sys).write_output(mfb.str());
+                                (*sys)._write_output(mfb.str());
                         }
                 }
                 delete sys;

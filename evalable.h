@@ -7,6 +7,9 @@
 #include "types.h"
 #include "observable.h"
 
+typedef std::function<double(vector<valarray<double>*>&)> evalablefunc;
+typedef std::function<void(valarray<double>&, vector<valarray<double>*>&)> vectorevalablefunc;
+
 class evalable
 {
 	public:
@@ -31,13 +34,9 @@ class evalable
 		double variance(uint);
 		double autocorrelationtime(uint); //need to implement jackknife binning still
 
-		void jackknife(vector<observable*>& , void (*f) (double&, vector <valarray<double>* >&));
-		void jackknife(vector<observable*>& , void (*f) (double&, vector <valarray<double>* >&,double*), double*);
-		void vectorjackknife(vector<observable*>& , void (*f) (valarray<double>&, vector <valarray<double>* >&));
-		void vectorjackknife(vector<observable*>& , void (*f) (valarray<double>&, vector <valarray<double>* >&,double*), double*);
+		void jackknife(vector<observable*>&, evalablefunc f);
+		void jackknife(vector<observable*>&, vectorevalablefunc f);
 
-		void jackknife(vector<observable*>& , void* , void (*f) (void*, double&, vector <valarray<double>* >&));
-		void vectorjackknife(vector<observable*>& , void*, void (*f) (void*, valarray<double>&, vector <valarray<double>* >&));
 
 
  		void reset() {mean_v.clear();error_v.clear();}

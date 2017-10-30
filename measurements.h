@@ -1,6 +1,4 @@
-#ifndef MCL_MEASUREMENTS_H
-#define MCL_MEASUREMENTS_H
-
+#pragma once
 #ifndef MCL_MEASUREMENTS_APPEND
 #define MCL_MEASUREMENTS_APPEND 0
 #endif
@@ -28,99 +26,20 @@ class measurements
 		evalable* get_vectorevalable(std::string name) {return eva_v[eo.at(name)];} 
 		void extract_observable(std::string name, int i, observable& os) {obs_v[eo.at(name)]->extract(i,os);}
 
-		//! Adds scalar observable
-		/*! Adds a new observable with specified name and default bin length*/
-		void add_observable(std::string);
-		/*! Adds a new observable with specified name and specific bin length. */
-		void add_observable(std::string,luint);
-		/*! Adds a new observable with specified name, specific bin length and a specified initial number of bins*/
-		void add_observable(std::string,luint,luint);
 		/*! Adds a new observable with specified name, specific bin length and a specified initial number of bins and resizing data*/
-		void add_observable(std::string,luint,luint,luint,luint);
+		void add_observable(std::string,luint=1,luint=1000,luint=2,luint=0);
 
-		//! Adds vector observable
-		/*! Adds a new vector observable with specified name and default vector length and default bin length*/
-		void add_vectorobservable(std::string);
-		/*! Adds a new vector observable with specified name and specified vector length and default bin length*/
-		void add_vectorobservable(std::string,luint);
-		/*! Adds a new vector observable with specified name and specified vector length and specified bin length*/
-		void add_vectorobservable(std::string,luint,luint);
-		/*! Adds a new vector observable with specified name and specified vector length and specified bin length and specified initial number of bins*/
-		void add_vectorobservable(std::string,luint,luint,luint);
 		/*! Adds a new vector observable with specified name and specified vector length and specified bin length and specified initial number of bins and resizing data*/
-		void add_vectorobservable(std::string,luint,luint,luint,luint,luint);
+		void add_vectorobservable(std::string,luint=1,luint=1,luint=1000,luint=2,luint=0);
 
 		//! (Re)Set bin length for all observables
 		void set_bin_length(luint bl) {for (uint i=0;i<obs_v.size();++i) obs_v[i]->set_bin_length(bl);}
 		void set_bin_length(std::string name, luint bl) {obs_v[eo.at(name)]->set_bin_length(bl);}
 		void set_vector_length(std::string name, luint nl) {obs_v[eo.at(name)]->set_vector_length(nl);}
 
- 		void add_evalable(std::string, std::vector<std::string>&, 
-			void (*f) (double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,std::string,std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,std::string,std::string,std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&)); 
+ 		void add_evalable(std::string, const std::vector<std::string>&, evalablefunc f); 
 
- 		void add_evalable(std::string, std::vector<std::string>&, 
-			void (*f) (double&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_evalable(std::string, std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_evalable(std::string, std::string, std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_evalable(std::string, std::string, std::string, std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_evalable(std::string, std::string, std::string, std::string, std::string,
-			void (*f) (double&, std::vector <std::valarray<double>* >&, double*), double*);
-
-		void add_vectorevalable(std::string, std::vector<std::string>&, 
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&));
-		void add_vectorevalable(std::string, std::string, 
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-		void add_vectorevalable(std::string, std::string, std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-		void add_vectorevalable(std::string, std::string, std::string, std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-		void add_vectorevalable(std::string, std::string, std::string, std::string, std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-
- 		void add_vectorevalable(std::string, std::vector<std::string>&, 
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_vectorevalable(std::string,std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_vectorevalable(std::string,std::string,std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_vectorevalable(std::string,std::string,std::string,std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&, double*), double*);
- 		void add_vectorevalable(std::string,std::string,std::string,std::string,std::string,
-			void (*f) (std::valarray<double>&, std::vector <std::valarray<double>* >&, double*), double*);
-
- 		void add_evalable(std::string, std::vector<std::string>&, 
-			void*, void (*f) (void*, double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,
-			void*, void (*f) (void*, double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,std::string,
-			void*, void (*f) (void*, double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,std::string,std::string,
-			void*, void (*f) (void*, double&, std::vector <std::valarray<double>* >&)); 
- 		void add_evalable(std::string,  std::string,std::string,std::string,std::string,
-			void*, void (*f) (void*, double&, std::vector <std::valarray<double>* >&)); 
-
-		void add_vectorevalable(std::string, std::vector<std::string>&, 
-			void*, void (*f) (void*, std::valarray<double>&, std::vector <std::valarray<double>* >&));
-		void add_vectorevalable(std::string, std::string, 
-			void*, void (*f) (void*, std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-		void add_vectorevalable(std::string, std::string, std::string, 
-			void*, void (*f) (void*, std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-		void add_vectorevalable(std::string, std::string, std::string, std::string,
-			void*, void (*f) (void*, std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-		void add_vectorevalable(std::string, std::string, std::string, std::string, std::string,
-			void*, void (*f) (void*, std::valarray<double>&, std::vector <std::valarray<double>* >&)); 
-
+		void add_vectorevalable(std::string, const std::vector<std::string>&, vectorevalablefunc);
 
 		//! Add measurment to observable
 		template <class T> 
@@ -207,5 +126,3 @@ class measurements
 		std::map<std::string,luint> eo;
 		std::map<std::string,int> tag; //1=obervable,0=evalable
 };
-	
-#endif

@@ -76,9 +76,7 @@ void evalable :: get_statistics(ostream& os)
 
 }
 
-void evalable :: jackknife(vector<observable*>& v, 
-		void (*f) (double&, vector <valarray<double>* >&)) 
-{
+void evalable :: jackknife(vector<observable*>& v, evalablefunc f) {
  	mean_v.clear();
  	error_v.clear();
 	bins_=v[0]->bins();
@@ -108,7 +106,7 @@ void evalable :: jackknife(vector<observable*>& v,
 			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
 			*jack[i]/=static_cast<double>(nmo);
 		}
-		f(ali[0],jack);
+		ali[0] = f(jack);
 		if (k) me+=ali; else {me=ali;}
 	}
 	jm=me;
@@ -117,7 +115,7 @@ void evalable :: jackknife(vector<observable*>& v,
 		*jack[i]=*sum[i];
 		*jack[i]/=static_cast<double>(n);
 	}
-	f(ali[0],jack);
+	ali[0] = f(jack);
 	for (uint j=0;j<me.size();++j)
 		me[j]=n*ali[j]-nmo*me[j]/n;
 	mean_v.push_back(me);
@@ -128,7 +126,7 @@ void evalable :: jackknife(vector<observable*>& v,
 			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
 			*jack[i]/=static_cast<double>(nmo);
 		}
-		f(ali[0],jack);
+		ali[0] = f(jack);
 		ali-=jm;
 		ali*=ali;
 		if (k) me+=ali; else me=ali;
@@ -142,74 +140,8 @@ void evalable :: jackknife(vector<observable*>& v,
 	}
 }
 
-void evalable :: jackknife(vector<observable*>& v, 
-		void (*f) (double&, vector <valarray<double>* >&, double*),double* p) 
-{
- 	mean_v.clear();
- 	error_v.clear();
-	bins_=v[0]->bins();
-	for (uint i=0;i<v.size();++i) if (v[i]->bins()<bins_) bins_=v[i]->bins();
-	bin_length_=v[0]->bin_length();
-	binning_base=v[0]->binning_base();
-	luint n=bins_;
-	luint nmo=n-1;
-	vector<valarray<double>* > sum;
-	vector<valarray<double>* > jack;
-	for (uint i=0;i<v.size();++i) {
-		valarray<double>* nsump=new valarray<double>(0.,v[i]->vector_length());
-		valarray<double>* njackp=new valarray<double>(0.,v[i]->vector_length());	
-		sum.push_back(nsump);
-		jack.push_back(njackp);
-	}
-	for (uint i=0;i<v.size();++i)
-		for (uint k=0;k<n;++k) {
-			*sum[i]+=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-		}
-	valarray<double> me(0.,1);
-	valarray<double> jm(0.,1);
-	valarray<double> ali(0.,1);
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(ali[0],jack,p);
-		if (k) me+=ali; else {me=ali;}
-	}
-	jm=me;
-	jm/=static_cast<double>(n);
-	for (uint i=0;i<v.size();++i) {
-		*jack[i]=*sum[i];
-		*jack[i]/=static_cast<double>(n);
-	}
-	f(ali[0],jack,p);
-	for (uint j=0;j<me.size();++j)
-		me[j]=n*ali[j]-nmo*me[j]/n;
-	mean_v.push_back(me);
-	vector_length_=me.size();
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(ali[0],jack,p);
-		ali-=jm;
-		ali*=ali;
-		if (k) me+=ali; else me=ali;
-	}	
-	me*=static_cast<double>(nmo)/static_cast<double>(bins_);
-	me=sqrt(me);
-	error_v.push_back(me);
-	for (uint i=0;i<v.size();++i) {
-		delete sum[i];
-		delete jack[i];
-	}
-}
 
-void evalable :: vectorjackknife(vector<observable*>& v, 
-		void (*f) (valarray<double>&, vector <valarray<double>* >&)) 
+void evalable :: jackknife(vector<observable*>& v, vectorevalablefunc f) 
 {
  	mean_v.clear();
  	error_v.clear();
@@ -346,206 +278,7 @@ void evalable :: vectorjackknife(vector<observable*>& v,
 // 	delete [] binneddata1;
 }
 
-void evalable :: vectorjackknife(vector<observable*>& v, 
-		void (*f) (valarray<double>&, vector <valarray<double>* >&, double*),double* p) 
-{
- 	mean_v.clear();
- 	error_v.clear();
-	bins_=v[0]->bins();
-	for (uint i=0;i<v.size();++i) if (v[i]->bins()<bins_) bins_=v[i]->bins();
-	bin_length_=v[0]->bin_length();
-	binning_base=v[0]->binning_base();
-	luint n=bins_;
-	luint nmo=n-1;
-	vector<valarray<double>* > sum;
-	vector<valarray<double>* > jack;
-	for (uint i=0;i<v.size();++i) {
-		valarray<double>* nsump=new valarray<double>(0.,v[i]->vector_length());
-		valarray<double>* njackp=new valarray<double>(0.,v[i]->vector_length());	
-		sum.push_back(nsump);
-		jack.push_back(njackp);
-	}
-	for (uint i=0;i<v.size();++i)
-		for (uint k=0;k<n;++k) {
-			*sum[i]+=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-		}
-	valarray<double> me;
-	valarray<double> jm;
-	valarray<double> ali;
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(ali,jack,p);
-		if (k) me+=ali; else {me.resize(ali.size());me=ali;}
-	}
-	jm.resize(me.size());
-	jm=me;
-	jm/=static_cast<double>(n);
-	for (uint i=0;i<v.size();++i) {
-		*jack[i]=*sum[i];
-		*jack[i]/=static_cast<double>(n);
-	}
-	f(ali,jack,p);
-	for (uint j=0;j<me.size();++j)
-		me[j]=n*ali[j]-nmo*me[j]/n;
-	mean_v.push_back(me);
-	vector_length_=me.size();
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(ali,jack,p);
-		ali-=jm;
-		ali*=ali;
-		if (k) me+=ali; else me=ali;
-	}	
-	me*=static_cast<double>(nmo)/static_cast<double>(bins_);
-	me=sqrt(me);
-	error_v.push_back(me);
-	for (uint i=0;i<v.size();++i) {
-		delete sum[i];
-		delete jack[i];
-	}
-}
 
-
-void evalable :: jackknife(vector<observable*>& v, void* obj,
-		void (*f) (void* ,double&, vector <valarray<double>* >&)) 
-{
- 	mean_v.clear();
- 	error_v.clear();
-	bins_=v[0]->bins();
-	for (uint i=0;i<v.size();++i) if (v[i]->bins()<bins_) bins_=v[i]->bins();
-	bin_length_=v[0]->bin_length();
-	binning_base=v[0]->binning_base();
-	luint n=bins_;
-	luint nmo=n-1;
-	vector<valarray<double>* > sum;
-	vector<valarray<double>* > jack;
-	for (uint i=0;i<v.size();++i) {
-		valarray<double>* nsump=new valarray<double>(0.,v[i]->vector_length());
-		valarray<double>* njackp=new valarray<double>(0.,v[i]->vector_length());	
-		sum.push_back(nsump);
-		jack.push_back(njackp);
-	}
-	for (uint i=0;i<v.size();++i)
-		for (uint k=0;k<n;++k) {
-			*sum[i]+=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-		}
-	valarray<double> me(0.,1);
-	valarray<double> jm(0.,1);
-	valarray<double> ali(0.,1);
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(obj,ali[0],jack);
-		if (k) me+=ali; else {me=ali;}
-	}
-	jm=me;
-	jm/=static_cast<double>(n);
-	for (uint i=0;i<v.size();++i) {
-		*jack[i]=*sum[i];
-		*jack[i]/=static_cast<double>(n);
-	}
-	f(obj,ali[0],jack);
-	for (uint j=0;j<me.size();++j)
-		me[j]=n*ali[j]-nmo*me[j]/n;
-	mean_v.push_back(me);
-	vector_length_=me.size();
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(obj,ali[0],jack);
-		ali-=jm;
-		ali*=ali;
-		if (k) me+=ali; else me=ali;
-	}	
-	me*=static_cast<double>(nmo)/static_cast<double>(bins_);
-	me=sqrt(me);
-	error_v.push_back(me);
-	for (uint i=0;i<v.size();++i) {
-		delete sum[i];
-		delete jack[i];
-	}
-}
-
-void evalable :: vectorjackknife(vector<observable*>& v, void* obj,
-		void (*f) (void*, valarray<double>&, vector <valarray<double>* >&)) 
-{
- 	mean_v.clear();
- 	error_v.clear();
-	bins_=v[0]->bins();
-	for (uint i=0;i<v.size();++i) if (v[i]->bins()<bins_) bins_=v[i]->bins();
-	bin_length_=v[0]->bin_length();
-	binning_base=v[0]->binning_base();
-	luint n=bins_;
-	luint nmo=n-1;
-	vector<valarray<double>* > sum;
-	vector<valarray<double>* > jack;
-	for (uint i=0;i<v.size();++i) {
-		valarray<double>* nsump=new valarray<double>(0.,v[i]->vector_length());
-		valarray<double>* njackp=new valarray<double>(0.,v[i]->vector_length());	
-		sum.push_back(nsump);
-		jack.push_back(njackp);
-	}
-	for (uint i=0;i<v.size();++i)
-		for (uint k=0;k<n;++k) {
-			*sum[i]+=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-		}
-	valarray<double> me;
-	valarray<double> jm;
-	valarray<double> ali;
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(obj,ali,jack);
-		if (k) me+=ali; else {me.resize(ali.size());me=ali;}
-	}
-	jm.resize(me.size());
-	jm=me;
-	jm/=static_cast<double>(n);
-	for (uint i=0;i<v.size();++i) {
-		*jack[i]=*sum[i];
-		*jack[i]/=static_cast<double>(n);
-	}
-	f(obj,ali,jack);
-	for (uint j=0;j<me.size();++j)
-		me[j]=n*ali[j]-nmo*me[j]/n;
-	mean_v.push_back(me);
-	vector_length_=me.size();
-	for (uint k=0;k<n;++k) {
-		for (uint i=0;i<v.size();++i) {
-			*jack[i]=*sum[i];
-			*jack[i]-=v[i]->samples[slice(k*(v[i]->vector_length()),v[i]->vector_length(),1)];
-			*jack[i]/=static_cast<double>(nmo);
-		}
-		f(obj,ali,jack);
-		ali-=jm;
-		ali*=ali;
-		if (k) me+=ali; else me=ali;
-	}	
-	me*=static_cast<double>(nmo)/static_cast<double>(bins_);
-	me=sqrt(me);
-	error_v.push_back(me);
-	for (uint i=0;i<v.size();++i) {
-		delete sum[i];
-		delete jack[i];
-	}
-}
 
 string evalable::toString() {
 	std::stringstream ss;

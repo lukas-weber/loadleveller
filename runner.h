@@ -45,10 +45,10 @@ class runner
 		/*! The current taskdir. */
 		std::string my_taskdir;
 
-		function<mc* (string&)> my_mccreator;
+		function<abstract_mc* (string&)> my_mccreator;
 		//! System
 		/*! Pointer to the system class where all the magic happens.*/
-		mc * sys = 0;
+		abstract_mc * sys = 0;
 		
 		int my_count = 0;
 		int do_next = 0;
@@ -92,7 +92,7 @@ class runner
 		runner();
 		~runner();
 
-		int start(int argc, char *argv[], function<mc* (string &)> mccreator);
+		int start(int argc, char *argv[], function<abstract_mc* (string &)> mccreator);
 
 };
 

@@ -3,4 +3,4 @@
 #include <functional>
 #include "mc.h"
 
-int merge(function<mc* (string&)> mccreator,int argc, char *argv[]);
+int merge(function<abstract_mc* (string&)> mccreator,int argc, char *argv[]);

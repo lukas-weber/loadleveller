@@ -1,30 +1,6 @@
 #include "measurements.h"
 #include <sstream>
 
-void measurements :: add_observable(std::string name) 
-{
-	observable *o = new observable(name,1);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
-
-void measurements :: add_observable(std::string name, luint bin_length) 
-{
-	observable *o = new observable(name, 1,bin_length);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
-
-void measurements :: add_observable(std::string name, luint bin_length, luint initial_length) 
-{
-	observable *o = new observable(name, 1, bin_length, initial_length);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
-
 void measurements :: add_observable(std::string name, luint bin_length, luint initial_length, luint resizefactor, luint resizeoffset)
 {
         observable *o = new observable(name, 1, bin_length, initial_length, resizefactor, resizeoffset);
@@ -33,39 +9,6 @@ void measurements :: add_observable(std::string name, luint bin_length, luint in
         tag[name]=1;
 }
 
-
-
-void measurements :: add_vectorobservable(std::string name) 
-{
-	observable *o = new observable(name);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
-
-void measurements :: add_vectorobservable(std::string name, luint vector_length) 
-{
-	observable *o = new observable(name, vector_length);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
-
-void measurements :: add_vectorobservable(std::string name, luint vector_length, luint bin_length) 
-{
-	observable *o = new observable(name, vector_length,bin_length);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
-
-void measurements :: add_vectorobservable(std::string name, luint vector_length, luint bin_length, luint initial_length) 
-{
-	observable *o = new observable(name, vector_length, bin_length, initial_length);
-	obs_v.push_back(o);
-	eo[name]=obs_v.size()-1;
-	tag[name]=1;
-}
 
 void measurements :: add_vectorobservable(std::string name, luint vector_length, luint bin_length, luint initial_length, luint resizefactor, luint resizeoffset)
 {
@@ -76,9 +19,7 @@ void measurements :: add_vectorobservable(std::string name, luint vector_length,
 }
 
 
-void measurements :: add_evalable(std::string name, std::vector<std::string>& n, 
-			void (*f) (double&, std::vector <std::valarray<double>* >&))
-{
+void measurements::add_evalable(std::string name , const std::vector<std::string>& n, evalablefunc f) {
  	evalable *e = new evalable(name);
 	std::vector<observable* > v;
 	for (uint i=0;i<n.size();++i) {
@@ -95,204 +36,7 @@ void measurements :: add_evalable(std::string name, std::vector<std::string>& n,
  	tag[name]=0;
 }
 
-void measurements :: add_evalable(std::string name, std::string n1, 
-			void (*f) (double&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	add_evalable(name,n,f);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2,
-			void (*f) (double&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	add_evalable(name,n,f);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2, std::string n3,
-			void (*f) (double&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	add_evalable(name,n,f);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2, std::string n3,std::string n4,
-			void (*f) (double&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	n.push_back(n4);
-	add_evalable(name,n,f);
-}
-
-
-
-void measurements :: add_evalable(std::string name, std::vector<std::string>& n, 
-			void (*f) (double&, std::vector <std::valarray<double>* >&, double* p), double* p) 
-{
-  	evalable *e = new evalable(name);
-	std::vector<observable* > v;
-	for (uint i=0;i<n.size();++i) v.push_back(obs_v[eo[n[i]]]);
- 	e->jackknife(v,f,p);
- 	//cout << e->toString() << endl;
- 	eva_v.push_back(e);
- 	eo[name]=eva_v.size()-1;
- 	tag[name]=0;
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, 
-			void (*f) (double&, std::vector<std::valarray<double>* >&,double*), double* p) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	add_evalable(name,n,f,p);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2,
-			void (*f) (double&, std::vector<std::valarray<double>* >&, double*), double* p) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	add_evalable(name,n,f,p);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2, std::string n3,
-			void (*f) (double&, std::vector<std::valarray<double>* >&, double*), double *p)  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	add_evalable(name,n,f,p);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2, std::string n3,std::string n4,
-			void (*f) (double&, std::vector<std::valarray<double>* >&, double *), double* p) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	n.push_back(n4);
-	add_evalable(name,n,f,p);
-}
-
-
-
-void measurements :: add_vectorevalable(std::string name, std::vector<std::string>& n, 
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&))
-{
- 	evalable *e = new evalable(name);
-	std::vector<observable* > v;
-	for (uint i=0;i<n.size();++i) v.push_back(obs_v[eo[n[i]]]);
- 	e->vectorjackknife(v,f);
- 	eva_v.push_back(e);
- 	eo[name]=eva_v.size()-1;
- 	tag[name]=0;
-}
- 
-void measurements :: add_vectorevalable(std::string name, std::string n1, 
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	add_vectorevalable(name,n,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2,
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	add_vectorevalable(name,n,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, std::string n3,
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	add_vectorevalable(name,n,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, std::string n3,std::string n4,
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	n.push_back(n4);
-	add_vectorevalable(name,n,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::vector<std::string>& n, 
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&, double*), double* p) 
-{
-  	evalable *e = new evalable(name);
-	std::vector<observable* > v;
-	for (uint i=0;i<n.size();++i) v.push_back(obs_v[eo[n[i]]]);
- 	e->vectorjackknife(v,f,p);
- 	eva_v.push_back(e);
- 	eo[name]=eva_v.size()-1;
- 	tag[name]=0;
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, 
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&, double*),double* p) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	add_vectorevalable(name,n,f,p);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2,
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&, double*),double* p) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	add_vectorevalable(name,n,f,p);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, std::string n3,
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&, double*),double *p)  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	add_vectorevalable(name,n,f,p);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, std::string n3,std::string n4,
-			void (*f) (std::valarray<double>&, std::vector<std::valarray<double>* >&, double*), double *p) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	n.push_back(n4);
-	add_vectorevalable(name,n,f,p);
-}
-
-
-
-void measurements :: add_evalable(std::string name, std::vector<std::string>& n, 
-			void* obj, void (*f) (void*, double&, std::vector <std::valarray<double>* >&))
-{
+void measurements::add_vectorevalable(std::string name, const std::vector<std::string>& n, vectorevalablefunc f) {
  	evalable *e = new evalable(name);
 	std::vector<observable* > v;
 	for (uint i=0;i<n.size();++i) {
@@ -301,105 +45,13 @@ void measurements :: add_evalable(std::string name, std::vector<std::string>& n,
 			s << "No observable with name " << n[i];
 			throw std::runtime_error(s.str());
 		}
-		v.push_back(obs_v[eo[n[i]]]);
+		v.push_back(obs_v[eo.at(n[i])]);
 	}
- 	e->jackknife(v,obj,f);
+ 	e->jackknife(v,f);
  	eva_v.push_back(e);
  	eo[name]=eva_v.size()-1;
  	tag[name]=0;
 }
-
-void measurements :: add_evalable(std::string name, std::string n1, 
-			void* obj, void (*f) (void*, double&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	add_evalable(name,n,obj,f);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2,
-			void* obj, void (*f) (void*, double&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	add_evalable(name,n,obj,f);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2, std::string n3,
-			void* obj, void (*f) (void*, double&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	add_evalable(name,n,obj,f);
-}
-
-void measurements :: add_evalable(std::string name, std::string n1, std::string n2, std::string n3, std::string n4,
-			void* obj, void (*f) (void*, double&, std::vector<std::valarray<double>* >&)) 
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	n.push_back(n4);
-	add_evalable(name,n,obj,f);
-}
-
-
-
-void measurements :: add_vectorevalable(std::string name, std::vector<std::string>& n, 
-			void* obj, void (*f) (void*, std::valarray<double>&, std::vector<std::valarray<double>* >&))
-{
- 	evalable *e = new evalable(name);
-	std::vector<observable* > v;
-	for (uint i=0;i<n.size();++i) v.push_back(obs_v[eo[n[i]]]);
- 	e->vectorjackknife(v,obj,f);
- 	eva_v.push_back(e);
- 	eo[name]=eva_v.size()-1;
- 	tag[name]=0;
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1,
-			void* obj, void (*f) (void*, std::valarray<double>&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	add_vectorevalable(name,n,obj,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, 
-			void* obj, void (*f) (void*, std::valarray<double>&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	add_vectorevalable(name,n,obj,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, std::string n3,
-			void* obj, void (*f) (void*, std::valarray<double>&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	add_vectorevalable(name,n,obj,f);
-}
-
-void measurements :: add_vectorevalable(std::string name, std::string n1, std::string n2, std::string n3, std::string n4,
-			void* obj, void (*f) (void*, std::valarray<double>&, std::vector<std::valarray<double>* >&))  
-{
-	std::vector<std::string> n;
-	n.push_back(n1);
-	n.push_back(n2);
-	n.push_back(n3);
-	n.push_back(n4);
-	add_vectorevalable(name,n,obj,f);
-}
-
-
 
 void measurements :: reset() {
 	for (uint i=0;i<obs_v.size();++i ) 

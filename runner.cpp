@@ -11,7 +11,7 @@ runner :: ~runner()
 	delete sys;
 }
 
-int runner :: start(int argc, char *argv[], function<mc* (string &)> mccreator)
+int runner :: start(int argc, char *argv[], function<abstract_mc* (string &)> mccreator)
 {
 
 	if(argc > 1 && string(argv[1]) == "merge") {
@@ -264,13 +264,12 @@ void runner :: run()
 	delete sys;
 	std::string taskfile = taskfiles[my_task.task_id];
 	sys = my_mccreator(taskfile);
-	if ((*sys).measure.read(my_rundir) && (*sys).read(my_rundir)) {
+	if ((*sys).measure.read(my_rundir) && (*sys)._read(my_rundir)) {
 		STATUS << my_rank << ": L " << my_rundir  << "\n";
 	}
 	else {
 		STATUS << my_rank << ": I " << my_rundir << "\n";
-		(*sys).random_init();
-		(*sys).init();
+		(*sys)._init();
 		checkpointing();
 	}
 	what_is_next(S_BUSY);
@@ -280,7 +279,7 @@ void runner :: run()
 	while(my_count < my_task.n_steps) {	
 #endif
 		my_task.steps_done ++;
-		(*sys).do_update();
+		(*sys)._do_update();
 		if((*sys).is_thermalized()) {
 #ifndef NO_TASK_SHARE
 			my_task.mes_done ++;
@@ -302,7 +301,7 @@ void runner :: run()
 
 void runner :: checkpointing()
 {
-	(*sys).write(my_rundir);
+	(*sys)._write(my_rundir);
 	(*sys).measure.write(my_rundir);
 	STATUS << my_rank << ": C " << my_rundir << "\n";
 }
@@ -321,7 +320,7 @@ void runner :: merge_measurements()
 		++run_counter;
 	}
 	std::string mf=my_taskdir+".out";
-	(*sys).write_output(mf);
+	(*sys)._write_output(mf);
 	STATUS << my_rank << ": M " << my_taskdir << "\n";
 }
 
