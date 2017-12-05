@@ -43,6 +43,10 @@ void abstract_mc::random_clear() {
 double abstract_mc::random01() {
 	return rng->d();
 }
+
+int abstract_mc::sweep() const {
+	return _sweep;
+}
 		
 void abstract_mc::_init() {
 	random_init();
@@ -50,20 +54,20 @@ void abstract_mc::_init() {
 }
 
 void abstract_mc::_do_update() {
-	sweep++;
+	_sweep++;
 	do_update();
 }
 
 void abstract_mc::_write(std::string dir) {
 	odump d(dir+"dump");
 	random_write(d);
-	d.write(sweep);
+	d.write(_sweep);
 	write(d);
 	d.close();
 	seed_write(dir+"seed");
 	dir+="sweeps";
 	ofstream f; f.open(dir.c_str());
-	f << ( (is_thermalized()) ? sweep-therm : 0 ) << " " << sweep <<endl;
+	f << ( (is_thermalized()) ? _sweep-therm : 0 ) << " " << _sweep <<endl;
 	f.close();
 }
 
@@ -72,7 +76,7 @@ bool abstract_mc::_read(std::string dir) {
 	if (!d) 
 		return false;
 	random_read(d);
-	d.read(sweep);
+	d.read(_sweep);
 	if(!read(d))
 		return false;
 
@@ -90,6 +94,6 @@ void abstract_mc::_write_output(std::string filename) {
 }
 
 bool abstract_mc::is_thermalized() {
-	return sweep>therm;
+	return _sweep>therm;
 }
 

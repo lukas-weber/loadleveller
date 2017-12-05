@@ -22,7 +22,7 @@ class abstract_mc
                 void random_read(idump& d);
 		void random_init();
 
-		int sweep = 0;
+		int _sweep = 0;
 		int therm = 0;
 	protected:
 		parser param;
@@ -34,6 +34,7 @@ class abstract_mc
 		virtual void do_update() = 0;
 	public:	
                 double random01();
+		int sweep() const;
 
 		virtual void do_measurement() = 0;
 
