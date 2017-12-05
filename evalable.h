@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <valarray>
+#include <functional>
 #include "types.h"
 #include "observable.h"
 
