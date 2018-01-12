@@ -1,111 +1,58 @@
 #include "random.h"
+#include <mpi.h>
+#include <climits>
 
-#ifdef MCL_RNG_MT
-randomnumbergenerator :: randomnumbergenerator()
-{
-	ptr = new MTRand();
-	my_seed=ptr->get_seed();
+static inline luint hash(time_t t, clock_t c){
+	// Get a uint64 from t and c
+	// Better than uint32(x) in case x is floating point in [0,1]
+	// Based on code by Lawrence Kirby (fred@genesis.demon.co.uk)
+
+	static uint64_t differ = 0;  // guarantee time-based seeds will change
+
+#ifndef MCL_SINGLE
+	int myrank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+	differ=(uint64_t)(myrank);
+#endif
+
+	uint64_t h1 = 0;
+	unsigned char *p = (unsigned char *) &t;
+	for( size_t i = 0; i < sizeof(t); ++i )
+	{
+		h1 *= UCHAR_MAX + 2U;
+		h1 += p[i];
+	}
+	uint64_t h2 = 0;
+	p = (unsigned char *) &c;
+	for( size_t j = 0; j < sizeof(c); ++j )
+	{
+		h2 *= UCHAR_MAX + 2U;
+		h2 += p[j];
+	}
+	return ( h1 + differ++ ) ^ h2;
 }
 
-randomnumbergenerator :: randomnumbergenerator(luint seed)
+randomnumbergenerator :: randomnumbergenerator() : uniform(0,1)
 {
-	ptr = new MTRand(seed);
-	my_seed=ptr->get_seed();
+	_seed = hash( time(NULL), clock());
+	gen.seed(_seed);
+}
+
+randomnumbergenerator :: randomnumbergenerator(luint seed) : uniform(0,1)
+{
+	_seed = seed;
+	gen.seed(seed);
 }
 
 void randomnumbergenerator :: write(odump& d)
 {
-	MTRand::uint32* randState;
-	randState = new MTRand::uint32[ MTRand::SAVE ];
-	ptr->save( randState );
-	d.write(randState,MTRand::SAVE);
-	d.write(my_seed);
-	delete [] randState;
+	d.binary_file << gen;
+	d.binary_file << uniform;
 }
 
 void randomnumbergenerator :: read(idump& d)
 {
-	MTRand::uint32* randState;
-	randState = new MTRand::uint32[ MTRand::SAVE ];
-	d.read(randState,MTRand::SAVE);
-	d.read(my_seed);
-	ptr->load( randState );
-	delete [] randState;
+	d.binary_file >> gen;
+	d.binary_file >> uniform;
 }
-#endif
-
-#ifdef  MCL_RNG_SPRNG_4
-randomnumbergenerator :: randomnumbergenerator()
-{
-	int gtype = 4; //Multipl. Lagg. Fib. 
-	ptr = SelectType(gtype);
-	my_seed=make_sprng_seed();
-	ptr->init_sprng(0, 1, my_seed, SPRNG_DEFAULT);
-}
-
-randomnumbergenerator :: randomnumbergenerator(luint seed)
-{
-	int gtype = 4; //Multipl. Lagg. Fib.
-	ptr = SelectType(gtype);
-	my_seed=seed;
-	ptr->init_sprng(0, 1, my_seed, SPRNG_DEFAULT);
-}
-
-void randomnumbergenerator :: write(odump& d)
-{
-	char* buffer;
-	int buffersize=ptr->pack_sprng(&buffer);
-	d.write(buffersize);
-	d.write(buffer,buffersize);
-	d.write(my_seed);
-	delete buffer;
-}
-
-void randomnumbergenerator :: read(idump& d)
-{
-	char* buffer;
-	int buffersize;
-	d.read(buffersize);
-	buffer = new char[buffersize];
-	d.read(buffer,buffersize);
-	d.read(my_seed);
-	ptr->unpack_sprng(buffer);
-	delete buffer;
-}
-#endif
-
-#ifdef MCL_RNG_BOOST
-void randomnumbergenerator :: write(odump& d)
-{
-}
-
-void randomnumbergenerator :: read(idump& d)
-{
-}
-
-randomnumbergenerator :: randomnumbergenerator()
-{
-	rng = new boost::mt19937;
-	val = new boost::uniform_real<> (0.0, 1.0);
-	
-	my_seed = 5489;
-}
-
-randomnumbergenerator :: randomnumbergenerator(int seed)
-{
-	rng = new boost::mt19937;
-	rng->seed(seed);
-	val = new boost::uniform_real<> (0.0, 1.0);
-	
-	my_seed = seed;
-}
-#endif
-// 
-// #ifdef MCL_RNG_ACML
-// randomnumbergenerator :: randomnumbergenerator(int seed)
-// {
-// 	gen = new acml_rand(seed, 0., 1.);
-// }
-//
-// #endif
 

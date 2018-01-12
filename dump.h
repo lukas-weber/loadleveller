@@ -112,9 +112,9 @@ class odump
 		template <class Type> void write(Type&);
 		void write(std::string&);
 
+		std::ofstream binary_file;
 	private:
 		std::string filename;
-		std::ofstream binary_file;
 		std::ios_base::openmode amode;
 		int bmode;
 		int is_open;
@@ -155,8 +155,9 @@ class idump
 
 		void read(std::string&);
 		void close() {if (is_open) {binary_file.close();is_open=0;}}
-	private:
+		
 		std::ifstream binary_file;
+	private:
 		int is_open;
 };
 
