@@ -4,7 +4,6 @@
 #include <functional>
 #include <string>
 #include <vector>
-#include <mpi.h>
 
 #include "mc.h"
 #include "measurements.h"
