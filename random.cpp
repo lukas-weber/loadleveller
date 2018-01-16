@@ -32,6 +32,32 @@ void randomnumbergenerator :: read(idump& d)
 	ptr->load( randState );
 	delete [] randState;
 }
+
+double randomnumbergenerator :: norm() { // adjusted from https://de.wikipedia.org/wiki/Polar-Methode
+	/* for now, I do not need the extra speed coming from this.
+	 * If you add hidden state like this you have to change the dump format
+	 * (breaking compatibility with your old runs)
+	   if(norm_is_stored) {
+		norm_is_stored=false;
+		return norm_stored;
+	}
+	*/
+	double u, v, q, p;
+
+	do {
+		u = 2.0 * d() - 1;
+		v = 2.0 * d() - 1;
+		q  = u * u + v * v;
+	} while (q <= 0.0 || q >= 1.0);
+
+	p = sqrt(-2 * log(q) / q);
+	/*
+	norm_stored = u * p;
+	norm_is_stored = true;
+	*/
+	return v * p;
+}
+
 #endif
 
 #ifdef  MCL_RNG_SPRNG_4

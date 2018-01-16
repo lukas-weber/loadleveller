@@ -13,8 +13,6 @@ using namespace std;
 class abstract_mc
 {
 	private:
-                randomnumbergenerator * rng = 0;
-
                 void param_init(string dir);
                 void random_clear();
                 void random_write(odump& d);
@@ -26,6 +24,7 @@ class abstract_mc
 		int therm = 0;
 	protected:
 		parser param;
+                randomnumbergenerator * rng = 0;
 		
 		virtual void init() = 0;
 		virtual void write(odump &out) = 0;

@@ -21,6 +21,8 @@ public:
 	double d(double supp) {return ptr->randDblExc(supp);}  //in (0,supp)
 	int i(int bound) {return ptr->randInt(bound-1);}       //in [0,bound)
 
+	double norm(); // normal distribution, mean = 0, std = 1
+
 private:
 	MTRand* ptr; 
 	luint my_seed;
