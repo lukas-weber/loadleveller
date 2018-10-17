@@ -34,7 +34,7 @@ namespace load_leveller {
 	// run this function from main() in your code.
 	template <class mc_implementation>
 	int run(int argc, char **argv) {
-		auto mccreator = [&] (string taskfile) -> abstract_mc* {return new ising(taskfile);};
+		auto mccreator = [&] (string taskfile) -> abstract_mc* {return new mc_implementation(taskfile);};
 
 		if(argc > 1 && string(argv[1]) == "merge") {
 			return merge(mccreator, argc-1, argv+1);
