@@ -329,6 +329,18 @@ inline void MTRand::reload()
 	left = N, pNext = state;
 }
 
+// MPI_Comm_rank will fail if this is not run in an mpi context, but in that
+// case the rank distinction is not actually needed.
+static uint32_t get_rank() {
+	int initialized;
+	MPI_Initialized(&initialized);
+	if(initialized) {
+		int rank;
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+		return rank;
+	}
+	return 0;
+}
 
 inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
 {
@@ -338,11 +350,7 @@ inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
 
 	static uint32 differ = 0;  // guarantee time-based seeds will change
 
-#ifndef MCL_SINGLE
-	int myrank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
-	differ=(uint32)(myrank);
-#endif
+	differ = get_rank();
 
 	uint32 h1 = 0;
 	unsigned char *p = (unsigned char *) &t;

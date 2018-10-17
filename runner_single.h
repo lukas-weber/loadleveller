@@ -18,15 +18,7 @@
 #include "measurements.h"
 #include "dump.h"
 #include "parser.h"
-
-struct one_task
-{
-	int task_id;
-	int is_done;
-	int n_steps;
-	int steps_done;
-	int mes_done;
-};
+#include "one_task.h"
 
 class runner_single
 {
@@ -36,7 +28,7 @@ class runner_single
 		std::string rundir;
 		std::string taskdir;
 
-		mc * sys;
+		abstract_mc * sys;
 		
 		int do_next;
 		
@@ -64,11 +56,10 @@ class runner_single
 		
 		
 	public:
-		runner_single(int argc, char *argv[]);
+		runner_single();
 		~runner_single();
 
-		void start();
-
+		int start(const std::string& jobfile, double walltime, double checkpointtime, function<abstract_mc* (string &)> mccreator, int argc, char **argv);
 };
 
 #endif

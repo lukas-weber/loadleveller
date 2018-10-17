@@ -16,18 +16,7 @@
 #include "measurements.h"
 #include "dump.h"
 #include "parser.h"
-
-//! One_task
-/*! Carries the information for one task and is transferred by mpi */
-struct one_task
-{
-	int task_id;
-	int is_done;
-	int n_steps;
-	int steps_done;
-	int mes_done;
-	int run_counter; 
-};
+#include "one_task.h"
 
 //! Runner
 /*! The main interface for inter-process communications and job management. The master and slave members are included here. */
@@ -92,7 +81,7 @@ class runner
 		runner();
 		~runner();
 
-		int start(int argc, char *argv[], function<abstract_mc* (string &)> mccreator);
+		int start(const string& jobfile, double walltime, double checkpointtime, function<abstract_mc* (string &)> mccreator, int argc, char **argv);
 
 };
 

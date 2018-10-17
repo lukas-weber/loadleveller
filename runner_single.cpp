@@ -1,22 +1,7 @@
 #include "runner_single.h"
+#include "merge.h"
 
-runner_single::runner_single(int argc, char *argv[]) {
-	jobfile = argv[1];
-	parser parsedfile(jobfile);
-	if (argc > 2)
-		walltime = atof(argv[2]);
-	else
-		walltime = parsedfile.return_value_of<double>("walltime");
-	if (argc > 3)
-		chktime = atof(argv[3]);
-	else
-		chktime = parsedfile.return_value_of<double>("checkpointtime");
-	taskfiles = parsedfile.return_vector<string>("@taskfiles");
-	time_start = time(NULL);
-	time_last_chkpt = time_start;
-	statusfile = parsedfile.value_or_default<string>("statusfile", jobfile + ".status");
-	masterfile = parsedfile.value_or_default<string>("masterfile", jobfile + ".master");
-	STATUS = new std::ofstream(statusfile.c_str(), std::ios::out | std::ios::app);
+runner_single::runner_single() {
 }
 
 runner_single::~runner_single() {
@@ -25,7 +10,23 @@ runner_single::~runner_single() {
 	delete sys;
 }
 
-void runner_single::start() {
+
+int runner_single :: start(const std::string& jobfile, double walltime, double checkpointtime, function<abstract_mc* (string &)> mccreator, int argc, char **argv)
+{
+	this->jobfile = jobfile;
+	this->walltime = walltime;
+	chktime = checkpointtime;
+	
+	parser parsedfile(jobfile);
+
+	taskfiles = parsedfile.return_vector<string>("@taskfiles");
+	time_start = time(NULL);
+	time_last_chkpt = time_start;
+	statusfile = parsedfile.value_or_default<string>("statusfile", jobfile + ".status");
+	masterfile = parsedfile.value_or_default<string>("masterfile", jobfile + ".master");
+	STATUS = new std::ofstream(statusfile.c_str(), std::ios::out | std::ios::app);
+
+
 	read();
 	int task_id = get_new_task_id();
 	while (task_id != -1) {
@@ -37,25 +38,25 @@ void runner_single::start() {
 		stringstream rb;
 		rb << taskdir << "/run" << 1 << ".";
 		rundir = rb.str();
-		sys = new mc(taskfile);
-		if ((*sys).measure.read(rundir) && (*sys).read(rundir)) {
+		sys = mccreator(taskfile);
+		if (sys->measure.read(rundir) && sys->_read(rundir)) {
 			(*STATUS) << 0 << " : L " << rundir << "\n";
 			cerr << 0 << " : L " << rundir << "\n";
 		} else {
 			(*STATUS) << 0 << " : I " << rundir << "\n";
 			cerr << 0 << " : I " << rundir << "\n";
-			(*sys).init();
+			sys->_init();
 			checkpointing();
 		}
 #ifdef NO_TASK_SHARE
-		while ((*sys).work_done()<0.5) {
+		while (sys->work_done()<0.5) {
 #else
 		while (tasks[task_id].mes_done < tasks[task_id].n_steps) {
 #endif
-			(*sys).do_update();
+			sys->_do_update();
 			++tasks[task_id].steps_done;
-			if ((*sys).is_thermalized()) {
-				(*sys).do_measurement();
+			if (sys->is_thermalized()) {
+				sys->do_measurement();
 				++tasks[task_id].mes_done;
 			}
 			if (is_chkpt_time()) {
@@ -76,6 +77,8 @@ void runner_single::start() {
 	}
 	write();
 	end_of_run();
+
+	return 0;
 }
 
 bool runner_single::is_chkpt_time() {
@@ -167,8 +170,8 @@ void runner_single::report() {
 
 void runner_single::checkpointing() {
 	cerr << "0 : C " << rundir << "\n";
-	(*sys).write(rundir);
-	(*sys).measure.write(rundir);
+	sys->_write(rundir);
+	sys->measure.write(rundir);
 	(*STATUS) << "0 : C " << rundir << "\n";
 	cerr << "0 : C " << rundir << " done" << "\n";
 }
@@ -176,7 +179,7 @@ void runner_single::checkpointing() {
 void runner_single::merge_measurements() {
 	cerr << "0 : M " << rundir << "\n";
 	std::string mf = taskdir + ".out";
-	(*sys).write_output(mf);
+	sys->_write_output(mf);
 	(*STATUS) << 0 << " : M " << taskdir << "\n";
 	cerr << "0 : M " << rundir << " done" << "\n";
 }

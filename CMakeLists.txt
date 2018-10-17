@@ -26,7 +26,7 @@ set(SRCs
 	runner.cpp
 	merge.cpp
 	mc.cpp
-	#runner_single.cpp
+	runner_single.cpp
 	runner_pt.cpp
 )
 

@@ -11,37 +11,18 @@ runner :: ~runner()
 	delete sys;
 }
 
-int runner :: start(int argc, char *argv[], function<abstract_mc* (string &)> mccreator)
+int runner :: start(const std::string& jobfile, double walltime, double checkpointtime, function<abstract_mc* (string &)> mccreator, int argc, char **argv)
 {
+	this->jobfile = jobfile;
+	this->walltime = walltime;
+	chktime = checkpointtime;
+	my_mccreator = mccreator;
 
-	if(argc > 1 && string(argv[1]) == "merge") {
-		return merge(mccreator, argc-1, argv+1);
-	}
-	if(argc < 2) {
-		cerr << "Usage: " << argv[0] <<" jobfile [walltime] [checkpointtime] "<< endl;
-		return -1;
-	}
 	MPI_Init(&argc,&argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 	
-	my_mccreator=mccreator;
-	jobfile = argv[1];
 	parser parsedfile(jobfile);
-	if (argc>2) walltime=atof(argv[2]);
-	else walltime = parsedfile.return_value_of<double>("walltime");
-	if (argc>3) chktime=atof(argv[3]);
-	else chktime  = parsedfile.return_value_of<double>("checkpointtime");
-	if (argc>4) {//default is seconds
-		if (argv[4][0]=='h') {
-			walltime*=3600;
-			chktime*=3600;
-		}
-		if (argv[4][0]=='m') {
-			walltime*=60;
-			chktime*=60;
-		}
-	}
 
 	taskfiles= parsedfile.return_vector< string >("@taskfiles");		
 	time_start = MPI_Wtime();
