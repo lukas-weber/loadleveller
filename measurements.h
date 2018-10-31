@@ -80,7 +80,7 @@ class measurements
                 double naiveerror(std::string name,uint j=0)
                         {return (tag[name]) ? obs_v[eo.at(name)]->naiveerror(j) : eva_v[eo.at(name)]->naiveerror(j);}
 		//! Number of Bins
-		int bins(std::string name,uint j=0)
+		int bins(std::string name)
 			{return (tag[name]) ? obs_v[eo.at(name)]->bins() : eva_v[eo.at(name)]->bins();}
 
 
