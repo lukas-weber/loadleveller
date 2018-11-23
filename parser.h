@@ -76,6 +76,13 @@ class parser
 			} else return defa;
 		}
 
+		// shorter wrapper for value_or_default
+		// be very careful when using it because the return type is inferred from the type of defa. 0. and 0 are different!
+		template <class T>
+		auto get(const std::string &parameter, T defa) -> decltype(defa) {
+			return value_or_default(parameter, defa);
+		}
+
 
 		template <class Type>
 		void set_value(std::string name, Type value)

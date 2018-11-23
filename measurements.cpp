@@ -181,7 +181,7 @@ bool measurements :: read(idump& bd) {
                 return false;
         else {
                 bool madeit=true;
-                uint number_of_observables;
+                uint number_of_observables = 0;
                 bd.read(number_of_observables);
                 for (uint i=0;i<number_of_observables;++i) {
                         observable *o = new observable("",1,1,1);
