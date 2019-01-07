@@ -193,6 +193,7 @@ void runner :: M_report()
 	for(uint i = 0; i < tasks.size(); i ++) {
 		STATUS 	
 		<< tasks[i].task_id << "\t" 
+		<< tasks[i].run_counter << "\t"
 		<< int(tasks[i].mes_done/(double)(tasks[i].n_steps)*100)<<"%\t"
 		<< tasks[i].steps_done << "\t"
 		<< tasks[i].mes_done << "\n";	
