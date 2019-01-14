@@ -1,17 +1,16 @@
 #include "runner_single.h"
-#include "merge.h"
+#include "dump.h"
+#include "merger.h"
 
-runner_single::runner_single() {
-}
+#include <fmt/format.h>
+#include <fmt/printf.h>
 
 runner_single::~runner_single() {
-	(*STATUS).close();
-	delete STATUS;
 	delete sys;
 }
 
 
-int runner_single :: start(const std::string& jobfile, double walltime, double checkpointtime, function<abstract_mc* (string &)> mccreator, int argc, char **argv)
+int runner_single :: start(const std::string& jobfile, double walltime, double checkpointtime, std::function<abstract_mc* (std::string &)> mccreator, int argc, char **argv)
 {
 	this->jobfile = jobfile;
 	this->walltime = walltime;
@@ -19,40 +18,29 @@ int runner_single :: start(const std::string& jobfile, double walltime, double c
 	
 	parser parsedfile(jobfile);
 
-	taskfiles = parsedfile.return_vector<string>("@taskfiles");
+	taskfiles = parsedfile.return_vector<std::string>("@taskfiles");
 	time_start = time(NULL);
 	time_last_chkpt = time_start;
-	statusfile = parsedfile.value_or_default<string>("statusfile", jobfile + ".status");
-	masterfile = parsedfile.value_or_default<string>("masterfile", jobfile + ".master");
-	STATUS = new std::ofstream(statusfile.c_str(), std::ios::out | std::ios::app);
+	//statusfile = parsedfile.value_or_default<std::string>("statusfile", jobfile + ".status");
+	masterfile = parsedfile.value_or_default<std::string>("masterfile", jobfile + ".master");
 
 
 	read();
 	int task_id = get_new_task_id();
 	while (task_id != -1) {
 		std::string taskfile = taskfiles[task_id];
-		stringstream tb;
-		tb << "task" << task_id + 1;
 		parser cfg(taskfile);
-		taskdir = cfg.value_or_default("taskdir", tb.str());
-		stringstream rb;
-		rb << taskdir << "/run" << 1 << ".";
-		rundir = rb.str();
+		taskdir = cfg.value_or_default("taskdir", fmt::format("task{:04d}",task_id + 1));
+		rundir = "/run1";
 		sys = mccreator(taskfile);
-		if (sys->measure.read(rundir) && sys->_read(rundir)) {
-			(*STATUS) << 0 << " : L " << rundir << "\n";
-			cerr << 0 << " : L " << rundir << "\n";
+		if(sys->_read(rundir)) {
+			STATUS << 0 << " : L " << rundir << "\n";
 		} else {
-			(*STATUS) << 0 << " : I " << rundir << "\n";
-			cerr << 0 << " : I " << rundir << "\n";
+			STATUS << 0 << " : I " << rundir << "\n";
 			sys->_init();
 			checkpointing();
 		}
-#ifdef NO_TASK_SHARE
-		while (sys->work_done()<0.5) {
-#else
 		while (tasks[task_id].mes_done < tasks[task_id].n_steps) {
-#endif
 			sys->_do_update();
 			++tasks[task_id].steps_done;
 			if (sys->is_thermalized()) {
@@ -94,34 +82,47 @@ bool runner_single::time_is_up() {
 }
 
 int runner_single::get_new_task_id() {
-	do_next = (do_next + 1) % (int) tasks.size();
+	next_task_id_ = (next_task_id_ + 1) % (int) tasks.size();
 	int count = 0;
-	while (tasks[do_next].is_done == 1 && count <= (int) (tasks.size())) {
+	while (tasks[next_task_id_].is_done == 1 && count <= (int) (tasks.size())) {
 		++count;
-		do_next = (do_next + 1) % (int) tasks.size();
+		next_task_id_ = (next_task_id_ + 1) % (int) tasks.size();
 	}
-	return (count >= (int) tasks.size()) ? -1 : do_next;
+	return (count >= (int) tasks.size()) ? -1 : next_task_id_;
 }
 
 void runner_single::write() {
-	odump d(masterfile);
-	int dd = do_next - 1;
-	d.write(dd);
-	d.write<one_task>(tasks);
-	d.close();
+	iodump d = iodump::create(masterfile);
+	d.write("next_task_id", next_task_id_-1);
+	d.change_group("tasks");
+	for(const auto& task : tasks) {
+		d.change_group(fmt::format("{:04d}", task.task_id));
+		task.checkpoint_write(d);
+		d.change_group("..");
+	}
+	d.change_group("..");
 }
 
 void runner_single::read() {
-	idump d(masterfile);
-	if (d.good()) {
-		d.read(do_next);
-		d.read<one_task>(tasks);
-	} else
-		do_next = -1;
-	d.close();
+	try {
+		iodump d = iodump::open_readonly(masterfile);
+
+		d.read("next_task_id", next_task_id_);
+		d.change_group("tasks");
+		for(const auto& task_name : d.list()) {
+			d.change_group(task_name);
+			tasks.emplace_back();
+			tasks.back().checkpoint_read(d);
+			d.change_group("..");
+		}		
+	} catch(iodump_exception e) {
+		fmt::printf("runner_single::read: failed to read master file: {}. Discarding progress information.", e.what());
+		next_task_id_= -1;
+	}
+
 	for (uint i = 0; i < taskfiles.size(); i++) {
 		parser tp(taskfiles[i]);
-		one_task new_task;
+		runner_task new_task;
 		if (tp.defined("SWEEPS"))
 			new_task.n_steps = tp.return_value_of<int>("SWEEPS");
 		if (tp.defined("n_steps"))
@@ -152,35 +153,30 @@ void runner_single::end_of_run() {
 		std::ofstream rfile(rfilename.c_str());
 		rfile << "restart me\n";
 		rfile.close();
-		(*STATUS) << 0 << " : Restart needed" << "\n";
+		STATUS << 0 << " : Restart needed" << "\n";
 	}
 	report();
-	(*STATUS) << 0 << " : finalized" << "\n";
+	STATUS << 0 << " : finalized" << "\n";
 	exit(0);
 }
 
 void runner_single::report() {
 	for (uint i = 0; i < tasks.size(); i++) {
-		(*STATUS) << tasks[i].task_id << "\t"
+		STATUS << tasks[i].task_id << "\t"
 				<< int(tasks[i].mes_done / (double) (tasks[i].n_steps) * 100) << "%\t"
 				<< tasks[i].steps_done << "\t" << tasks[i].mes_done << "\n";
 	}
-	(*STATUS) << "\n";
+	STATUS << "\n";
 }
 
 void runner_single::checkpointing() {
-	cerr << "0 : C " << rundir << "\n";
 	sys->_write(rundir);
-	sys->measure.write(rundir);
-	(*STATUS) << "0 : C " << rundir << "\n";
-	cerr << "0 : C " << rundir << " done" << "\n";
+	STATUS << "0 : C " << rundir << "\n";
 }
 
 void runner_single::merge_measurements() {
-	cerr << "0 : M " << rundir << "\n";
 	std::string mf = taskdir + ".out";
 	sys->_write_output(mf);
-	(*STATUS) << 0 << " : M " << taskdir << "\n";
-	cerr << "0 : M " << rundir << " done" << "\n";
+	STATUS << 0 << " : M " << taskdir << "\n";
 }
 

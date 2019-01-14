@@ -1,43 +1,28 @@
 #include "mc.h"
 
-abstract_mc :: abstract_mc (string dir) {
-	param_init(dir);
+abstract_mc::abstract_mc(const std::string& taskfile) {
+	param.read_file(taskfile);
 
-	therm=param.value_or_default<int>("THERMALIZATION",10000);
+	therm_=param.value_or_default<int>("THERMALIZATION",10000);
 }
 
-abstract_mc :: ~abstract_mc() {
-	random_clear();
+abstract_mc::~abstract_mc() {
 }
 
 void abstract_mc::random_init() {
 	if (param.defined("SEED"))
-		rng = new randomnumbergenerator(param.value_of<luint>("SEED"));
+		rng.reset(new randomnumbergenerator(param.value_of<uint64_t>("SEED")));
 	else
-		rng = new randomnumbergenerator();
-}
-void abstract_mc::param_init(string dir) {
-	param.read_file(dir);
+		rng.reset(new randomnumbergenerator());
 }
 
-void abstract_mc::random_write(odump& d) {
-	rng->write(d);
+void abstract_mc::random_write(iodump& d) {
+	rng->checkpoint_write(d);
 }
 
-void abstract_mc::seed_write(string fn) {
-	ofstream s;
-	s.open(fn.c_str());
-	s << rng->seed()<<endl;s.close();
-}
-
-void abstract_mc::random_read(idump& d) {
-	rng = new randomnumbergenerator();
-	rng->read(d);
-}
-
-void abstract_mc::random_clear() { 
-	delete rng;
-	rng = 0;
+void abstract_mc::random_read(iodump& d) {
+	rng.reset(new randomnumbergenerator());
+	rng->checkpoint_read(d);
 }
 
 double abstract_mc::random01() {
@@ -45,7 +30,7 @@ double abstract_mc::random01() {
 }
 
 int abstract_mc::sweep() const {
-	return _sweep;
+	return sweep_;
 }
 		
 void abstract_mc::_init() {
@@ -54,46 +39,44 @@ void abstract_mc::_init() {
 }
 
 void abstract_mc::_do_update() {
-	_sweep++;
+	sweep_++;
 	do_update();
 }
 
-void abstract_mc::_write(std::string dir) {
-	odump d(dir+"dump");
-	random_write(d);
-	d.write(_sweep);
-	write(d);
-	d.close();
-	seed_write(dir+"seed");
-	dir+="sweeps";
-	ofstream f; f.open(dir.c_str());
-	f << ( (is_thermalized()) ? _sweep-therm : 0 ) << " " << _sweep <<endl;
-	f.close();
+void abstract_mc::_write(const std::string& dir) {
+	iodump meas_file = iodump::open_readwrite(dir+".meas.h5");
+	measure.samples_write(meas_file);
+	
+	iodump dump_file = iodump::create(dir+".dump.h5");
+	measure.checkpoint_write(dump_file);
+	random_write(dump_file);
+
+	dump_file.write("sweeps", sweep_);
+	
+	dump_file.write("thermalization_sweeps", std::min(therm_,sweep_)); // only for convenience
+	checkpoint_write(dump_file);
 }
 
-bool abstract_mc::_read(std::string dir) {
-	idump d(dir+"dump");
-	if (!d) 
-		return false;
-	random_read(d);
-	d.read(_sweep);
-	if(!read(d))
-		return false;
+bool abstract_mc::_read(const std::string& dir) {
+	try {
+		iodump dump_file = iodump::open_readonly(dir+"dump.h5");
+		measure.checkpoint_read(dump_file);
+		random_read(dump_file);
+		dump_file.read("sweeps", sweep_);
 
-	d.close();
+		checkpoint_read(dump_file);
+
+	} catch(const iodump_exception& e) {
+		return false;
+	}
 	return true;
 }
 
-void abstract_mc::_write_output(std::string filename) {
-	ofstream f(filename.c_str());
-	write_output(f);
-	f << "PARAMETERS" << endl;
-	param.get_all(f);
-	measure.get_statistics(f);
-	f.close();
+void abstract_mc::_write_output(const std::string& filename) {
+	write_output(filename);
 }
 
 bool abstract_mc::is_thermalized() {
-	return _sweep>therm;
+	return sweep_>therm_;
 }
 

@@ -1,6 +1,7 @@
 #ifndef MCL_SINGLE
 #include "mpi.h"
 #endif
+#include <cassert>
 
 // MersenneTwister.h
 // Mersenne Twister random number generator -- a C++ class MTRand
@@ -82,8 +83,6 @@ public:
 	typedef unsigned long uint32;  // unsigned integer type, at least 32 bits
 	
 	static const int N = 624;       // length of state vector
-	static const int SAVE = N + 1;  // length of array for save()
-
 protected:
 	enum { M = 397 };  // period parameter
 	
@@ -128,8 +127,8 @@ public:
 	uint32 get_seed() {return myoneseed;}
 	
 	// Saving and loading generator state
-	void save( uint32* saveArray ) const;  // to array of size SAVE
-	void load( uint32 *const loadArray );  // from such array
+	void save(std::vector<uint32>& saveArray) const;  // to array of size SAVE
+	void load(const std::vector<uint32>& loadArray);  // from such array
 	friend std::ostream& operator<<( std::ostream& os, const MTRand& mtrand );
 	friend std::istream& operator>>( std::istream& is, MTRand& mtrand );
 
@@ -370,24 +369,15 @@ inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
 }
 
 
-inline void MTRand::save( uint32* saveArray ) const
+inline void MTRand::save(std::vector<uint32>& saveArray) const
 {
-	uint32 *sa = saveArray;
-	const uint32 *s = state;
-	int i = N;
-	for( ; i--; *sa++ = *s++ ) {}
-	*sa = left;
+	saveArray = std::vector<uint32>{state, state+N};
 }
 
 
-inline void MTRand::load( uint32 *const loadArray )
-{
-	uint32 *s = state;
-	uint32 *la = loadArray;
-	int i = N;
-	for( ; i--; *s++ = *la++ ) {}
-	left = *la;
-	pNext = &state[N-left];
+inline void MTRand::load(const std::vector<uint32>& loadArray) {
+	assert(loadArray.size() == N);
+	memcpy(state, loadArray.data(), sizeof(uint32)*N);
 }
 
 

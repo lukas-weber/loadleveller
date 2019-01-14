@@ -16,38 +16,27 @@
 #include "measurements.h"
 #include "dump.h"
 #include "parser.h"
-#include "one_task.h"
+#include "runner_task.h"
 
-//! Runner
-/*! The main interface for inter-process communications and job management. The master and slave members are included here. */
 class runner
 {
 	private:
-		
-		//! My Task
-		/*! The current task of the node. */
-		one_task my_task;
-		//! Rundir
-		/*! The current running dir. */
+		runner_task my_task;
 		std::string my_rundir;
-		//! Taskdir
-		/*! The current taskdir. */
 		std::string my_taskdir;
 
-		function<abstract_mc* (string&)> my_mccreator;
-		//! System
-		/*! Pointer to the system class where all the magic happens.*/
+		std::function<abstract_mc* (std::string&)> my_mccreator;
 		abstract_mc * sys = 0;
 		
 		int my_count = 0;
-		int do_next = 0;
+		int next_task_id_ = 0;
 
 		std::string jobfile;
 		std::string statusfile;
 		std::string masterfile;
 
-		std::vector<one_task> tasks;
-		std::vector<string> taskfiles;
+		std::vector<runner_task> tasks;
+		std::vector<std::string> taskfiles;
 		
 		std::ofstream STATUS;
 		
@@ -81,7 +70,7 @@ class runner
 		runner();
 		~runner();
 
-		int start(const string& jobfile, double walltime, double checkpointtime, function<abstract_mc* (string &)> mccreator, int argc, char **argv);
+		int start(const std::string& jobfile, double walltime, double checkpointtime, std::function<abstract_mc* (std::string &)> mccreator, int argc, char **argv);
 
 };
 

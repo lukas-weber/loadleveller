@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 2.6)
 project(load_leveller)
 
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
+
 find_package(MPI REQUIRED)
 set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -O3 -std=c++11 -pedantic ${MPI_LINK_FLAGS} ${MPI_COMPILE_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -O3 -std=c++17 -pedantic ${MPI_LINK_FLAGS} ${MPI_COMPILE_FLAGS}")
 include_directories(${MPI_INCLUDE_PATH})
 
 option(MEASUREMENTS_APPEND "Use append mode for writing measurements" OFF)
@@ -24,10 +27,9 @@ set(SRCs
 	parser.cpp
 	random.cpp
 	runner.cpp
-	merge.cpp
+	merger.cpp
 	mc.cpp
 	runner_single.cpp
-	runner_pt.cpp
 )
 
 add_library(load_leveller STATIC ${SRCs})

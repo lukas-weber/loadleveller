@@ -1,59 +1,29 @@
-#ifndef MCL_VECTOREVALABLE_H
-#define MCL_VECTOREVALABLE_H
+#pragma once
 
-#include <string>
 #include <vector>
-#include <valarray>
 #include <functional>
-#include "types.h"
-#include "observable.h"
+#include <string>
 
-typedef std::function<double(vector<valarray<double>*>&)> evalablefunc;
-typedef std::function<void(valarray<double>&, vector<valarray<double>*>&)> vectorevalablefunc;
+class observable_result;
+class merger_results;
 
-class evalable
-{
-	public:
-		evalable() {name_="";}
-		evalable(string newname) {name_=newname;} 
-		
-		~evalable() {}
+class evalable {
+public:
+	// Internally all observables are vectors, so you need a function
+	//
+	// std::vector<double> calculate_stuff(const std::vector<std::vector<double>>& obs);
+	//
+	// to create your evalable. The vector then contains all the observable values you
+	// specified when constructing the evalable
+	// 
+	typedef std::function<std::vector<double>(const std::vector<std::vector<double>>& observables)> func;
+	
+	evalable(const std::string& name, std::vector<std::string> used_observables, func fun); 
+	const std::string& name() const;
+	void jackknife(const merger_results& res, observable_result &out) const;
 
-		string name() {return name_;}
-		void set_name(string newname) {name_=newname;}
-		luint  bins(){return bins_;}
-		luint  vector_length() {return vector_length_;}
-		luint  bin_length() {return bin_length_;}
- 
-                void mean(valarray<double>&); 
-                void error(valarray<double>&);
-		void variance(valarray<double>&);
-		void autocorrelationtime(valarray<double>&); //need to implement jackknife binning still
-		double mean(uint);
-		double error(uint);
-		double naiveerror(uint);
-		double variance(uint);
-		double autocorrelationtime(uint); //need to implement jackknife binning still
-
-		void jackknife(vector<observable*>&, evalablefunc f);
-		void jackknife(vector<observable*>&, vectorevalablefunc f);
-
-
-
- 		void reset() {mean_v.clear();error_v.clear();}
- 		void get_statistics(ostream&);
-
- 		string toString();
-
-		vector<valarray<double> > mean_v;
-		vector<valarray<double> > error_v;
-
-	private:
-                string name_;
-		luint bins_;
-		luint vector_length_;
-		luint bin_length_;
-		luint binning_base;	
+private:
+        const std::string name_;
+        const std::vector<std::string> used_observables_;
+        const func fun_;
 };
-
-#endif
