@@ -1,7 +1,4 @@
 #pragma once
-#ifndef MCL_MEASUREMENTS_APPEND
-#define MCL_MEASUREMENTS_APPEND 0
-#endif
 
 #include <string>
 #include <vector>
