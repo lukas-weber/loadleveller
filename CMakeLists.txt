@@ -28,4 +28,4 @@ set(SRCs
 )
 
 add_library(load_leveller STATIC ${SRCs})
-target_link_libraries(load_leveller ${MPI_LIBRARIES} ${HDF5_C_LIBRARY_hdf5})
+target_link_libraries(load_leveller ${MPI_LIBRARIES} ${CONAN_LIBS})
