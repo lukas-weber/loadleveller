@@ -28,4 +28,4 @@ set(SRCs
 )
 
 add_library(load_leveller STATIC ${SRCs})
-target_link_libraries(load_leveller ${MPI_LIBRARIES} ${CONAN_LIBS})
+#target_link_libraries(load_leveller ${MPI_LIBRARIES} ${CONAN_LIBS})
