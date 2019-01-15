@@ -27,6 +27,5 @@ set(SRCs
 	runner_single.cpp
 )
 
-add_library(load_leveller ${SRCs})
 add_library(load_leveller STATIC ${SRCs})
 #target_link_libraries(load_leveller ${MPI_LIBRARIES} ${CONAN_LIBS})
