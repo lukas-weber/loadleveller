@@ -29,11 +29,3 @@ set(SRCs
 
 add_library(load_leveller STATIC ${SRCs})
 target_link_libraries(load_leveller ${MPI_LIBRARIES} ${HDF5_C_LIBRARY_hdf5})
-
-
-SET(MCPREFIX "$ENV{HOME}/mc/" CACHE PATH "Prefix prepended to
-install directories")
-SET(CMAKE_INSTALL_PREFIX "${MCPREFIX}" CACHE INTERNAL "Prefix
-prepended to install directories" FORCE)
-
-install(TARGETS load_leveller DESTINATION .)
