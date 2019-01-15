@@ -2,7 +2,7 @@
 
 #include "mc.h"
 #include "runner_task.h"
-#include <iostream>
+#include <ostream>
 #include <functional>
 
 class runner_single {

@@ -2,6 +2,7 @@
 #include "dump.h"
 #include "merger.h"
 
+#include <fstream>
 #include <fmt/format.h>
 #include <fmt/printf.h>
 

@@ -1,17 +1,11 @@
-#ifndef MCL_RUNNER_H
-#define MCL_RUNNER_H
+#pragma once
 
 #include <vector>
 #include <functional>
-
+#include <fstream>
 #include <mpi.h>
 
-#ifdef NO_TASK_SHARE
-#include "mc_ee.h"
-#else
 #include "mc.h"
-#endif
-
 #include "definitions.h"
 #include "measurements.h"
 #include "dump.h"
@@ -74,4 +68,3 @@ class runner
 
 };
 
-#endif

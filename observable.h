@@ -1,14 +1,10 @@
 #ifndef MCL_OBSERVABLE_H
 #define MCL_OBSERVABLE_H
 
-#include <iostream>
-#include <fstream>
 #include <cmath>
 #include <string>
 #include <vector>
-#include <valarray>
 #include <map>
-#include "types.h"
 #include "dump.h"
 
 class observable
