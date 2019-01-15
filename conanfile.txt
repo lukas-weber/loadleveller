@@ -1,6 +1,10 @@
 [requires]
-jsonformoderncpp/3.5.0@vthiery/stable
 fmt/5.2.1@bincrafters/stable
+hdf5/1.10.2-dm2@lweber/mc
 
 [generators]
 cmake
+
+[options]
+fmt:header_only=True
+hdf5:shared=False

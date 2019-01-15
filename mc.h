@@ -22,7 +22,7 @@ protected:
 	
 	virtual void init() = 0;
 	virtual void checkpoint_write(iodump& out) = 0;
-	virtual bool checkpoint_read(iodump& in) = 0;
+	virtual void checkpoint_read(iodump& in) = 0;
 	virtual void write_output(const std::string& filename) = 0;
 	virtual void do_update() = 0;
 public:	

@@ -9,15 +9,10 @@ set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -O3 -std=c++17 -pedantic ${MPI_LINK_FLAGS} ${MPI_COMPILE_FLAGS}")
 include_directories(${MPI_INCLUDE_PATH})
 
-option(MEASUREMENTS_APPEND "Use append mode for writing measurements" OFF)
-option(DUMP_BUFFER "dump uses buffered writeout" OFF)
-
-if(MEASUREMENTS_APPEND)
-	add_definitions(-DMCL_MEASUREMENTS_APPEND=1)
-endif()
-if(DUMP_BUFFER)
-	add_definitions(-DMCL_DUMP_BUFFER=1)
-endif()
+set(HDF5_USE_STATIC_LIBRARIES)
+find_package(HDF5 REQUIRED)
+include_directories(${HDF5_INCLUDE_DIR})
+add_definitions(${HDF5_C_DEFINITIONS})
 
 set(SRCs
 	dump.cpp
@@ -33,7 +28,7 @@ set(SRCs
 )
 
 add_library(load_leveller STATIC ${SRCs})
-target_link_libraries(load_leveller ${MPI_LIBRARIES})
+target_link_libraries(load_leveller ${MPI_LIBRARIES} ${HDF5_C_LIBRARY_hdf5})
 
 
 SET(MCPREFIX "$ENV{HOME}/mc/" CACHE PATH "Prefix prepended to

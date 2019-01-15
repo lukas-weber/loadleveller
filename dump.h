@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <hdf5.h>
+#include <string>
 
 struct iodump_exception : public std::exception {
 	std::string message;
