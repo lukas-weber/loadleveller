@@ -61,7 +61,6 @@ class runner
 		
 	public:
 		int my_rank, world_size;
-		runner();
 		~runner();
 
 		int start(const std::string& jobfile, double walltime, double checkpointtime, std::function<abstract_mc* (std::string &)> mccreator, int argc, char **argv);

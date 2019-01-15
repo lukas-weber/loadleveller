@@ -29,3 +29,8 @@ public:
 private:
 	std::map<std::string, observable> observables_;
 };
+
+template <class T> 
+void measurements::add(const std::string name, T value) {
+	observables_.at(name).add(value);
+}

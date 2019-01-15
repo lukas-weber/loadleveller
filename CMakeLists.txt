@@ -20,7 +20,9 @@ set(SRCs
 	merger.cpp
 	mc.cpp
 	runner_single.cpp
+	runner_task.cpp
 )
 
 add_library(load_leveller ${SRCs})
 #target_link_libraries(load_leveller ${MPI_LIBRARIES} ${CONAN_LIBS})
+install(FILES load_leveller.h DESTINATION include)

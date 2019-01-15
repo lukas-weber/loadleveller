@@ -17,12 +17,6 @@ void measurements::add_observable(const std::string& name, size_t bin_size, size
 	observables_.emplace(name, observable{name, bin_size, vector_length, initial_length});
 }
 
-template <class T> 
-void measurements::add(const std::string name, T value) {
-	observables_.at(name).add(value);
-}
-
-
 void measurements::checkpoint_write(iodump& dump_file) {
 	dump_file.change_group("measurements");
 
