@@ -1,7 +1,7 @@
 #include "runner.h"
 #include "merger.h"
 #include <fmt/printf.h>
-#include <experimental/filesystem>
+#include <dirent.h>
 
 runner::~runner()
 {
@@ -303,8 +303,11 @@ void runner::merge_measurements() {
 		const std::string meas_ending = ".meas.h5";
 		merger m;
 		std::vector<std::string> meas_files;
-		for(const auto &f : std::experimental::filesystem::directory_iterator("my_taskdir")) {
-			std::string fname = f.path();
+
+		DIR *taskdir = opendir(my_taskdir.c_str());
+		struct dirent *result;
+		while((result = readdir(taskdir)) != NULL) {
+			std::string fname{result->d_name};
 			if(fname.compare(fname.length()-meas_ending.length(), meas_ending.length(), meas_ending) == 0) {
 				meas_files.push_back(fname);
 			}
