@@ -59,6 +59,9 @@ bool iodump::group_members::iterator::operator!=(const iterator& b) {
 	return idx_ != b.idx_;
 }
 
+iodump::group_members iodump::list() {
+	return group_members{group_};
+}
 	
 iodump iodump::create(const std::string& filename) {
 	hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
