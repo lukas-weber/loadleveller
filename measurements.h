@@ -17,12 +17,12 @@ public:
 	template <class T> 
 	void add(const std::string name, T value);
 
-	void checkpoint_write(iodump& dump_file);
-	void checkpoint_read(iodump& dump_file);
+	void checkpoint_write(const iodump::group& dump_file);
+	void checkpoint_read(const iodump::group& dump_file);
 	
 	// samples_write needs to be called before checkpoint_write and the meas_file
 	// should be opened in read/write mode.
-	void samples_write(iodump& meas_file);
+	void samples_write(const iodump::group& meas_file);
 private:
 	std::map<std::string, observable> observables_;
 };

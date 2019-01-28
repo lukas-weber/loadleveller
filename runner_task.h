@@ -11,6 +11,6 @@ struct runner_task {
 	int mes_done = 0;
 	int run_counter = 0; 
 
-	void checkpoint_write(iodump &d) const;
-	void checkpoint_read(iodump &d);
+	void checkpoint_write(const iodump::group& d) const;
+	void checkpoint_read(const iodump::group& d);
 };

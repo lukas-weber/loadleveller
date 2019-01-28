@@ -11,23 +11,23 @@ randomnumbergenerator::randomnumbergenerator(uint64_t seed)
 {
 }
 
-void randomnumbergenerator::checkpoint_write(iodump& d) {
-	std::vector<MTRand::uint32> randState;
+void randomnumbergenerator::checkpoint_write(const iodump::group& d) {
+	std::vector<uint64_t> randState;
 	mtrand_.save(randState);
 	// if you implement your own random number generator backend,
 	// make sure to keep this file layout for scripts that like to read the seed.
-	d.change_group("random_number_generator");
 	d.write("state",randState);
 	d.write("seed", seed_);
-	d.change_group("..");
+	
+	// This is for future compatibility. B) You can add RNG implementations without
+	// breaking compatibility to old runs.
+	d.write("type", static_cast<uint32_t>(RNG_MersenneTwister)); 
 }
 
-void randomnumbergenerator::checkpoint_read(iodump& d) {
-	std::vector<MTRand::uint32> randState;
-	d.change_group("random_number_generator");
+void randomnumbergenerator::checkpoint_read(const iodump::group& d) {
+	std::vector<uint64_t> randState;
 	d.read("state", randState);
 	d.read("seed", seed_);
-	d.change_group("..");
 	mtrand_.load(randState);
 }
 

@@ -1,7 +1,7 @@
 #include "runner.h"
 #include "dump.h"
 
-void runner_task::checkpoint_write(iodump &d) const {
+void runner_task::checkpoint_write(const iodump::group& d) const {
 	d.write("task_id", task_id);
 	d.write("is_done", is_done);
 	d.write("n_steps", n_steps);
@@ -10,7 +10,7 @@ void runner_task::checkpoint_write(iodump &d) const {
 	d.write("run_counter", run_counter);
 }
 
-void runner_task::checkpoint_read(iodump &d) {
+void runner_task::checkpoint_read(const iodump::group& d) {
 	d.read("task_id", task_id);
 	d.read("is_done", is_done);
 	d.read("n_steps", n_steps);

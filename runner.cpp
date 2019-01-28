@@ -1,6 +1,6 @@
 #include "runner.h"
 #include "merger.h"
-#include <fmt/printf.h>
+#include <fmt/format.h>
 #include <dirent.h>
 
 runner::~runner()
@@ -119,7 +119,7 @@ void runner::M_wait()
 		if(stat.MPI_TAG == T_STATUS)
 			M_update(stat.MPI_SOURCE);
 		else {
-			fmt::printf("mpi rank {}: unknown message tag {} from {}\n", my_rank, stat.MPI_TAG, stat.MPI_SOURCE);
+			STATUS << fmt::format("mpi rank {}: unknown message tag {} from {}\n", my_rank, stat.MPI_TAG, stat.MPI_SOURCE);
 		}
 	}
 	M_write();
@@ -129,15 +129,13 @@ void runner::M_wait()
 void runner::M_write()
 {
 	iodump d = iodump::create(masterfile);
-	d.write("next_task_id", next_task_id_);
+	auto g = d.get_root();
+	g.write("next_task_id", next_task_id_);
 
-	d.change_group("tasks");
+	auto tasks_group = g.open_group("tasks");
 	for(const auto& task : tasks) {
-		d.change_group(fmt::format("{:04d}", task.task_id));
-		task.checkpoint_write(d);
-		d.change_group("..");
+		task.checkpoint_write(tasks_group.open_group(fmt::format("{:04d}", task.task_id)));
 	}
-	d.change_group("..");
 }
 
 void runner::M_read()
@@ -145,17 +143,16 @@ void runner::M_read()
 	N_exit = 0;
 	try {
 		iodump d = iodump::open_readonly(masterfile);
+		auto g = d.get_root();
 
-		d.read("next_task_id", next_task_id_);
-		d.change_group("tasks");
-		for(const auto& task_name : d.list()) {
-			d.change_group(task_name);
+		g.read("next_task_id", next_task_id_);
+		auto tasks_group = g.open_group("tasks");
+		for(const auto& task_name : tasks_group) {
 			tasks.emplace_back();
-			tasks.back().checkpoint_read(d);
-			d.change_group("..");
+			tasks.back().checkpoint_read(tasks_group.open_group(task_name));
 		}		
 	} catch(iodump_exception e) {
-		fmt::printf("runner::M_read: failed to read master file: {}. Discarding progress information.", e.what());
+		STATUS << "runner::M_read: failed to read master file. Discarding progress information.\n";
 		next_task_id_= -1;
 	}
 
@@ -226,7 +223,7 @@ void runner::what_is_next(int status)
 		std::string taskfile = taskfiles[my_task.task_id];
 		parser cfg(taskfile);
 		my_taskdir = cfg.value_or_default("taskdir",fmt::format("task{:04d}", my_task.task_id+1));
-		my_rundir = fmt::format("/run{:04d}", my_task.run_counter);
+		my_rundir = fmt::format("{}/run{:04d}", my_taskdir, my_task.run_counter);
 		my_count  = my_task.mes_done;
 		run();
 	}
@@ -234,7 +231,10 @@ void runner::what_is_next(int status)
 		int task_comm_size = sizeof(runner_task) / sizeof(char);
 		MPI_Send((char*) &my_task, task_comm_size, MPI_CHAR, 0, T_STATUS, MPI_COMM_WORLD);
 		int new_action = recv_action();
-		if(new_action == A_PROCESS_DATA_NEW_JOB) {merge_measurements();what_is_next(S_IDLE);}
+		if(new_action == A_PROCESS_DATA_NEW_JOB) {
+			merge_measurements();
+			what_is_next(S_IDLE);
+		}
 		if(new_action == A_NEW_JOB) what_is_next(S_IDLE);
 		if(new_action == A_EXIT) end_of_run();
 		//else, new_action == A_CONTINUE, and we 
@@ -308,8 +308,8 @@ void runner::merge_measurements() {
 		struct dirent *result;
 		while((result = readdir(taskdir)) != NULL) {
 			std::string fname{result->d_name};
-			if(fname.compare(fname.length()-meas_ending.length(), meas_ending.length(), meas_ending) == 0) {
-				meas_files.push_back(fname);
+			if(fname.length() > meas_ending.length() and fname.compare(fname.length()-meas_ending.length(), meas_ending.length(), meas_ending) == 0) {
+				meas_files.push_back(fmt::format("{}/{}", my_taskdir, fname));
 			}
 		}
 

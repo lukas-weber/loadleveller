@@ -19,10 +19,12 @@ public:
 	template <class T>
 	void add(const std::vector<T>&);
 
-	void checkpoint_write(iodump& dump_file) const;
-	void measurement_write(iodump& meas_file);
+	void checkpoint_write(const iodump::group& dump_file) const;
+
+	// This will empty the cache of already completed bins
+	void measurement_write(const iodump::group& meas_file);
 	
-	void checkpoint_read(iodump& dump_file);
+	void checkpoint_read(const iodump::group& dump_file);
 
 private:
 	std::string name_;

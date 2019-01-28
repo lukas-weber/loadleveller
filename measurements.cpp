@@ -17,36 +17,23 @@ void measurements::add_observable(const std::string& name, size_t bin_size, size
 	observables_.emplace(name, observable{name, bin_size, vector_length, initial_length});
 }
 
-void measurements::checkpoint_write(iodump& dump_file) {
-	dump_file.change_group("measurements");
-
+void measurements::checkpoint_write(const iodump::group& dump_file) {
 	for(const auto& obs : observables_) {
-		dump_file.change_group(obs.first);
-		obs.second.checkpoint_write(dump_file);
-		dump_file.change_group("..");
+		obs.second.checkpoint_write(dump_file.open_group(obs.first));
 	}
-
-	dump_file.change_group("..");
 }
 
-void measurements::checkpoint_read(iodump& dump_file) {
-	dump_file.change_group("measurements");
-
-	for(const auto& obs_name : dump_file.list()) {
-		dump_file.change_group(obs_name);
+void measurements::checkpoint_read(const iodump::group& dump_file) {
+	for(const auto& obs_name : dump_file) {
 		add_observable(obs_name);
-		observables_.at(obs_name).checkpoint_read(dump_file);
-		dump_file.change_group("..");
+		observables_.at(obs_name).checkpoint_read(dump_file.open_group(obs_name));
 	}
-
-	dump_file.change_group("..");
 }
 
-void measurements::samples_write(iodump& meas_file) {
+void measurements::samples_write(const iodump::group& meas_file) {
 	for(auto& obs : observables_) {
-		meas_file.change_group(obs.first);
-		obs.second.measurement_write(meas_file);
-		meas_file.change_group("..");
+		auto g = meas_file.open_group(obs.first);
+		obs.second.measurement_write(g);
 	}
 }
 

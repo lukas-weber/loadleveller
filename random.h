@@ -8,14 +8,19 @@
 // in that case, also get rid of the macros and use templates to switch between different generators or so.
 
 #ifdef MCL_RNG_MT
+
+enum rng_type {
+	RNG_MersenneTwister = 0,
+};
+
 #include "MersenneTwister.h"
 class randomnumbergenerator
 {
 public:
 	randomnumbergenerator();
 	randomnumbergenerator(uint64_t seed);
-	void checkpoint_write(iodump& dump_file);
-	void checkpoint_read(iodump& dump_file);
+	void checkpoint_write(const iodump::group& dump_file);
+	void checkpoint_read(const iodump::group& dump_file);
 	uint64_t seed() {return seed_;}
 	double d(double supp=1) {return mtrand_.randDblExc(supp);}  //in (0,supp)
 	int i(int bound) {return mtrand_.randInt(bound-1);}       //in [0,bound)

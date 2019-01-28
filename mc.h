@@ -9,9 +9,6 @@
 
 class abstract_mc {
 private:
-        void random_write(iodump& dump_file);
-        void seed_write(const std::string& fn);
-        void random_read(iodump& dump_file);
         void random_init();
 
 	int sweep_ = 0;
@@ -21,8 +18,8 @@ protected:
         std::unique_ptr<randomnumbergenerator> rng;
 	
 	virtual void init() = 0;
-	virtual void checkpoint_write(iodump& out) = 0;
-	virtual void checkpoint_read(iodump& in) = 0;
+	virtual void checkpoint_write(const iodump::group& out) = 0;
+	virtual void checkpoint_read(const iodump::group& in) = 0;
 	virtual void write_output(const std::string& filename) = 0;
 	virtual void do_update() = 0;
 public:	

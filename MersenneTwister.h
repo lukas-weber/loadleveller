@@ -127,8 +127,8 @@ public:
 	uint32 get_seed() {return myoneseed;}
 	
 	// Saving and loading generator state
-	void save(std::vector<uint32>& saveArray) const;  // to array of size SAVE
-	void load(const std::vector<uint32>& loadArray);  // from such array
+	void save(std::vector<uint32>& saveArray) const;
+	void load(const std::vector<uint32>& loadArray);
 	friend std::ostream& operator<<( std::ostream& os, const MTRand& mtrand );
 	friend std::istream& operator>>( std::istream& is, MTRand& mtrand );
 
@@ -372,12 +372,16 @@ inline MTRand::uint32 MTRand::hash( time_t t, clock_t c )
 inline void MTRand::save(std::vector<uint32>& saveArray) const
 {
 	saveArray = std::vector<uint32>{state, state+N};
+	saveArray.push_back(left);
 }
 
 
 inline void MTRand::load(const std::vector<uint32>& loadArray) {
-	assert(loadArray.size() == N);
+	left = loadArray.back();
+	assert(loadArray.size() == N+1);
 	memcpy(state, loadArray.data(), sizeof(uint32)*N);
+
+	pNext = &state[N-left];
 }
 
 

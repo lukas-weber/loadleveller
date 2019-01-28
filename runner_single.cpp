@@ -23,8 +23,7 @@ int runner_single :: start(const std::string& jobfile, double walltime, double c
 	time_start = time(NULL);
 	time_last_chkpt = time_start;
 	//statusfile = parsedfile.value_or_default<std::string>("statusfile", jobfile + ".status");
-	masterfile = parsedfile.value_or_default<std::string>("masterfile", jobfile + ".master");
-
+	masterfile = parsedfile.value_or_default<std::string>("masterfile", jobfile + ".master.h5");
 
 	read();
 	int task_id = get_new_task_id();
@@ -32,7 +31,7 @@ int runner_single :: start(const std::string& jobfile, double walltime, double c
 		std::string taskfile = taskfiles[task_id];
 		parser cfg(taskfile);
 		taskdir = cfg.value_or_default("taskdir", fmt::format("task{:04d}",task_id + 1));
-		rundir = "/run1";
+		rundir = fmt::format("{}/run1", taskdir);
 		sys = mccreator(taskfile);
 		if(sys->_read(rundir)) {
 			STATUS << 0 << " : L " << rundir << "\n";
@@ -94,30 +93,27 @@ int runner_single::get_new_task_id() {
 
 void runner_single::write() {
 	iodump d = iodump::create(masterfile);
-	d.write("next_task_id", next_task_id_-1);
-	d.change_group("tasks");
+	auto g = d.get_root();
+	g.write("next_task_id", next_task_id_-1);
+	auto tasks_group = g.open_group("tasks");
 	for(const auto& task : tasks) {
-		d.change_group(fmt::format("{:04d}", task.task_id));
-		task.checkpoint_write(d);
-		d.change_group("..");
+		task.checkpoint_write(tasks_group.open_group(fmt::format("{:04d}", task.task_id)));
 	}
-	d.change_group("..");
 }
 
 void runner_single::read() {
 	try {
 		iodump d = iodump::open_readonly(masterfile);
+		auto g = d.get_root();
 
-		d.read("next_task_id", next_task_id_);
-		d.change_group("tasks");
-		for(const auto& task_name : d.list()) {
-			d.change_group(task_name);
+		g.read("next_task_id", next_task_id_);
+		auto tasks_group = g.open_group("tasks");
+		for(const auto& task_name : tasks_group) {
 			tasks.emplace_back();
-			tasks.back().checkpoint_read(d);
-			d.change_group("..");
+			tasks.back().checkpoint_read(tasks_group.open_group(task_name));
 		}		
 	} catch(iodump_exception e) {
-		fmt::printf("runner_single::read: failed to read master file: {}. Discarding progress information.", e.what());
+		STATUS << "runner_single::read: failed to read master file. Discarding progress information.\n";
 		next_task_id_= -1;
 	}
 

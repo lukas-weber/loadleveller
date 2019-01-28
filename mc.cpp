@@ -16,15 +16,6 @@ void abstract_mc::random_init() {
 		rng.reset(new randomnumbergenerator());
 }
 
-void abstract_mc::random_write(iodump& d) {
-	rng->checkpoint_write(d);
-}
-
-void abstract_mc::random_read(iodump& d) {
-	rng.reset(new randomnumbergenerator());
-	rng->checkpoint_read(d);
-}
-
 double abstract_mc::random01() {
 	return rng->d();
 }
@@ -45,27 +36,28 @@ void abstract_mc::_do_update() {
 
 void abstract_mc::_write(const std::string& dir) {
 	iodump meas_file = iodump::open_readwrite(dir+".meas.h5");
-	measure.samples_write(meas_file);
-	
-	iodump dump_file = iodump::create(dir+".dump.h5");
-	measure.checkpoint_write(dump_file);
-	random_write(dump_file);
+	measure.samples_write(meas_file.get_root());
 
-	dump_file.write("sweeps", sweep_);
+	iodump dump_file = iodump::create(dir+".dump.h5");
+	auto g = dump_file.get_root();
 	
-	dump_file.write("thermalization_sweeps", std::min(therm_,sweep_)); // only for convenience
-	checkpoint_write(dump_file);
+	measure.checkpoint_write(g.open_group("measurements"));
+	rng->checkpoint_write(g.open_group("random_number_generator"));
+	checkpoint_write(g.open_group("simulation"));
+
+	g.write("sweeps", sweep_);
+	g.write("thermalization_sweeps", std::min(therm_,sweep_)); // only for convenience
 }
 
 bool abstract_mc::_read(const std::string& dir) {
 	try {
-		iodump dump_file = iodump::open_readonly(dir+"dump.h5");
-		measure.checkpoint_read(dump_file);
-		random_read(dump_file);
-		dump_file.read("sweeps", sweep_);
+		iodump dump_file = iodump::open_readonly(dir+".dump.h5");
+		auto g = dump_file.get_root();
+		measure.checkpoint_read(g.open_group("measurements"));
+		rng->checkpoint_read(g.open_group("random_number_generator"));
+		checkpoint_read(g.open_group("simulation"));
 
-		checkpoint_read(dump_file);
-
+		g.read("sweeps", sweep_);
 	} catch(const iodump_exception& e) {
 		return false;
 	}

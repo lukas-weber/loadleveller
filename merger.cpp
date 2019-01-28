@@ -30,20 +30,21 @@ merger_results merger::merge(const std::vector<std::string>& filenames, size_t r
 	// In the first pass we gather the metadata to decide on the rebinning_bin_length.
 	for(auto& filename : filenames) {
 		iodump meas_file = iodump::open_readonly(filename);
-		for(const auto& obs_name : meas_file.list()) {
+		auto g = meas_file.get_root();
+		for(const auto& obs_name : g) {
 			res.observables.try_emplace(obs_name);
 			auto& obs = res.observables[obs_name];
 			obs.name = obs_name;
 
 			size_t vector_length;
 			std::vector<double> samples;
+			std::cerr << obs_name << "\n";
 
-			meas_file.change_group(obs_name);
-			meas_file.read("bin_length", obs.internal_bin_length);
-			meas_file.read("vector_length", vector_length);
-			int sample_size = meas_file.get_extent("samples");
-			meas_file.read("samples", samples);
-			meas_file.change_group("..");
+			auto obs_group = g.open_group(obs_name);
+			obs_group.read("bin_length", obs.internal_bin_length);
+			obs_group.read("vector_length", vector_length);
+			int sample_size = obs_group.get_extent("samples");
+			obs_group.read("samples", samples);
 
 			if(sample_size % vector_length != 0) {
 				throw std::runtime_error{"merge: sample count is not an integer multiple of the vector length. Corrupt file?"};
@@ -67,12 +68,13 @@ merger_results merger::merge(const std::vector<std::string>& filenames, size_t r
 	size_t samples_processed = 0;
 	for(auto& filename : filenames) {
 		iodump meas_file = iodump::open_readonly(filename);
-		for(const auto& obs_name : meas_file.list()) {
+		auto g = meas_file.get_root();
+		for(const auto& obs_name : g) {
 			std::vector<double> samples;
 			auto& obs = res.observables[obs_name];
 			obs.name = obs_name;
 			
-			meas_file.read(fmt::format("{}/samples", obs_name), samples);
+			g.read(fmt::format("{}/samples", obs_name), samples);
 
 			// rebinning_bin_count*rebinning_bin_length may be smaller than
 			// total_sample_count. In that case, we throw away the leftover samples.
@@ -105,14 +107,15 @@ merger_results merger::merge(const std::vector<std::string>& filenames, size_t r
 	// now handle the error and autocorrelation time which are calculated by rebinning.
 	for(auto& filename : filenames) {
 		iodump meas_file = iodump::open_readonly(filename);
-		for(const auto& obs_name : meas_file.list()) {
+		auto g = meas_file.get_root();
+		for(const auto& obs_name : g) {
 			std::vector<double> samples;
 			auto& obs = res.observables.at(obs_name);
 			auto& obs_meta = metadata.at(obs_name);
 
 			size_t vector_length = obs.mean.size();
 			
-			meas_file.read(fmt::format("{}/samples", obs_name), samples);
+			g.read(fmt::format("{}/samples", obs_name), samples);
 
 			for(size_t i = 0; obs_meta.current_rebin < rebinning_bin_count and i < samples.size(); i++) {
 				size_t vector_idx = i%vector_length;
