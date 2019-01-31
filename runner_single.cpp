@@ -4,149 +4,121 @@
 
 #include <fstream>
 #include <fmt/format.h>
-#include <fmt/printf.h>
 
-runner_single::~runner_single() {
-	delete sys;
+// these are crafted to be compatible with an mpi run.
+std::string runner_single::taskdir(int task_id) const {
+	return fmt::format("{}.{}", jobfile_name_, task_names_[task_id]);
+}
+std::string runner_single::rundir(int task_id) const {
+	return taskdir(task_id)+"/run0001";
 }
 
-
-int runner_single :: start(const std::string& jobfile, double walltime, double checkpointtime, std::function<abstract_mc* (std::string &)> mccreator, int argc, char **argv)
+int runner_single::start(const std::string& jobfile_name, const mc_factory& mccreator, int argc, char **argv)
 {
-	this->jobfile = jobfile;
-	this->walltime = walltime;
-	chktime = checkpointtime;
-	
-	parser parsedfile(jobfile);
+	jobfile_name_ = jobfile_name;
+	jobfile_ = std::unique_ptr<parser>{new parser{jobfile_name}};
 
-	taskfiles = parsedfile.return_vector<std::string>("@taskfiles");
-	time_start = time(NULL);
-	time_last_chkpt = time_start;
-	//statusfile = parsedfile.value_or_default<std::string>("statusfile", jobfile + ".status");
-	masterfile = parsedfile.value_or_default<std::string>("masterfile", jobfile + ".master.h5");
+	parser jobconfig{jobfile_->get<std::string>("jobconfig")};
+
+	for(auto node : (*jobfile_)["tasks"]) {
+		std::string task_name = node.first;
+		if(std::find(task_names_.begin(), task_names_.end(), task_name) != task_names_.end()) {
+			throw std::runtime_error(fmt::format("Task '{}' occured more than once in '{}'", task_name, jobfile_name));
+		}
+		task_names_.push_back(task_name);
+	}
+
+	walltime_ = jobconfig.get<double>("mc_walltime");
+	chktime_ = jobconfig.get<double>("mc_checkpoint_time");
+	
+	time_start_ = time(NULL);
+	time_last_chkpt_ = time_start_;
 
 	read();
-	int task_id = get_new_task_id();
-	while (task_id != -1) {
-		std::string taskfile = taskfiles[task_id];
-		parser cfg(taskfile);
-		taskdir = cfg.value_or_default("taskdir", fmt::format("task{:04d}",task_id + 1));
-		rundir = fmt::format("{}/run1", taskdir);
-		sys = mccreator(taskfile);
-		if(sys->_read(rundir)) {
-			STATUS << 0 << " : L " << rundir << "\n";
+	task_id_ = get_new_task_id(task_id_);
+	while(task_id_ != -1) {
+		sys = std::unique_ptr<abstract_mc>{mccreator(jobfile_name, task_names_[task_id_])};
+		if(sys->_read(rundir(task_id_))) {
+			STATUS << 0 << " : L " << rundir(task_id_) << "\n";
 		} else {
-			STATUS << 0 << " : I " << rundir << "\n";
+			STATUS << 0 << " : I " << rundir(task_id_) << "\n";
 			sys->_init();
 			checkpointing();
 		}
-		while (tasks[task_id].mes_done < tasks[task_id].n_steps) {
+		
+		while (!tasks_[task_id_].is_done()) {
 			sys->_do_update();
-			++tasks[task_id].steps_done;
+			tasks_[task_id_].sweeps++;
 			if (sys->is_thermalized()) {
 				sys->do_measurement();
-				++tasks[task_id].mes_done;
 			}
 			if (is_chkpt_time()) {
 				checkpointing();
-				write();
 				if (time_is_up()) {
 					end_of_run();
 				}
 			}
 
 		}
+
 		checkpointing();
-		write();
 		merge_measurements();
-		delete sys;
-		tasks[task_id].is_done = 1;
-		task_id = get_new_task_id();
+		task_id_ = get_new_task_id(task_id_);
 	}
-	write();
 	end_of_run();
 
 	return 0;
 }
 
 bool runner_single::is_chkpt_time() {
-	if ((time(NULL) - time_last_chkpt) > chktime) {
-		time_last_chkpt = time(NULL);
+	if ((time(NULL) - time_last_chkpt_) > chktime_) {
+		time_last_chkpt_ = time(NULL);
 		return true;
 	}
 	return false;
 }
 
 bool runner_single::time_is_up() {
-	return ((time(NULL) - time_start) > walltime);
+	return ((time(NULL) - time_start_) > walltime_);
 }
 
-int runner_single::get_new_task_id() {
-	next_task_id_ = (next_task_id_ + 1) % (int) tasks.size();
-	int count = 0;
-	while (tasks[next_task_id_].is_done == 1 && count <= (int) (tasks.size())) {
-		++count;
-		next_task_id_ = (next_task_id_ + 1) % (int) tasks.size();
+int runner_single::get_new_task_id(int old_id) {
+	int ntasks = tasks_.size();
+	int i;
+	for(i = 1; i <= ntasks; i++) {
+		if(!tasks_[(old_id+i)%ntasks].is_done())
+			return (old_id+i)%ntasks;
 	}
-	return (count >= (int) tasks.size()) ? -1 : next_task_id_;
-}
 
-void runner_single::write() {
-	iodump d = iodump::create(masterfile);
-	auto g = d.get_root();
-	g.write("next_task_id", next_task_id_-1);
-	auto tasks_group = g.open_group("tasks");
-	for(const auto& task : tasks) {
-		task.checkpoint_write(tasks_group.open_group(fmt::format("{:04d}", task.task_id)));
-	}
+	// everything done!
+	return -1;
 }
 
 void runner_single::read() {
-	try {
-		iodump d = iodump::open_readonly(masterfile);
-		auto g = d.get_root();
+	for(size_t i = 0; i < task_names_.size(); i++) {
+		auto task = (*jobfile_)["tasks"][task_names_[i]];
 
-		g.read("next_task_id", next_task_id_);
-		auto tasks_group = g.open_group("tasks");
-		for(const auto& task_name : tasks_group) {
-			tasks.emplace_back();
-			tasks.back().checkpoint_read(tasks_group.open_group(task_name));
-		}		
-	} catch(iodump_exception e) {
-		STATUS << "runner_single::read: failed to read master file. Discarding progress information.\n";
-		next_task_id_= -1;
-	}
+		int target_sweeps = task.get<int>("sweeps");
+		int target_thermalization = task.get<int>("thermalization");
+		iodump dump = iodump::open_readonly(rundir(i)+".dump.h5");
+		int sweeps;
+		dump.get_root().read("sweeps", sweeps);
 
-	for (uint i = 0; i < taskfiles.size(); i++) {
-		parser tp(taskfiles[i]);
-		runner_task new_task;
-		if (tp.defined("SWEEPS"))
-			new_task.n_steps = tp.return_value_of<int>("SWEEPS");
-		if (tp.defined("n_steps"))
-			new_task.n_steps = tp.return_value_of<int>("n_steps");
-		if (i < tasks.size()) {
-			if (new_task.n_steps > tasks[i].n_steps)
-				tasks[i].is_done = 0;
-			if (new_task.n_steps != tasks[i].n_steps)
-				tasks[i].n_steps = new_task.n_steps;
-		} else {
-			new_task.task_id = i;
-			new_task.is_done = 0;
-			new_task.steps_done = 0;
-			new_task.mes_done = 0;
-			tasks.push_back(new_task);
-		}
+		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, 0);
 	}
 	report();
 }
 
 void runner_single::end_of_run() {
 	bool need_restart = false;
-	for (uint i = 0; i < tasks.size(); i++)
-		if (tasks[i].is_done == 0)
+	for (size_t i = 0; i < tasks_.size(); i++) {
+		if(!tasks_[i].is_done()) {
 			need_restart = true;
+			break;
+		}
+	}
 	if (need_restart) {
-		std::string rfilename = jobfile + ".restart";
+		std::string rfilename = jobfile_name_ + ".restart";
 		std::ofstream rfile(rfilename.c_str());
 		rfile << "restart me\n";
 		rfile.close();
@@ -158,22 +130,20 @@ void runner_single::end_of_run() {
 }
 
 void runner_single::report() {
-	for (uint i = 0; i < tasks.size(); i++) {
-		STATUS << tasks[i].task_id << "\t"
-				<< int(tasks[i].mes_done / (double) (tasks[i].n_steps) * 100) << "%\t"
-				<< tasks[i].steps_done << "\t" << tasks[i].mes_done << "\n";
+	for(size_t i = 0; i < tasks_.size(); i ++) {
+		STATUS << fmt::format("{:4d} {:3.0f}%\n", i,
+				      tasks_[i].sweeps/(double)(tasks_[i].target_sweeps + tasks_[i].target_thermalization)*100);
 	}
-	STATUS << "\n";
 }
 
 void runner_single::checkpointing() {
-	sys->_write(rundir);
-	STATUS << "0 : C " << rundir << "\n";
+	sys->_write(rundir(task_id_));
+	STATUS << "0 : C " << rundir(task_id_) << "\n";
 }
 
 void runner_single::merge_measurements() {
-	std::string mf = taskdir + ".out";
+	std::string mf = taskdir(task_id_) + ".out";
 	sys->_write_output(mf);
-	STATUS << 0 << " : M " << taskdir << "\n";
+	STATUS << 0 << " : M " << taskdir(task_id_) << "\n";
 }
 

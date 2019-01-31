@@ -3,9 +3,11 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <functional>
 #include "measurements.h"
 #include "random.h"
 #include "parser.h"
+
 
 class abstract_mc {
 private:
@@ -41,6 +43,8 @@ public:
 	bool is_thermalized();
 	measurements measure;	
 	
-	abstract_mc(const std::string& taskfile);
+	abstract_mc(const std::string& jobfile, const std::string& taskname);
 	virtual ~abstract_mc();
 };
+
+typedef std::function<abstract_mc *(const std::string&, const std::string&)> mc_factory;

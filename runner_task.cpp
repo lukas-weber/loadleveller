@@ -1,21 +1,10 @@
 #include "runner.h"
 #include "dump.h"
 
-void runner_task::checkpoint_write(const iodump::group& d) const {
-	d.write("task_id", task_id);
-	d.write("is_done", is_done);
-	d.write("n_steps", n_steps);
-	d.write("steps_done", steps_done);
-	d.write("mes_done", mes_done);
-	d.write("run_counter", run_counter);
+runner_task::runner_task(int target_sweeps, int target_thermalization, int sweeps, int scheduled_runs)
+	: target_sweeps{target_sweeps}, target_thermalization{target_thermalization}, sweeps{sweeps}, scheduled_runs{scheduled_runs} {
 }
 
-void runner_task::checkpoint_read(const iodump::group& d) {
-	d.read("task_id", task_id);
-	d.read("is_done", is_done);
-	d.read("n_steps", n_steps);
-	d.read("steps_done", steps_done);
-	d.read("mes_done", mes_done);
-	d.read("run_counter", run_counter);
+bool runner_task::is_done() const {
+	return sweeps > (target_sweeps + target_thermalization);
 }
-	

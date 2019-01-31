@@ -3,38 +3,26 @@
 #include "merger.h"
 #include "runner.h"
 #include "runner_single.h"
+#include "mc.h"
 
 namespace load_leveller {
-
 	template <class mc_runner>
-	static int run_mc(std::function<abstract_mc * (const std::string&)> mccreator, int argc, char **argv) {
-		if(argc < 4) {
-			std::cerr << "Usage: " << argv[0] <<" jobfile walltime checkpointtime [h/m/s]\nThe last argument sets the time unit for walltime and checkpointtime. Default is seconds.\n";
+	static int run_mc(mc_factory mccreator, int argc, char **argv) {
+		if(argc < 2) {
+			std::cerr << fmt::format("{0} JOBFILE\n{0} single JOBFILE\n{0} merge JOBFILE\n\n Without further flags, the MPI scheduler is started. 'single' starts a single core scheduler (useful for debugging), 'merge' merges unmerged measurement results.\n", argv[0]);
 			return -1;
 		}
 
-		std::string jobfile = argv[1];
-		double walltime = atof(argv[2]);
-		double chktime = atof(argv[3]);
-		if(argc>4) {//default is seconds
-			if(argv[4][0] == 'h') {
-				walltime *= 3600;
-				chktime *= 3600;
-			}
-			if(argv[4][0] == 'm') {
-				walltime *= 60;
-				chktime *= 60;
-			}
-		}
+		std::string jobfile{argv[1]};
 
 		mc_runner r;
-		return r.start(jobfile, walltime, chktime, mccreator, argc, argv);
+		return r.start(jobfile, mccreator, argc, argv);
 	}
 
 	// run this function from main() in your code.
 	template <class mc_implementation>
 	int run(int argc, char **argv) {
-		auto mccreator = [&] (const std::string& taskfile) -> abstract_mc* {return new mc_implementation(taskfile);};
+		auto mccreator = [&] (const std::string& jobfile, const std::string& taskname) -> abstract_mc* {return new mc_implementation(jobfile, taskname);};
 
 		if(argc > 1 && std::string(argv[1]) == "merge") {
 		//	return merge(mccreator, argc-1, argv+1);

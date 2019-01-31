@@ -119,7 +119,8 @@ constexpr hid_t iodump::h5_datatype() {
 
 	throw std::runtime_error{fmt::format("unsupported datatype: {}",typeid(T).name())};
 	// If you run into this error, you probably tried to write a non-primitive datatype
-	// to a dump file. see runner_task for a minimalistic example of what to do.
+	// to a dump file. See the other classes’s checkpointing functions for an example of
+	// what to do.
 	// ... or it is a native datatype I forgot to add. Then add it.
 }
 

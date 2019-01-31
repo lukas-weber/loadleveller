@@ -1,5 +1,5 @@
 #include "evalable.h"
-#include "merger.h"
+#include <map>
 #include <fmt/format.h>
 
 evalable::evalable(const std::string& name, std::vector<std::string> used_observables, func fun)
@@ -10,7 +10,7 @@ const std::string& evalable::name() const {
 	return name_;
 }
 
-void evalable::jackknife(const merger_results& res, observable_result& obs_res) const {
+void evalable::jackknife(const results& res, observable_result& obs_res) const {
 	std::vector<observable_result> observables;
 	observables.reserve(used_observables_.size());
 

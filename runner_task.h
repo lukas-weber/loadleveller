@@ -4,13 +4,11 @@ class iodump;
 
 // used by the runner
 struct runner_task {
-	int task_id = 0;
-	int is_done = 0;
-	int n_steps = 0;
-	int steps_done = 0;
-	int mes_done = 0;
-	int run_counter = 0; 
+	int target_sweeps;
+	int target_thermalization;
+	int sweeps;
+	int scheduled_runs;
 
-	void checkpoint_write(const iodump::group& d) const;
-	void checkpoint_read(const iodump::group& d);
+	bool is_done() const ;
+	runner_task(int target_sweeps, int target_thermalization, int sweeps, int scheduled_runs);
 };

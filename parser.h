@@ -1,131 +1,54 @@
-#ifndef MY_PARSER_H
-#define MY_PARSER_H
+#pragma once
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <map>
+#include <yaml-cpp/yaml.h>
+#include <fmt/format.h>
 
-class parser
-{
-	public:
-		parser();
-		parser(std::string);
-		
-		// one can add other symbols for comments, etc.
-		void add_comment(std::string);
-		void add_delim(std::string);
-		
-		// read a file (if it has not happend yet)
-		bool read_file(std::string);
-		
-		// writes out all variables to the specified output
-		void get_all(std::ostream&);
+// This is mostly a wrapper around yaml-cpp with more helpful error handling.
+// For simplicity it does not support advanced yaml features such as complex-typed
+// keys in maps.
 
-		// writes out all scalar variables and from the first array 
-		// the secified entry to the specified output
-		// usefull for output within a parallel tempering code
-		void get_all_with_one_from_specified_array(std::string, int, std::ostream&);
-
-		std::string return_value_of(std::string);
-		std::string value_of(std::string name) {return return_value_of(name);}
-		std::string operator[](std::string name) {return return_value_of(name);}
-
-		bool defined(std::string);
-
-		template <class Type>
-		Type return_value_of(std::string name)
-		{
-			Type ret;
-			std::stringstream buffer;
-			std::map<std::string,std::string>::iterator it;
-			it=vars.find(name);
-			if(it != vars.end()) {	
-				buffer << vars[name];
-				buffer >> ret;
-				readVals.push_back(name);
-				return ret;
-			} else {
-				std::cerr<<"#PARSER: NO VARIABLE WITH NAME "<<name<<" FOUND!"<< std::endl;
-				return Type();
-			}
-		}
-		
-		template <class Type>
-		Type value_of(std::string name) {return return_value_of<Type>(name);}
-
-		template <class Type>
-		Type operator[](std::string name) {return return_value_of<Type>(name);}
-
-		std::string value_or_default(std::string, std::string);
-		
-		template <class Type>
-		Type value_or_default(std::string name, Type defa)
-		{
-			Type ret;
-			std::stringstream buffer;
-			std::map<std::string,std::string>::iterator it;
-			it=vars.find(name);
-			if(it != vars.end()) {	
-				buffer << vars[name];
-				buffer >> ret;
-				readVals.push_back(name);
-				return ret;
-			} else return defa;
-		}
-
-		// shorter wrapper for value_or_default
-		// be very careful when using it because the return type is inferred from the type of defa. 0. and 0 are different!
-		template <class T>
-		auto get(const std::string &parameter, T defa) -> decltype(defa) {
-			return value_or_default(parameter, defa);
-		}
-
-
-		template <class Type>
-		void set_value(std::string name, Type value)
-		{
-			std::stringstream b;
-			b<<value;
-			vars[name]=b.str();
-		}
-
-		template <class Type>
-		std::vector< Type > return_vector(std::string name)
-		{
-			std::vector< Type > ret;
-			std::map<std::string,std::vector<std::string> >::iterator it;
-			it=arrs.find(name);
-			if(it==arrs.end()) {
-				std::cerr<<"#PARSER: NO ARRAY WITH NAME "<<name<<" FOUND!"<<std::endl; 
-				return ret;
-			}
-			for(uint j=0;j<((*it).second).size();j++) {
-				Type tmp;
-				std::stringstream buffer;
-				buffer<<((*it).second)[j];
-				buffer>>tmp;
-				ret.push_back(tmp);
-			}
-			readVals.push_back(name);
-			return ret;
-		}
-
-		template <class Type>
-		std::vector< Type > vector(std::string name) {return return_vector<Type>(name);}
-
-		std::vector<std::string> unused_parameters();
-
-
+class parser {
+private:
+	YAML::Node content_;
+	const std::string filename_;
+	
+	// fake parser based on a subnode
+	parser(const YAML::Node& node, const std::string& filename);
+public:
+	class iterator {
 	private:
-		std::string notfine, comment, array;
-		std::map<std::string,std::string> vars;
-		std::map<std::string,std::vector<std::string> > arrs;
-		std::vector<std::string> readVals;
+		std::string filename_;
+		YAML::Node::iterator it_;
+	public:
+		iterator(std::string filename, YAML::Node::iterator it);
+		std::pair<std::string, parser> operator*();
+		iterator operator++();
+		bool operator!=(const iterator& b);
+	};
+	
+	parser(const std::string& filename);
+
+	template<typename T>
+	T get(const std::string& name) {
+		if(!content_[name]) {
+			throw std::runtime_error(fmt::format("YAML: {}: required key '{}' not found.", filename_, name));
+		}
+		return content_[name].as<T>();
+	}
+	
+	template<typename T>
+	auto get(const std::string& name, T default_val) -> decltype(default_val) {
+		return content_[name].as<T>(default_val);
+	}
+
+	// is key name defined?
+	bool defined(const std::string& name);
+
+	parser operator[](const std::string& name);
+	iterator begin();
+	iterator end();
+
+	// This gives access to the underlying yaml-cpp api. Only use it if you absolutely need to.
+	// This function is needed to dump the task settings into the result file for example.
+	const YAML::Node& get_yaml();
 };
-
-
-
-#endif
-

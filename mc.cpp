@@ -1,17 +1,17 @@
 #include "mc.h"
 
-abstract_mc::abstract_mc(const std::string& taskfile) {
-	param.read_file(taskfile);
-
-	therm_=param.value_or_default<int>("THERMALIZATION",10000);
+abstract_mc::abstract_mc(const std::string& jobfile, const std::string& taskname) 
+	: param{parser{jobfile}["tasks"][taskname]} {
+	
+	therm_ = param.get<int>("thermalization");
 }
 
 abstract_mc::~abstract_mc() {
 }
 
 void abstract_mc::random_init() {
-	if (param.defined("SEED"))
-		rng.reset(new randomnumbergenerator(param.value_of<uint64_t>("SEED")));
+	if(param.defined("seed"))
+		rng.reset(new randomnumbergenerator(param.get<uint64_t>("seed")));
 	else
 		rng.reset(new randomnumbergenerator());
 }

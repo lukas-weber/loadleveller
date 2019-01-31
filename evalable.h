@@ -3,9 +3,7 @@
 #include <vector>
 #include <functional>
 #include <string>
-
-class observable_result;
-class merger_results;
+#include "results.h"
 
 class evalable {
 public:
@@ -20,7 +18,7 @@ public:
 	
 	evalable(const std::string& name, std::vector<std::string> used_observables, func fun); 
 	const std::string& name() const;
-	void jackknife(const merger_results& res, observable_result &out) const;
+	void jackknife(const results& res, observable_result &out) const;
 
 private:
         const std::string name_;

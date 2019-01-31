@@ -18,8 +18,8 @@ void merger::add_evalable(const std::string& name, const std::vector<std::string
 	evalables_.emplace_back(name, used_observables, func);
 }
 
-merger_results merger::merge(const std::vector<std::string>& filenames, size_t rebinning_bin_count) {
-	merger_results res;
+results merger::merge(const std::vector<std::string>& filenames, size_t rebinning_bin_count) {
+	results res;
 
 	// This thing reads the complete time series of an observable which will
 	// probably make it the biggest memory user of load leveller. But since
@@ -159,7 +159,7 @@ merger_results merger::merge(const std::vector<std::string>& filenames, size_t r
 	return res;
 }
 
-void merger::evaluate_evalables(merger_results& res) {
+void merger::evaluate_evalables(results& res) {
 	std::vector<observable_result> evalable_results;
 	for(auto &eval : evalables_) {
 		evalable_results.emplace_back();
