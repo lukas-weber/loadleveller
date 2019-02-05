@@ -30,7 +30,7 @@ namespace load_leveller {
 			return run_mc<runner_single>(mccreator, argc-1, argv+1);
 		}
 
-		return run_mc<runner>(mccreator, argc, argv);
+		return run_mc<runner_mpi>(mccreator, argc, argv);
 	}
 
 }

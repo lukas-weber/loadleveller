@@ -4,10 +4,12 @@
 
 #include <fstream>
 #include <fmt/format.h>
+#include <iostream>
+#include <sys/stat.h>
 
 // these are crafted to be compatible with an mpi run.
 std::string runner_single::taskdir(int task_id) const {
-	return fmt::format("{}.{}", jobfile_name_, task_names_[task_id]);
+	return fmt::format("{}.{}", jobfile_name_, task_names_.at(task_id));
 }
 std::string runner_single::rundir(int task_id) const {
 	return taskdir(task_id)+"/run0001";
@@ -22,10 +24,15 @@ int runner_single::start(const std::string& jobfile_name, const mc_factory& mccr
 
 	for(auto node : (*jobfile_)["tasks"]) {
 		std::string task_name = node.first;
-		if(std::find(task_names_.begin(), task_names_.end(), task_name) != task_names_.end()) {
-			throw std::runtime_error(fmt::format("Task '{}' occured more than once in '{}'", task_name, jobfile_name));
-		}
+		std::cerr << task_name << '\n';
 		task_names_.push_back(task_name);
+	}
+
+	for(size_t i = 0; i < task_names_.size(); i++) {
+		int rc = mkdir(taskdir(i).c_str(), 0755);
+		if(rc && errno != EEXIST) {
+			throw std::runtime_error{fmt::format("creation of output directory '{}' failed: {}", taskdir(i), strerror(errno))};
+		}
 	}
 
 	walltime_ = jobconfig.get<double>("mc_walltime");
@@ -100,9 +107,13 @@ void runner_single::read() {
 
 		int target_sweeps = task.get<int>("sweeps");
 		int target_thermalization = task.get<int>("thermalization");
-		iodump dump = iodump::open_readonly(rundir(i)+".dump.h5");
-		int sweeps;
-		dump.get_root().read("sweeps", sweeps);
+		int sweeps = 0;
+
+		try {
+			iodump dump = iodump::open_readonly(rundir(i)+".dump.h5");
+			dump.get_root().read("sweeps", sweeps);
+		} catch(iodump_exception& e) {
+		}
 
 		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, 0);
 	}

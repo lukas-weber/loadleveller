@@ -29,22 +29,22 @@ public:
 	parser(const std::string& filename);
 
 	template<typename T>
-	T get(const std::string& name) {
-		if(!content_[name]) {
-			throw std::runtime_error(fmt::format("YAML: {}: required key '{}' not found.", filename_, name));
+	T get(const std::string& key) {
+		if(!content_[key]) {
+			throw std::runtime_error(fmt::format("YAML: {}: required key '{}' not found.", filename_, key));
 		}
-		return content_[name].as<T>();
+		return content_[key].as<T>();
 	}
 	
 	template<typename T>
-	auto get(const std::string& name, T default_val) -> decltype(default_val) {
-		return content_[name].as<T>(default_val);
+	auto get(const std::string& key, T default_val) -> decltype(default_val) {
+		return content_[key].as<T>(default_val);
 	}
 
-	// is key name defined?
-	bool defined(const std::string& name);
+	// is key defined?
+	bool defined(const std::string& key);
 
-	parser operator[](const std::string& name);
+	parser operator[](const std::string& key);
 	iterator begin();
 	iterator end();
 

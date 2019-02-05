@@ -16,8 +16,8 @@ static std::runtime_error non_map_error(const std::string& filename) {
 	return std::runtime_error(fmt::format("YAML: {}: trying to dereference non-map node.", filename));
 }
 
-static std::runtime_error key_error(const std::string& filename, const std::string& name) {
-	return std::runtime_error(fmt::format("YAML: {}: could not find required key '{}'", filename, name));
+static std::runtime_error key_error(const std::string& filename, const std::string& key) {
+	return std::runtime_error(fmt::format("YAML: {}: could not find required key '{}'", filename, key));
 }
 
 
@@ -50,30 +50,30 @@ parser::iterator parser::begin() {
 
 parser::iterator parser::end() {
 
-	return iterator{filename_, content_.begin()};
+	return iterator{filename_, content_.end()};
 }
 
-bool parser::defined(const std::string& name) {
+bool parser::defined(const std::string& key) {
 	if(!content_.IsMap()) {
 		return false;
 	}
-	return content_[name].IsDefined();
+	return content_[key].IsDefined();
 }
 
-parser parser::operator[](const std::string& name) {
+parser parser::operator[](const std::string& key) {
 	if(!content_.IsMap()) {
 		throw non_map_error(filename_);
 	}
 		
-	auto node = content_[name];
+	auto node = content_[key];
 	if(!node.IsDefined())
-		throw key_error(filename_, name);
+		throw key_error(filename_, key);
 	if(!node.IsMap())
-		throw std::runtime_error(fmt::format("YAML: {}: Found key '{}', but it has a scalar value. Was expecting it to be a map", filename_, name));
+		throw std::runtime_error(fmt::format("YAML: {}: Found key '{}', but it has a scalar value. Was expecting it to be a map", filename_, key));
 
 	try {
 		return parser{node, filename_};
 	} catch(YAML::Exception) {
-		throw key_error(filename_, name);
+		throw key_error(filename_, key);
 	}
 }
