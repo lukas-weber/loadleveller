@@ -7,7 +7,7 @@ parser::iterator::iterator(std::string filename, YAML::Node::iterator it)
 std::pair<std::string, parser> parser::iterator::operator*() {
 	try {
 		return std::make_pair(it_->first.as<std::string>(), parser{it_->second, filename_});
-	} catch(YAML::Exception e) {
+	} catch(YAML::Exception& e) {
 		throw std::runtime_error(fmt::format("YAML: {}: dereferencing map key failed: {}. Maybe it was not a string?", filename_, e.what()));
 	}
 }
@@ -66,14 +66,20 @@ parser parser::operator[](const std::string& key) {
 	}
 		
 	auto node = content_[key];
-	if(!node.IsDefined())
+	if(!node.IsDefined()) {
 		throw key_error(filename_, key);
-	if(!node.IsMap())
+	}
+	if(!node.IsMap()) {
 		throw std::runtime_error(fmt::format("YAML: {}: Found key '{}', but it has a scalar value. Was expecting it to be a map", filename_, key));
+	}
 
 	try {
 		return parser{node, filename_};
-	} catch(YAML::Exception) {
+	} catch(YAML::Exception&) {
 		throw key_error(filename_, key);
 	}
+}
+
+const YAML::Node& parser::get_yaml() {
+	return content_;
 }

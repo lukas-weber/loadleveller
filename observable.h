@@ -9,7 +9,7 @@
 class observable
 {
 public:	
-	observable(std::string name, size_t vector_length = 1, size_t bin_length = 1, size_t initial_length = 1000);
+	observable(std::string name, size_t bin_length = 1, size_t vector_length = 1, size_t initial_length = 1000);
 
 	const std::string& name() const;
 

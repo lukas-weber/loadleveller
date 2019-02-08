@@ -2,10 +2,12 @@
 #include <fmt/format.h>
 
 bool measurements::observable_name_is_legal(const std::string& obs_name) {
-	if(obs_name.find('/') != obs_name.npos)
+	if(obs_name.find('/') != obs_name.npos) {
 		return false;
-	if(obs_name.find('.') != obs_name.npos)
+	}
+	if(obs_name.find('.') != obs_name.npos) {
 		return false;
+	}
 	return true;
 }
 

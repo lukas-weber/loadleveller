@@ -4,39 +4,35 @@
 #include "runner_task.h"
 #include <ostream>
 #include <functional>
+#include "runner.h"
+
+int runner_single_start(jobinfo job, const mc_factory& mccreator, int argc, char **argv);
 
 class runner_single {
 private:
+	jobinfo job_;
+	
+	mc_factory mccreator_;
 	std::unique_ptr<abstract_mc> sys;
 	
-	int task_id_;
-	
-	std::string jobfile_name_;
-	std::unique_ptr<parser> jobfile_;
-
+	int task_id_{-1};
 	std::vector<runner_task> tasks_;
-	std::vector<std::string> task_names_;
 	
-	std::ostream& STATUS = std::cout;
-	
-	double chktime_;
-	double walltime_;
-	double time_start_;
-	double time_last_chkpt_;
+	double time_start_{0};
+	double time_last_checkpoint_{0};
 
-	std::string taskdir(int task_id) const;
-	std::string rundir(int task_id) const;
-	
 	void read();
-	bool time_is_up();
 	void end_of_run();
 	int  get_new_task_id(int old_id);
 	void report();
 	
-	bool is_chkpt_time();
+	bool time_is_up() const;
+	bool is_checkpoint_time() const;
+
 	void checkpointing();
 	void merge_measurements();
 public:
-	int start(const std::string& jobfile, const mc_factory& mccreator, int argc, char **argv);
+	runner_single(jobinfo, mc_factory mccreator);
+	int start();
 };
 

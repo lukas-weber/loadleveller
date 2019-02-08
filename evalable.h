@@ -16,7 +16,7 @@ public:
 	// 
 	typedef std::function<std::vector<double>(const std::vector<std::vector<double>>& observables)> func;
 	
-	evalable(const std::string& name, std::vector<std::string> used_observables, func fun); 
+	evalable(std::string name, std::vector<std::string> used_observables, func fun); 
 	const std::string& name() const;
 	void jackknife(const results& res, observable_result &out) const;
 

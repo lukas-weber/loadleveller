@@ -1,8 +1,8 @@
 #include "observable.h"
 #include <fmt/format.h>
 
-observable::observable(std::string name, size_t vector_length, size_t bin_length, size_t initial_length)
-	: name_{name},
+observable::observable(std::string name, size_t bin_length, size_t vector_length, size_t initial_length)
+	: name_{std::move(name)},
 	bin_length_{bin_length},
 	vector_length_{vector_length},
 	initial_length_{initial_length},
@@ -33,8 +33,6 @@ void observable::checkpoint_write(const iodump::group& dump_file) const {
 
 
 void observable::measurement_write(const iodump::group& meas_file) {
-	if(samples_.size() < vector_length_) // observable might be completely empty
-		return;
 	std::vector<double> current_bin_value(samples_.end()-vector_length_, samples_.end());
 	samples_.resize(current_bin_*vector_length_);
 

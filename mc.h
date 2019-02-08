@@ -3,11 +3,10 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include <functional>
 #include "measurements.h"
 #include "random.h"
 #include "parser.h"
-
+#include "evalable.h"
 
 class abstract_mc {
 private:
@@ -22,13 +21,14 @@ protected:
 	virtual void init() = 0;
 	virtual void checkpoint_write(const iodump::group& out) = 0;
 	virtual void checkpoint_read(const iodump::group& in) = 0;
-	virtual void write_output(const std::string& filename) = 0;
+	virtual void write_output(const std::string& filename) {};
 	virtual void do_update() = 0;
+	virtual void do_measurement() = 0;
 public:	
         double random01();
 	int sweep() const;
 
-	virtual void do_measurement() = 0;
+	virtual void register_evalables(std::vector<evalable>& evalables) = 0;
 
 	// these functions do a little more, like taking care of the
 	// random number generator state, then call the child class versions.
@@ -39,12 +39,13 @@ public:
 	void _write_output(const std::string& filename);
 
 	void _do_update();
+	void _do_measurement();
 	
 	bool is_thermalized();
 	measurements measure;	
 	
 	abstract_mc(const std::string& jobfile, const std::string& taskname);
-	virtual ~abstract_mc();
+	virtual ~abstract_mc() = default;
 };
 
 typedef std::function<abstract_mc *(const std::string&, const std::string&)> mc_factory;

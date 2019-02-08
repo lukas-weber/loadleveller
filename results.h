@@ -24,6 +24,9 @@ struct observable_result {
 	std::vector<double> autocorrelation_time;
 };
 
+namespace YAML {
+	class Node;
+}
 
 // results holds the means and errors merged from all the runs belonging to a task
 // this includes both regular observables and evalables.
@@ -31,5 +34,5 @@ struct results {
 	std::map<std::string, observable_result> observables;
 
 	// writes out the results in a yaml file.
-	void write_yaml(const std::string &filename, const std::string &taskname);
+	void write_yaml(const std::string &filename, const std::string &taskname, const YAML::Node& params);
 };

@@ -21,6 +21,7 @@ set(SRCs
 	mc.cpp
 	runner_single.cpp
 	runner_task.cpp
+	results.cpp
 )
 
 add_library(load_leveller ${SRCs})

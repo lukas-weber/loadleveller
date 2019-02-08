@@ -1,9 +1,14 @@
 #include "evalable.h"
 #include <map>
 #include <fmt/format.h>
+#include "measurements.h"
 
-evalable::evalable(const std::string& name, std::vector<std::string> used_observables, func fun)
-	: name_{name}, used_observables_{used_observables}, fun_{fun} {
+evalable::evalable(std::string name, std::vector<std::string> used_observables, func fun)
+	: name_{std::move(name)}, used_observables_{std::move(used_observables)}, fun_{std::move(fun)} {
+	// evalable names also should be valid HDF5 paths
+	if(not measurements::observable_name_is_legal(name)) {
+		throw std::runtime_error{fmt::format("illegal evalable name '{}': must not contain . or /", name)};
+	}
 }
 
 const std::string& evalable::name() const {
@@ -19,19 +24,21 @@ void evalable::jackknife(const results& res, observable_result& obs_res) const {
 	size_t bin_count = -1; // maximal value
 	for(const auto& obs_name : used_observables_) {
 		if(res.observables.count(obs_name) <= 0) {
-			throw std::runtime_error(fmt::format("evalable '{}': used observable '{}' not found in Monte Carlo results."));
+			throw std::runtime_error(fmt::format("evalable '{}': used observable '{}' not found in Monte Carlo results.", name_, obs_name));
 		}
 		const auto& obs = res.observables.at(obs_name);
 
-		if(obs.rebinning_bin_count < bin_count)
+		if(obs.rebinning_bin_count < bin_count) {
 			bin_count = obs.rebinning_bin_count;
+		}
 		
 		observables.emplace_back(obs);
 	}
 	obs_res.rebinning_bin_count = bin_count;
 
-	if(bin_count == 0)
+	if(bin_count == 0) {
 		return;
+	}
 	
 	std::vector<std::vector<double>> jacked_means(observables.size());
 	std::vector<std::vector<double>> sums(observables.size());
@@ -60,7 +67,7 @@ void evalable::jackknife(const results& res, observable_result& obs_res) const {
 		}
 		
 		std::vector<double> jacked_eval = fun_(jacked_means);
-		if(jacked_eval_mean.size() == 0)
+		if(jacked_eval_mean.empty())
 			jacked_eval_mean.resize(jacked_eval.size(), 0);
 		if(jacked_eval_mean.size() != jacked_eval.size()) {
 			throw std::runtime_error(fmt::format("evalable '{}': evalables must not change their dimensions depending on the input"));
@@ -78,8 +85,9 @@ void evalable::jackknife(const results& res, observable_result& obs_res) const {
 	// calculate the function estimator from the complete dataset.
 	for(size_t obs_idx = 0; obs_idx < observables.size(); obs_idx++) {
 		jacked_means[obs_idx] = sums[obs_idx];
-		for(size_t i = 0; i < observables[obs_idx].mean.size(); i++)
-			jacked_means[obs_idx][i] /= bin_count;
+		for(auto& jacked_mean : jacked_means[obs_idx]) {
+			jacked_mean /= bin_count;
+		}
 	}
 	
 	std::vector<double> complete_eval = fun_(jacked_means);
@@ -103,15 +111,16 @@ void evalable::jackknife(const results& res, observable_result& obs_res) const {
 		}
 		
 		std::vector<double> jacked_eval = fun_(jacked_means);
-		if(obs_res.error.size() == 0)
+		if(obs_res.error.empty()) {
 			obs_res.error.resize(jacked_eval.size(), 0);
+		}
 
 		for(size_t i = 0; i < obs_res.error.size(); i++) {
 			obs_res.error[i] += pow(jacked_eval[i]-jacked_eval_mean[i], 2);
 		}
 	}
 	for(size_t i = 0; i < obs_res.error.size(); i++) {
-		obs_res.error[i] = sqrt((bin_count-1)/bin_count * obs_res.error[i]);
+		obs_res.error[i] = sqrt((bin_count-1) * obs_res.error[i]/bin_count);
 	}
 }
 

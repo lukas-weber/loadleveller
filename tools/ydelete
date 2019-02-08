@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+import yaml
+import shutil
+import argparse
+
+parser = argparse.ArgumentParser(description='This script deletes all the simulation result directories of the job specified by JOBFILE so that you can restart it from scratch. Use with caution.')
+
+parser.add_argument('jobfile', metavar='JOBFILE', help='Configuration file containing all the job information. May be generated using ytaskmaker')
+args = parser.parse_args()
+
+
+with open(args.jobfile, 'r') as f:
+    jobfile = yaml.load(f)
+
+for task_name, _ in jobfile['tasks'].items():
+    try:
+        shutil.rmtree('{}.{}'.format(args.jobfile, task_name)) # adjust this if you adjust the task dir format in load-leveller
+    except:
+        pass
+

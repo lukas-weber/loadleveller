@@ -11,11 +11,7 @@
 #include "parser.h"
 #include "runner_task.h"
 
-class runner_mpi {
-public:
-	static int start(const std::string& jobfile_name, const mc_factory& mccreator, int argc, char **argv);
-};
-	
+
 struct jobinfo {
 	std::string jobfile_name;
 	parser jobfile;
@@ -24,7 +20,6 @@ struct jobinfo {
 	
 	double checkpoint_time;
 	double walltime;
-	int sweeps_before_communication;
 	
 	std::ostream& status{std::cout};
 	
@@ -34,14 +29,17 @@ struct jobinfo {
 	std::string taskdir(int task_id) const;
 	
 	static std::vector<std::string> list_run_files(const std::string& taskdir, const std::string& file_ending);
+	void merge_task(int task_id, const std::vector<evalable>& evalables);
 };
+
+int runner_mpi_start(jobinfo job, const mc_factory& mccreator, int argc, char **argv);
 
 class runner_master {
 private:
 	jobinfo job_;
 
-	int num_active_ranks_;
-	int time_start_;
+	int num_active_ranks_{0};
+	int time_start_{0};
 
 	std::vector<runner_task> tasks_;
 	int current_task_id_{-1};
@@ -58,7 +56,7 @@ private:
 	void end_of_run();
 	void report();
 public:
-	runner_master(jobinfo&& job);
+	runner_master(jobinfo job);
 	void start();
 };
 
@@ -69,11 +67,12 @@ private:
 	mc_factory mccreator_;
 	std::unique_ptr<abstract_mc> sys_;
 
-	double time_last_checkpoint_;
-	double time_start_;
+	double time_last_checkpoint_{0};
+	double time_start_{0};
 
-	int rank_;
+	int rank_{0};
 	int sweeps_since_last_query_{0};
+	int sweeps_before_communication_{0};
 	int task_id_{-1};
 	int run_id_{-1};
 	
@@ -85,7 +84,7 @@ private:
 	void checkpointing();
 	void merge_measurements();
 public:
-	runner_slave(jobinfo&& job, const mc_factory& mccreator);
+	runner_slave(jobinfo job, mc_factory mccreator);
 	void start();
 };
 
