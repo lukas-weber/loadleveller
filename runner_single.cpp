@@ -7,15 +7,14 @@
 #include <iostream>
 #include <sys/stat.h>
 
-int runner_single_start(jobinfo job, const mc_factory& mccreator, int argc, char **argv) {
+int runner_single_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
 	runner_single r{std::move(job), mccreator};
 	r.start();
 	return 0;
 }
 
 runner_single::runner_single(jobinfo job, mc_factory mccreator)
-	: job_{std::move(job)}, mccreator_{std::move(mccreator)} {
-}
+    : job_{std::move(job)}, mccreator_{std::move(mccreator)} {}
 
 int runner_single::start() {
 	time_start_ = time(nullptr);
@@ -24,21 +23,22 @@ int runner_single::start() {
 	read();
 	task_id_ = get_new_task_id(task_id_);
 	while(task_id_ != -1 && !time_is_up()) {
-		sys = std::unique_ptr<abstract_mc>{mccreator_(job_.jobfile_name, job_.task_names.at(task_id_))};
+		sys = std::unique_ptr<abstract_mc>{
+		    mccreator_(job_.jobfile_name, job_.task_names.at(task_id_))};
 		if(sys->_read(job_.rundir(task_id_, 1))) {
 			job_.status << 0 << " : L " << job_.rundir(task_id_, 1) << "\n";
 		} else {
 			job_.status << 0 << " : I " << job_.rundir(task_id_, 1) << "\n";
 			sys->_init();
 		}
-		
+
 		while(!tasks_[task_id_].is_done() && !time_is_up()) {
 			sys->_do_update();
 			tasks_[task_id_].sweeps++;
 			if(sys->is_thermalized()) {
 				sys->_do_measurement();
 			}
-			
+
 			if(is_checkpoint_time()) {
 				checkpointing();
 			}
@@ -65,8 +65,8 @@ int runner_single::get_new_task_id(int old_id) {
 	int ntasks = tasks_.size();
 	int i;
 	for(i = 1; i <= ntasks; i++) {
-		if(!tasks_[(old_id+i)%ntasks].is_done()) {
-			return (old_id+i)%ntasks;
+		if(!tasks_[(old_id + i) % ntasks].is_done()) {
+			return (old_id + i) % ntasks;
 		}
 	}
 
@@ -83,9 +83,9 @@ void runner_single::read() {
 		int sweeps = 0;
 
 		try {
-			iodump dump = iodump::open_readonly(job_.rundir(i,1)+".dump.h5");
+			iodump dump = iodump::open_readonly(job_.rundir(i, 1) + ".dump.h5");
 			dump.get_root().read("sweeps", sweeps);
-		} catch(iodump_exception& e) {
+		} catch(iodump_exception &e) {
 		}
 
 		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, 0);
@@ -95,34 +95,39 @@ void runner_single::read() {
 
 void runner_single::end_of_run() {
 	bool need_restart = false;
-	for (size_t i = 0; i < tasks_.size(); i++) {
+	for(size_t i = 0; i < tasks_.size(); i++) {
 		if(!tasks_[i].is_done()) {
 			need_restart = true;
 			break;
 		}
 	}
-	if (need_restart) {
+	if(need_restart) {
 		std::string rfilename = job_.jobfile_name + ".restart";
 		std::ofstream rfile(rfilename.c_str());
 		rfile << "restart me\n";
 		rfile.close();
-		job_.status << 0 << " : Restart needed" << "\n";
+		job_.status << 0 << " : Restart needed"
+		            << "\n";
 	}
 	report();
-	job_.status << 0 << " : finalized" << "\n";
+	job_.status << 0 << " : finalized"
+	            << "\n";
 }
 
 void runner_single::report() {
-	for(size_t i = 0; i < tasks_.size(); i ++) {
-		job_.status << fmt::format("{:4d} {:3.0f}%\n", i,
-				      tasks_[i].sweeps/static_cast<double>(tasks_[i].target_sweeps + tasks_[i].target_thermalization)*100);
+	for(size_t i = 0; i < tasks_.size(); i++) {
+		job_.status << fmt::format(
+		    "{:4d} {:3.0f}%\n", i,
+		    tasks_[i].sweeps /
+		        static_cast<double>(tasks_[i].target_sweeps + tasks_[i].target_thermalization) *
+		        100);
 	}
 }
 
 void runner_single::checkpointing() {
 	time_last_checkpoint_ = time(nullptr);
 	sys->_write(job_.rundir(task_id_, 1));
-	job_.status << "0 : C " << job_.rundir(task_id_,1) << "\n";
+	job_.status << "0 : C " << job_.rundir(task_id_, 1) << "\n";
 }
 
 void runner_single::merge_measurements() {
@@ -136,4 +141,3 @@ void runner_single::merge_measurements() {
 
 	job_.status << "0 : M " << job_.taskdir(task_id_) << "\n";
 }
-

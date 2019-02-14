@@ -12,7 +12,7 @@ bool measurements::observable_name_is_legal(const std::string& obs_name) {
 }
 
 void measurements::add_observable(const std::string& name, size_t bin_size, size_t vector_length, size_t initial_length) {
-	if(not observable_name_is_legal(name)) {
+	if(!observable_name_is_legal(name)) {
 		throw std::runtime_error(fmt::format("Illegal observable name '{}': names must not contain / or .", name));
 	}
 

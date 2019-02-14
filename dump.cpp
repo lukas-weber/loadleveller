@@ -1,27 +1,29 @@
 #include "dump.h"
+#include <iostream>
+#include <sstream>
+#include <sys/file.h>
 #include <typeinfo>
 #include <unistd.h>
-#include <sstream>
-#include <iostream>
-#include <sys/file.h>
 
 static bool filter_available(H5Z_filter_t filter) {
 	htri_t avail = H5Zfilter_avail(filter);
 	if(avail == 0) {
 		return false;
-        }
+	}
 
 	unsigned int filter_info;
 	herr_t status = H5Zget_filter_info(filter, &filter_info);
-	return status >= 0 && (filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED) != 0 && (filter_info & H5Z_FILTER_CONFIG_DECODE_ENABLED) != 0;
+	return status >= 0 && (filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED) != 0 &&
+	       (filter_info & H5Z_FILTER_CONFIG_DECODE_ENABLED) != 0;
 }
 
 static herr_t H5Ewalk_cb(unsigned int n, const H5E_error2_t *err_desc, void *client_data) {
-	std::stringstream& s = *reinterpret_cast<std::stringstream *>(client_data);
+	std::stringstream &s = *reinterpret_cast<std::stringstream *>(client_data);
 
 	char *min_str = H5Eget_minor(err_desc->min_num);
 	char *maj_str = H5Eget_major(err_desc->maj_num);
-	s << fmt::format("#{}: {}:{} in {}(): {}\n", n, err_desc->file_name, err_desc->line, err_desc->func_name, err_desc->desc);
+	s << fmt::format("#{}: {}:{} in {}(): {}\n", n, err_desc->file_name, err_desc->line,
+	                 err_desc->func_name, err_desc->desc);
 	s << fmt::format("    {}: {}\n", static_cast<int>(err_desc->maj_num), maj_str);
 	s << fmt::format("    {}: {}\n\n", static_cast<int>(err_desc->min_num), min_str);
 
@@ -31,7 +33,7 @@ static herr_t H5Ewalk_cb(unsigned int n, const H5E_error2_t *err_desc, void *cli
 	return 0;
 }
 
-iodump_exception::iodump_exception(const std::string& message)  {
+iodump_exception::iodump_exception(const std::string &message) {
 	std::stringstream s;
 	H5Ewalk(H5E_DEFAULT, H5E_WALK_DOWNWARD, H5Ewalk_cb, &s);
 
@@ -43,7 +45,7 @@ const char *iodump_exception::what() const noexcept {
 	return message_.c_str();
 }
 
-iodump::group::group(hid_t parent, const std::string& path) {
+iodump::group::group(hid_t parent, const std::string &path) {
 	group_ = H5Gopen(parent, path.c_str(), H5P_DEFAULT);
 	if(group_ < 0) {
 		group_ = H5Gcreate2(parent, path.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
@@ -75,22 +77,22 @@ iodump::group::iterator iodump::group::end() const {
 	if(status < 0) {
 		throw iodump_exception{"H5Gget_info"};
 	}
-	
+
 	return iodump::group::iterator{group_, info.nlinks};
 }
 
-iodump::group::iterator::iterator(hid_t group, uint64_t idx)
-	: group_(group), idx_(idx) {
-}
+iodump::group::iterator::iterator(hid_t group, uint64_t idx) : group_(group), idx_(idx) {}
 
 std::string iodump::group::iterator::operator*() {
-	ssize_t name_size = H5Lget_name_by_idx(group_, "/", H5_INDEX_NAME, H5_ITER_INC, idx_, nullptr, 0, H5P_DEFAULT);
+	ssize_t name_size =
+	    H5Lget_name_by_idx(group_, "/", H5_INDEX_NAME, H5_ITER_INC, idx_, nullptr, 0, H5P_DEFAULT);
 	if(name_size < 0) {
 		throw iodump_exception{"H5Lget_name_by_idx"};
 	}
 
-	std::vector<char> buf(name_size+1);
-	name_size = H5Lget_name_by_idx(group_, "/", H5_INDEX_NAME, H5_ITER_INC, idx_, buf.data(), buf.size(), H5P_DEFAULT);
+	std::vector<char> buf(name_size + 1);
+	name_size = H5Lget_name_by_idx(group_, "/", H5_INDEX_NAME, H5_ITER_INC, idx_, buf.data(),
+	                               buf.size(), H5P_DEFAULT);
 	if(name_size < 0) {
 		throw iodump_exception{"H5Lget_name_by_idx"};
 	}
@@ -102,12 +104,12 @@ iodump::group::iterator iodump::group::iterator::operator++() {
 	idx_++;
 	return *this;
 }
-	
-bool iodump::group::iterator::operator!=(const iterator& b) {
+
+bool iodump::group::iterator::operator!=(const iterator &b) {
 	return idx_ != b.idx_;
 }
 
-iodump iodump::create(const std::string& filename) {
+iodump iodump::create(const std::string &filename) {
 	H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
 	hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -118,7 +120,7 @@ iodump iodump::create(const std::string& filename) {
 	return iodump{filename, file};
 }
 
-iodump iodump::open_readonly(const std::string& filename) {
+iodump iodump::open_readonly(const std::string &filename) {
 	H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
 	hid_t file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
 	if(file < 0) {
@@ -127,7 +129,7 @@ iodump iodump::open_readonly(const std::string& filename) {
 	return iodump{filename, file};
 }
 
-iodump iodump::open_readwrite(const std::string& filename) {
+iodump iodump::open_readwrite(const std::string &filename) {
 	H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
 	if(access(filename.c_str(), R_OK) != F_OK) {
 		create(filename);
@@ -140,7 +142,8 @@ iodump iodump::open_readwrite(const std::string& filename) {
 	return iodump{filename, file};
 }
 
-iodump::iodump(std::string filename, hid_t h5_file) : filename_{std::move(filename)}, h5_file_{h5_file} {
+iodump::iodump(std::string filename, hid_t h5_file)
+    : filename_{std::move(filename)}, h5_file_{h5_file} {
 	if(compression_filter_ != 0 && !filter_available(compression_filter_)) {
 		throw iodump_exception{"H5Filter not available."};
 	}
@@ -154,7 +157,10 @@ iodump::group iodump::get_root() {
 	return group{h5_file_, "/"};
 }
 
-iodump::h5_handle iodump::group::create_dataset(const std::string& name, hid_t datatype, hsize_t size, hsize_t chunk_size, H5Z_filter_t compression_filter, bool unlimited) const {
+iodump::h5_handle iodump::group::create_dataset(const std::string &name, hid_t datatype,
+                                                hsize_t size, hsize_t chunk_size,
+                                                H5Z_filter_t compression_filter,
+                                                bool unlimited) const {
 	herr_t status;
 
 	if(exists(name)) {
@@ -167,13 +173,14 @@ iodump::h5_handle iodump::group::create_dataset(const std::string& name, hid_t d
 			throw iodump_exception{"H5Sget_simple_extent_npoints"};
 		}
 		if(oldsize != size) {
-			throw std::runtime_error{"iodump: tried to write into an existing dataset with different dimensions!"};
+			throw std::runtime_error{
+			    "iodump: tried to write into an existing dataset with different dimensions!"};
 		}
 
 		return dataset;
 	} else {
 		hid_t dataspace_h;
-		if(not unlimited) {
+		if(!unlimited) {
 			dataspace_h = H5Screate_simple(1, &size, nullptr);
 		} else {
 			hsize_t maxdim = H5S_UNLIMITED;
@@ -188,7 +195,7 @@ iodump::h5_handle iodump::group::create_dataset(const std::string& name, hid_t d
 			if(status < 0) {
 				throw iodump_exception{"H5Pset_chunk"};
 			}
-			
+
 			if(compression_filter == H5Z_FILTER_DEFLATE) {
 				status = H5Pset_deflate(*plist, 6);
 				if(status < 0) {
@@ -197,15 +204,17 @@ iodump::h5_handle iodump::group::create_dataset(const std::string& name, hid_t d
 			}
 		}
 
-		return h5_handle{H5Dcreate2(group_, name.c_str(), datatype, *dataspace, H5P_DEFAULT, *plist, H5P_DEFAULT), H5Dclose};
+		return h5_handle{H5Dcreate2(group_, name.c_str(), datatype, *dataspace, H5P_DEFAULT, *plist,
+		                            H5P_DEFAULT),
+		                 H5Dclose};
 	}
 }
 
-iodump::group iodump::group::open_group(const std::string& path) const {
+iodump::group iodump::group::open_group(const std::string &path) const {
 	return group{group_, path};
 }
 
-size_t iodump::group::get_extent(const std::string& name) const {
+size_t iodump::group::get_extent(const std::string &name) const {
 	h5_handle dataset{H5Dopen2(group_, name.c_str(), H5P_DEFAULT), H5Dclose};
 	h5_handle dataspace{H5Dget_space(*dataset), H5Sclose};
 
@@ -230,16 +239,14 @@ bool iodump::group::exists(const std::string &path) const {
 	return true;
 }
 
-
 iodump::h5_handle::h5_handle(hid_t handle, herr_t (*closer)(hid_t))
-	: closer_{closer}, handle_{handle} {
+    : closer_{closer}, handle_{handle} {
 	if(handle < 0) {
 		throw iodump_exception{"h5_handle"};
 	}
 }
 
-iodump::h5_handle::h5_handle(h5_handle&& h) noexcept
-	: closer_{h.closer_}, handle_{h.handle_} {
+iodump::h5_handle::h5_handle(h5_handle &&h) noexcept : closer_{h.closer_}, handle_{h.handle_} {
 	h.handle_ = -1;
 }
 

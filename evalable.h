@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
+#include "results.h"
 #include <functional>
 #include <string>
-#include "results.h"
+#include <vector>
 
 class evalable {
 public:
@@ -13,15 +13,16 @@ public:
 	//
 	// to create your evalable. The vector then contains all the observable values you
 	// specified when constructing the evalable
-	// 
-	typedef std::function<std::vector<double>(const std::vector<std::vector<double>>& observables)> func;
-	
-	evalable(std::string name, std::vector<std::string> used_observables, func fun); 
-	const std::string& name() const;
-	void jackknife(const results& res, observable_result &out) const;
+	//
+	typedef std::function<std::vector<double>(const std::vector<std::vector<double>> &observables)>
+	    func;
+
+	evalable(std::string name, std::vector<std::string> used_observables, func fun);
+	const std::string &name() const;
+	void jackknife(const results &res, observable_result &out) const;
 
 private:
-        const std::string name_;
-        const std::vector<std::string> used_observables_;
-        const func fun_;
+	const std::string name_;
+	const std::vector<std::string> used_observables_;
+	const func fun_;
 };

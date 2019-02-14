@@ -13,9 +13,9 @@ args = parser.parse_args()
 with open(args.jobfile, 'r') as f:
     jobfile = yaml.load(f)
 
-for task_name, _ in jobfile['tasks'].items():
-    try:
-        shutil.rmtree('{}.{}'.format(args.jobfile, task_name)) # adjust this if you adjust the task dir format in load-leveller
-    except:
-        pass
+try:
+    shutil.rmtree('{}.data'.format(args.jobfile)) # adjust this if you adjust the task dir format in load-leveller
+    shutil.rmtree('{}.results.yml'.format(args.jobfile))
+except:
+    pass
 

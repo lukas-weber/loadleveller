@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include <map>
+#include <vector>
 
 struct observable_result {
 	std::string name;
@@ -25,7 +25,7 @@ struct observable_result {
 };
 
 namespace YAML {
-	class Node;
+class Node;
 }
 
 // results holds the means and errors merged from all the runs belonging to a task
@@ -34,5 +34,6 @@ struct results {
 	std::map<std::string, observable_result> observables;
 
 	// writes out the results in a yaml file.
-	void write_yaml(const std::string &filename, const std::string &taskname, const YAML::Node& params);
+	void write_yaml(const std::string &filename, const std::string& taskdir,
+	                const YAML::Node &params);
 };

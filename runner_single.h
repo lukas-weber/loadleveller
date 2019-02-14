@@ -1,38 +1,38 @@
 #pragma once
 
 #include "mc.h"
-#include "runner_task.h"
-#include <ostream>
-#include <functional>
 #include "runner.h"
+#include "runner_task.h"
+#include <functional>
+#include <ostream>
 
-int runner_single_start(jobinfo job, const mc_factory& mccreator, int argc, char **argv);
+int runner_single_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
 
 class runner_single {
 private:
 	jobinfo job_;
-	
+
 	mc_factory mccreator_;
 	std::unique_ptr<abstract_mc> sys;
-	
+
 	int task_id_{-1};
 	std::vector<runner_task> tasks_;
-	
+
 	double time_start_{0};
 	double time_last_checkpoint_{0};
 
 	void read();
 	void end_of_run();
-	int  get_new_task_id(int old_id);
+	int get_new_task_id(int old_id);
 	void report();
-	
+
 	bool time_is_up() const;
 	bool is_checkpoint_time() const;
 
 	void checkpointing();
 	void merge_measurements();
+
 public:
 	runner_single(jobinfo, mc_factory mccreator);
 	int start();
 };
-

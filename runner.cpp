@@ -1,5 +1,5 @@
-#include "runner.h"
 #include "merger.h"
+#include "runner.h"
 #include <dirent.h>
 #include <fmt/format.h>
 #include <fstream>
@@ -22,30 +22,39 @@ enum {
 };
 
 std::string jobinfo::taskdir(int task_id) const {
-	return fmt::format("{}.{}", jobfile_name, task_names.at(task_id));
+	return fmt::format("{}.data/{}", jobfile_name, task_names.at(task_id));
 }
 
 std::string jobinfo::rundir(int task_id, int run_id) const {
 	return fmt::format("{}/run{:04d}", taskdir(task_id), run_id);
 }
 
-jobinfo::jobinfo(const std::string& jobfile_name)
-	: jobfile_name{jobfile_name}, jobfile{jobfile_name} {
-
+jobinfo::jobinfo(const std::string &jobfile_name)
+    : jobfile_name{jobfile_name}, jobfile{jobfile_name} {
 	for(auto node : jobfile["tasks"]) {
 		std::string task_name = node.first;
 		task_names.push_back(task_name);
 	}
 
-	// perhaps a bit controversally, jobinfo tries to create the task directories. TODO: single file output.
+	std::string datadir = fmt::format("{}.data", jobfile_name);
+	int rc = mkdir(datadir.c_str(), 0755);
+	if(rc != 0 && errno != EEXIST) {
+		throw std::runtime_error{
+		    fmt::format("creation of output directory '{}' failed: {}", datadir, strerror(errno))};
+	}
+
+	// perhaps a bit controversally, jobinfo tries to create the task directories. TODO: single file
+	// output.
 	for(size_t i = 0; i < task_names.size(); i++) {
 		int rc = mkdir(taskdir(i).c_str(), 0755);
 		if(rc != 0 && errno != EEXIST) {
-			throw std::runtime_error{fmt::format("creation of output directory '{}' failed: {}", taskdir(i), strerror(errno))};
+			throw std::runtime_error{fmt::format("creation of output directory '{}' failed: {}",
+			                                     taskdir(i), strerror(errno))};
 		}
 	}
 
-	// The jobconfig file contains information about the launch options, walltime, number of cores etc... not sure if this is really the best way to solve the issue.
+	// The jobconfig file contains information about the launch options, walltime, number of cores
+	// etc... not sure if this is really the best way to solve the issue.
 	auto jobconfig_path = jobfile.get<std::string>("jobconfig");
 	parser jobconfig{jobconfig_path};
 
@@ -56,12 +65,14 @@ jobinfo::jobinfo(const std::string& jobfile_name)
 // This function lists files that could be run files being in the taskdir
 // and having the right file_ending.
 // The regex has to be matched with the output of the rundir function.
-std::vector<std::string> jobinfo::list_run_files(const std::string& taskdir, const std::string& file_ending) {
-	std::regex run_filename{"run\\d{4,}\\."+file_ending};
+std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
+                                                 const std::string &file_ending) {
+	std::regex run_filename{"run\\d{4,}\\." + file_ending};
 	std::vector<std::string> results;
 	DIR *dir = opendir(taskdir.c_str());
 	if(dir == nullptr) {
-		throw std::ios_base::failure(fmt::format("could not open directory '{}': {}", taskdir, strerror(errno)));
+		throw std::ios_base::failure(
+		    fmt::format("could not open directory '{}': {}", taskdir, strerror(errno)));
 	}
 	struct dirent *result;
 	while((result = readdir(dir)) != nullptr) {
@@ -75,17 +86,31 @@ std::vector<std::string> jobinfo::list_run_files(const std::string& taskdir, con
 	return results;
 }
 
-void jobinfo::merge_task(int task_id, const std::vector<evalable>& evalables) {
+void jobinfo::concatenate_results() {
+	std::ofstream cat_results{fmt::format("{}.results.yml", jobfile_name)};
+	for(size_t i = 0; i < task_names.size(); i++) {
+		std::ifstream res_file{taskdir(i)+"/results.yml"};
+		res_file.seekg(0,res_file.end);
+		size_t size = res_file.tellg();
+		res_file.seekg(0, res_file.beg);
+		
+		std::vector<char> buf(size+1, 0);
+		res_file.read(buf.data(), size);
+		cat_results << buf.data() << "\n";
+	}
+}
+
+void jobinfo::merge_task(int task_id, const std::vector<evalable> &evalables) {
 	std::vector<std::string> meas_files = list_run_files(taskdir(task_id), "meas\\.h5");
 	results results = merge(meas_files, evalables);
 
 	std::string result_filename = fmt::format("{}/results.yml", taskdir(task_id));
-	const std::string& task_name = task_names.at(task_id);
-	results.write_yaml(result_filename, task_name, jobfile["tasks"][task_name].get_yaml());
+	const std::string &task_name = task_names.at(task_id);
+	results.write_yaml(result_filename, taskdir(task_id), jobfile["tasks"][task_name].get_yaml());
 }
 
-int runner_mpi_start(jobinfo job, const mc_factory& mccreator, int argc, char **argv) {
-	MPI_Init(&argc,&argv);
+int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
+	MPI_Init(&argc, &argv);
 
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -103,10 +128,7 @@ int runner_mpi_start(jobinfo job, const mc_factory& mccreator, int argc, char **
 	return 0;
 }
 
-
-runner_master::runner_master(jobinfo job)
-	: job_{std::move(job)} {
-}
+runner_master::runner_master(jobinfo job) : job_{std::move(job)} {}
 
 void runner_master::start() {
 	time_start_ = MPI_Wtime();
@@ -125,8 +147,8 @@ int runner_master::get_new_task_id(int old_id) {
 	int ntasks = tasks_.size();
 	int i;
 	for(i = 1; i <= ntasks; i++) {
-		if(!tasks_[(old_id+i)%ntasks].is_done())
-			return (old_id+i)%ntasks;
+		if(!tasks_[(old_id + i) % ntasks].is_done())
+			return (old_id + i) % ntasks;
 	}
 
 	// everything done!
@@ -134,7 +156,7 @@ int runner_master::get_new_task_id(int old_id) {
 }
 
 bool runner_master::time_is_up() const {
-	return MPI_Wtime()-time_start_ > job_.walltime;
+	return MPI_Wtime() - time_start_ > job_.walltime;
 }
 
 void runner_master::react() {
@@ -142,64 +164,66 @@ void runner_master::react() {
 	MPI_Status stat;
 	MPI_Recv(&node_status, 1, MPI_INT, MPI_ANY_SOURCE, T_STATUS, MPI_COMM_WORLD, &stat);
 	int node = stat.MPI_SOURCE;
-	//job_.status << "0 : Status " << node_status << " from " << node << "\n";
-	if (node_status == S_IDLE) {
+	// job_.status << "0 : Status " << node_status << " from " << node << "\n";
+	if(node_status == S_IDLE) {
 		if(time_is_up()) {
 			send_action(A_EXIT, node);
 		} else {
 			current_task_id_ = get_new_task_id(current_task_id_);
 
 			if(current_task_id_ < 0) {
-				send_action(A_EXIT,node);
+				send_action(A_EXIT, node);
 				num_active_ranks_--;
 			} else {
-				send_action(A_NEW_JOB,node);
+				send_action(A_NEW_JOB, node);
 				tasks_[current_task_id_].scheduled_runs++;
-				int msg[3] = { current_task_id_, tasks_[current_task_id_].scheduled_runs, tasks_[current_task_id_].target_sweeps };
-				MPI_Send(&msg, sizeof(msg)/sizeof(msg[0]), MPI_INT, node, T_NEW_JOB, MPI_COMM_WORLD);
+				int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
+				              tasks_[current_task_id_].target_sweeps};
+				MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB,
+				         MPI_COMM_WORLD);
 			}
 		}
 	} else { // S_BUSY
 		int msg[2];
-		MPI_Recv(msg, sizeof(msg)/sizeof(msg[0]), MPI_INT, node, T_STATUS, MPI_COMM_WORLD, &stat);
+		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_STATUS, MPI_COMM_WORLD, &stat);
 		int task_id = msg[0];
 		int completed_sweeps = msg[1];
 
 		tasks_[task_id].sweeps += completed_sweeps;
 		if(tasks_[task_id].is_done()) {
-			job_.status << fmt::format("0 : {} done, scheduled_runs: {}\n", job_.task_names[task_id], tasks_[task_id].scheduled_runs);
+			job_.status << fmt::format("0 : {} done, scheduled_runs: {}\n",
+			                           job_.task_names[task_id], tasks_[task_id].scheduled_runs);
 			tasks_[task_id].scheduled_runs--;
-			send_action((tasks_[task_id].scheduled_runs == 0) ? 
-				A_PROCESS_DATA_NEW_JOB : A_NEW_JOB, node);
+			send_action((tasks_[task_id].scheduled_runs == 0) ? A_PROCESS_DATA_NEW_JOB : A_NEW_JOB,
+			            node);
 		} else if(time_is_up()) {
-			send_action(A_EXIT, node);	
+			send_action(A_EXIT, node);
 			num_active_ranks_--;
 		} else {
 			send_action(A_CONTINUE, node);
 		}
 	}
 
-	//report(); // disable for production!!
+	// report(); // disable for production!!
 }
 
 void runner_master::send_action(int action, int destination) {
-	//job_.status << "0 : Action "<<action<<" destination " << to << "\n";
+	// job_.status << "0 : Action "<<action<<" destination " << to << "\n";
 	MPI_Send(&action, 1, MPI_INT, destination, T_ACTION, MPI_COMM_WORLD);
 }
-
 
 int runner_master::read_dump_progress(int task_id) {
 	int sweeps = 0;
 	try {
-		for(auto& dump_name : jobinfo::list_run_files(job_.taskdir(task_id), "dump\\.h5")) {
+		for(auto &dump_name : jobinfo::list_run_files(job_.taskdir(task_id), "dump\\.h5")) {
 			int dump_sweeps = 0;
-				iodump d = iodump::open_readonly(dump_name);
-				d.get_root().read("sweeps", dump_sweeps);
-				sweeps += dump_sweeps;
+			iodump d = iodump::open_readonly(dump_name);
+			d.get_root().read("sweeps", dump_sweeps);
+			sweeps += dump_sweeps;
 		}
-	} catch(iodump_exception& e) {
+	} catch(iodump_exception &e) {
 		// okay
-	} catch(std::ios_base::failure& e) {
+	} catch(std::ios_base::failure &e) {
 		// might happen if the taskdir does not exist
 	}
 
@@ -222,19 +246,20 @@ void runner_master::read() {
 
 void runner_master::end_of_run() {
 	bool need_restart = false;
-	for(size_t i = 0; i < tasks_.size(); i ++) {
+	for(size_t i = 0; i < tasks_.size(); i++) {
 		if(!tasks_[i].is_done()) {
-			need_restart=true;
+			need_restart = true;
 			break;
 		}
 	}
 
 	if(need_restart) {
-		std::string rfilename = job_.jobfile_name+".restart";
+		std::string rfilename = job_.jobfile_name + ".restart";
 		std::ofstream rfile(rfilename);
 		rfile << "restart me\n";
 		rfile.close();
-		job_.status << "0 : Restart needed" << "\n";
+		job_.status << "0 : Restart needed"
+		            << "\n";
 	}
 
 	report();
@@ -242,15 +267,15 @@ void runner_master::end_of_run() {
 
 void runner_master::report() {
 	job_.status << "0 : Task progress: \n";
-	for(size_t i = 0; i < tasks_.size(); i ++) {
-		job_.status << fmt::format("-- {}: {:4d} active runs: {:7d} sweeps of {:7d} target\n", job_.task_names[i], tasks_[i].scheduled_runs,
-				      tasks_[i].sweeps, tasks_[i].target_sweeps + tasks_[i].target_thermalization);
+	for(size_t i = 0; i < tasks_.size(); i++) {
+		job_.status << fmt::format("-- {}: {:4d} active runs: {:7d} sweeps of {:7d} target\n",
+		                           job_.task_names[i], tasks_[i].scheduled_runs, tasks_[i].sweeps,
+		                           tasks_[i].target_sweeps + tasks_[i].target_thermalization);
 	}
 }
 
 runner_slave::runner_slave(jobinfo job, mc_factory mccreator)
-	: job_{std::move(job)}, mccreator_{std::move(mccreator)} {
-}
+    : job_{std::move(job)}, mccreator_{std::move(mccreator)} {}
 
 void runner_slave::start() {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
@@ -260,21 +285,23 @@ void runner_slave::start() {
 	int action = what_is_next(S_IDLE);
 	while(action != A_EXIT) {
 		if(action == A_NEW_JOB) {
-			sys_ = std::unique_ptr<abstract_mc>{mccreator_(job_.jobfile_name, job_.task_names[task_id_])};
-			if (sys_->_read(job_.rundir(task_id_, run_id_))) {
-				job_.status << rank_ << " : L " << job_.rundir(task_id_, run_id_)  << "\n";
+			sys_ = std::unique_ptr<abstract_mc>{
+			    mccreator_(job_.jobfile_name, job_.task_names[task_id_])};
+			if(sys_->_read(job_.rundir(task_id_, run_id_))) {
+				job_.status << rank_ << " : L " << job_.rundir(task_id_, run_id_) << "\n";
 			} else {
 				job_.status << rank_ << " : I " << job_.rundir(task_id_, run_id_) << "\n";
 				sys_->_init();
-				//checkpointing();
+				// checkpointing();
 			}
 		} else {
 			if(!sys_) {
-				throw std::runtime_error("slave got A_CONTINUE even though there is no job to be continued");
+				throw std::runtime_error(
+				    "slave got A_CONTINUE even though there is no job to be continued");
 			}
 		}
 
-		while(sweeps_since_last_query_ < sweeps_before_communication_) {	
+		while(sweeps_since_last_query_ < sweeps_before_communication_) {
 			sys_->_do_update();
 			sweeps_since_last_query_++;
 
@@ -293,23 +320,23 @@ void runner_slave::start() {
 }
 
 bool runner_slave::is_checkpoint_time() {
-	return MPI_Wtime()-time_last_checkpoint_ > job_.checkpoint_time;
+	return MPI_Wtime() - time_last_checkpoint_ > job_.checkpoint_time;
 }
 
 bool runner_slave::time_is_up() {
-	return MPI_Wtime()-time_start_ > job_.walltime;
+	return MPI_Wtime() - time_start_ > job_.walltime;
 }
 
 int runner_slave::what_is_next(int status) {
 	MPI_Send(&status, 1, MPI_INT, MASTER, T_STATUS, MPI_COMM_WORLD);
-	if (status==S_IDLE) {
+	if(status == S_IDLE) {
 		int new_action = recv_action();
 		if(new_action == A_EXIT) {
 			return A_EXIT;
 		}
 		MPI_Status stat;
 		int msg[3];
-		MPI_Recv(&msg, sizeof(msg)/sizeof(msg[0]), MPI_INT, 0, T_NEW_JOB, MPI_COMM_WORLD, &stat);
+		MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, T_NEW_JOB, MPI_COMM_WORLD, &stat);
 		task_id_ = msg[0];
 		run_id_ = msg[1];
 		sweeps_before_communication_ = msg[2];
@@ -317,8 +344,8 @@ int runner_slave::what_is_next(int status) {
 		return A_NEW_JOB;
 	}
 
-	int msg[2] = { task_id_, sweeps_since_last_query_ };
-	MPI_Send(msg, sizeof(msg)/sizeof(msg[0]), MPI_INT, 0, T_STATUS, MPI_COMM_WORLD);
+	int msg[2] = {task_id_, sweeps_since_last_query_};
+	MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, T_STATUS, MPI_COMM_WORLD);
 	sweeps_since_last_query_ = 0;
 	int new_action = recv_action();
 	if(new_action == A_PROCESS_DATA_NEW_JOB) {
@@ -331,7 +358,7 @@ int runner_slave::what_is_next(int status) {
 	if(new_action == A_EXIT) {
 		return A_EXIT;
 	}
-	
+
 	return A_CONTINUE;
 }
 
@@ -358,4 +385,3 @@ void runner_slave::merge_measurements() {
 
 	job_.status << rank_ << " : M " << job_.taskdir(task_id_) << "\n";
 }
-
