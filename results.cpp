@@ -3,7 +3,8 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
-void results::write_yaml(const std::string &filename, const std::string &taskdir, const YAML::Node &params) {
+void results::write_yaml(const std::string &filename, const std::string &taskdir,
+                         const YAML::Node &params) {
 	YAML::Emitter out;
 	out << YAML::BeginSeq;
 	out << YAML::BeginMap;

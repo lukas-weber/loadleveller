@@ -1,5 +1,5 @@
-#include "merger.h"
 #include "runner.h"
+#include "merger.h"
 #include <dirent.h>
 #include <fmt/format.h>
 #include <fstream>
@@ -89,12 +89,12 @@ std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
 void jobinfo::concatenate_results() {
 	std::ofstream cat_results{fmt::format("{}.results.yml", jobfile_name)};
 	for(size_t i = 0; i < task_names.size(); i++) {
-		std::ifstream res_file{taskdir(i)+"/results.yml"};
-		res_file.seekg(0,res_file.end);
+		std::ifstream res_file{taskdir(i) + "/results.yml"};
+		res_file.seekg(0, res_file.end);
 		size_t size = res_file.tellg();
 		res_file.seekg(0, res_file.beg);
-		
-		std::vector<char> buf(size+1, 0);
+
+		std::vector<char> buf(size + 1, 0);
 		res_file.read(buf.data(), size);
 		cat_results << buf.data() << "\n";
 	}

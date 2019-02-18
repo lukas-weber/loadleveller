@@ -1,12 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 project(load_leveller)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup()
-
+find_package (PkgConfig REQUIRED)
 find_package(MPI REQUIRED)
-find_package(fmt REQUIRED)
-find_package(HDF5 REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+pkg_check_modules(yaml-cpp REQUIRED IMPORTED_TARGET yaml-cpp)
+pkg_check_modules(HDF5 REQUIRED IMPORTED_TARGET HDF5)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -26,5 +25,5 @@ set(SRCs
 )
 
 add_library(load_leveller ${SRCs})
-target_link_libraries(load_leveller PUBLIC MPI::MPI_CXX fmt::fmt)
+target_link_libraries(load_leveller PUBLIC MPI::MPI_CXX fmt::fmt PkgConfig::yaml-cpp PkgConfig::HDF5)
 install(FILES load_leveller.h DESTINATION include)

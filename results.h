@@ -34,6 +34,6 @@ struct results {
 	std::map<std::string, observable_result> observables;
 
 	// writes out the results in a yaml file.
-	void write_yaml(const std::string &filename, const std::string& taskdir,
+	void write_yaml(const std::string &filename, const std::string &taskdir,
 	                const YAML::Node &params);
 };
