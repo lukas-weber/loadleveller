@@ -35,6 +35,7 @@ libloadleveller = library('loadleveller',
   dependencies : loadleveller_deps,
   version : meson.project_version(),
   install : true,
+  override_options : ['c_std=none']
 )
 
 pkg = import('pkgconfig')
@@ -45,7 +46,7 @@ pkg.generate(libloadleveller,
 install_headers(loadleveller_headers, subdir : 'loadleveller')
 
 loadleveller_dep = declare_dependency(
-  include_directories : include_directories('.'),
+  include_directories : include_directories('../include/'),
   link_with : libloadleveller,
   dependencies : loadleveller_deps,
   version : meson.project_version(),
