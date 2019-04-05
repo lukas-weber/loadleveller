@@ -5,6 +5,8 @@ abstract_mc::abstract_mc(const std::string &jobfile, const std::string &taskname
 	therm_ = param.get<int>("thermalization");
 }
 
+void abstract_mc::write_output(const std::string &) {}
+
 void abstract_mc::random_init() {
 	if(param.defined("seed")) {
 		rng.reset(new randomnumbergenerator(param.get<uint64_t>("seed")));

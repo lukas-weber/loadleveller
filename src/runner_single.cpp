@@ -7,7 +7,7 @@
 #include <iostream>
 #include <sys/stat.h>
 
-int runner_single_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
+int runner_single_start(jobinfo job, const mc_factory &mccreator, int, char **) {
 	runner_single r{std::move(job), mccreator};
 	r.start();
 	return 0;
@@ -94,21 +94,6 @@ void runner_single::read() {
 }
 
 void runner_single::end_of_run() {
-	bool need_restart = false;
-	for(size_t i = 0; i < tasks_.size(); i++) {
-		if(!tasks_[i].is_done()) {
-			need_restart = true;
-			break;
-		}
-	}
-	if(need_restart) {
-		std::string rfilename = job_.jobfile_name + ".restart";
-		std::ofstream rfile(rfilename.c_str());
-		rfile << "restart me\n";
-		rfile.close();
-		job_.status << 0 << " : Restart needed"
-		            << "\n";
-	}
 	report();
 	job_.status << 0 << " : finalized"
 	            << "\n";

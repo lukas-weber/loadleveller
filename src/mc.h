@@ -22,7 +22,7 @@ protected:
 	virtual void init() = 0;
 	virtual void checkpoint_write(const iodump::group &out) = 0;
 	virtual void checkpoint_read(const iodump::group &in) = 0;
-	virtual void write_output(const std::string &filename){};
+	virtual void write_output(const std::string &filename);
 	virtual void do_update() = 0;
 	virtual void do_measurement() = 0;
 

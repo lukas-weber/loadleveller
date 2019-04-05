@@ -167,12 +167,12 @@ iodump::h5_handle iodump::group::create_dataset(const std::string &name, hid_t d
 		h5_handle dataset{H5Dopen2(group_, name.c_str(), H5P_DEFAULT), H5Dclose};
 		h5_handle dataspace{H5Dget_space(*dataset), H5Sclose};
 
-		hsize_t oldsize = H5Sget_simple_extent_npoints(*dataspace);
+		hssize_t oldsize = H5Sget_simple_extent_npoints(*dataspace);
 
 		if(oldsize < 0) {
 			throw iodump_exception{"H5Sget_simple_extent_npoints"};
 		}
-		if(oldsize != size) {
+		if(static_cast<hsize_t>(oldsize) != size) {
 			throw std::runtime_error{
 			    "iodump: tried to write into an existing dataset with different dimensions!"};
 		}

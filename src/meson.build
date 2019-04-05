@@ -34,16 +34,18 @@ libloadleveller = library('loadleveller',
   loadleveller_sources,
   dependencies : loadleveller_deps,
   version : meson.project_version(),
-  install : true,
+  install : should_install,
   override_options : ['c_std=none']
 )
 
-pkg = import('pkgconfig')
-pkg.generate(libloadleveller,
-  description : 'Framework for distributed (Quantum) Monte Carlo codes',
-)
-
-install_headers(loadleveller_headers, subdir : 'loadleveller')
+if should_install
+  pkg = import('pkgconfig')
+  pkg.generate(libloadleveller,
+    description : 'Framework for distributed (Quantum) Monte Carlo codes',
+  )
+  
+  install_headers(loadleveller_headers, subdir : 'loadleveller')
+endif
 
 loadleveller_dep = declare_dependency(
   include_directories : include_directories('../include/'),

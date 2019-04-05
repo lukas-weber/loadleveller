@@ -8,7 +8,7 @@ import glob
 import sys
 import os
 
-parser = argparse.ArgumentParser(description='This helper program runs a load-leveller Monte Carlo program using a provided YAML-formatted jobfile. The jobfile contains information on how to run the job (what mc binary, mpi-parameters, ...) and a number of tasks with different simulation parameters each. When running on a cluster batch system, the batch script is generated using ygeneratebatchscript.')
+parser = argparse.ArgumentParser(description='This helper program runs a loadleveller Monte Carlo program using a provided YAML-formatted jobfile. The jobfile contains information on how to run the job (what mc binary, mpi-parameters, ...) and a number of tasks with different simulation parameters each. When running on a cluster batch system, the batch script is generated using ygeneratebatchscript.')
 
 parser.add_argument('jobfile', metavar='JOBFILE', help='Configuration file containing all the job information. May be generated using ytaskmaker')
 parser.add_argument('-s','--single', action='store_true', help='Run in the single core scheduler mode')
@@ -41,12 +41,13 @@ try:
     error = False
     label = 'Warning' if args.force else 'Error'
     if binary_modtime > data_modtime:
-        print('{}: binary \'{}\' is newer than the checkpoint files.\nUse ydelete to start from a blank run or use \'--force\' to proceed if you are sure\nthe new binary is compatible.'.format(label, mcbinary))
+        print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, mcbinary))
         error = True
     if jobfile_modtime > data_modtime:
-        print('{}: jobfile \'{}\' is newer than the checkpoint files.\nStarting the run now might lead to corruption. Use ydelete to start\nfrom the blank run or use \'--force\' if you are very sure.'.format(label, args.jobfile))
+        print('{}: jobfile \'{}\' is newer than the checkpoint files.'.format(label, args.jobfile))
         error = True
     if not args.force and error:
+        print('Use ydelete to start from a blank run or use \'--force\' to proceed if you are sure\nthe changes you made are compatible.')
         sys.exit(1)
 except StopIteration:
     pass

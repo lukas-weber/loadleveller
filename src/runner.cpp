@@ -245,23 +245,6 @@ void runner_master::read() {
 }
 
 void runner_master::end_of_run() {
-	bool need_restart = false;
-	for(size_t i = 0; i < tasks_.size(); i++) {
-		if(!tasks_[i].is_done()) {
-			need_restart = true;
-			break;
-		}
-	}
-
-	if(need_restart) {
-		std::string rfilename = job_.jobfile_name + ".restart";
-		std::ofstream rfile(rfilename);
-		rfile << "restart me\n";
-		rfile.close();
-		job_.status << "0 : Restart needed"
-		            << "\n";
-	}
-
 	report();
 }
 
