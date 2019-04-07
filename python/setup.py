@@ -9,6 +9,11 @@ setuptools.setup(
     url="https://git.rwth-aachen.de/lukas.weber2/load_leveller",
     packages=setuptools.find_packages(),
     license="MIT",
-    scripts=["ydelete","yrun","ystatus"],
-    install_requires=["pyyaml","h5py","numpy"]
+    scripts=["ydelete","yrun"],
+    install_requires=["pyyaml","h5py","numpy"],
+    entry_points={
+        'console_scripts': [
+            'ystatus = loadleveller.jobstatus:ystatus',
+        ],
+    }
 )
