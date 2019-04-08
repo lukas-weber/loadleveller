@@ -20,7 +20,8 @@ args = parser.parse_args()
 jobdir = os.path.dirname(args.jobfile)
 jobfile_name = os.path.basename(args.jobfile)
 
-os.chdir(jobdir)
+if jobdir != '':
+    os.chdir(jobdir)
 
 if args.single and args.merge:
     print('Error: cannot merge and run in single mode at the same time.')

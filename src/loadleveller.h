@@ -6,7 +6,7 @@
 #include "runner_single.h"
 
 namespace load_leveller {
-inline int merge_only(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
+inline int merge_only(jobinfo job, const mc_factory &mccreator, int, char **) {
 	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
 		std::vector<evalable> evalables;
 		std::unique_ptr<abstract_mc> sys{mccreator(job.jobfile_name, job.task_names[task_id])};
