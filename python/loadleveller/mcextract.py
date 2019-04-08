@@ -50,24 +50,24 @@ class MCArchive:
                 o.mean[i,:] = value['mean']
                 o.error[i,:] = value['error']
 
-    def condition_mask(self, conditions):
-        if not conditions:
+    def filter_mask(self, filter):
+        if not filter:
             return [True for _ in range(self.num_tasks)]
 
-        return [all(self.parameters[key][i] == val for key, val in conditions.items()) for i in range(self.num_tasks)]
+        return [all(self.parameters[key][i] == val for key, val in filter.items()) for i in range(self.num_tasks)]
 
-    def get_parameter(self, name, unique=False, conditions={}):
-        selection = list(itertools.compress(self.parameters[name], self.condition_mask(conditions)))
+    def get_parameter(self, name, unique=False, filter={}):
+        selection = list(itertools.compress(self.parameters[name], self.filter_mask(filter)))
         
         if unique:
             return list(sorted(set(selection)))
         return selection
 
-    def get_observable(self, name, conditions={}):
+    def get_observable(self, name, filter={}):
         orig = self.observables[name]
         
         selection = Observable(0)
-        mask = self.condition_mask(conditions)
+        mask = self.filter_mask(filter)
         selection.rebinning_bin_count = orig.rebinning_bin_count[mask]
         selection.rebinning_bin_length = orig.rebinning_bin_length[mask]
         selection.autocorrelation_time = orig.autocorrelation_time[mask]
