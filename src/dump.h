@@ -109,7 +109,9 @@ public:
 
 	group get_root();
 
-	iodump(iodump &) = delete;
+	// TODO: once the intel compiler can do guaranteed copy elision,
+	// please uncomment this line! and be careful about bugs!
+	//iodump(iodump &) = delete;
 	~iodump();
 
 	friend class group;
