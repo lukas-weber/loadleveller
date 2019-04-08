@@ -17,11 +17,16 @@ parser.add_argument('--force', action='store_true', help='Ignore warnings about 
 
 args = parser.parse_args()
 
+jobdir = os.path.dirname(args.jobfile)
+jobfile_name = os.path.basename(args.jobfile)
+
+os.chdir(jobdir)
+
 if args.single and args.merge:
     print('Error: cannot merge and run in single mode at the same time.')
     sys.exit(1)
 
-with open(args.jobfile, 'r') as f:
+with open(jobfile_name, 'r') as f:
     jobfile = yaml.load(f)
 
 jobconfig_path = os.path.expandvars(os.path.expanduser(jobfile['jobconfig']))
@@ -32,10 +37,10 @@ mcbinary = os.path.expandvars(os.path.expanduser(jobconfig['mc_binary']))
 
 # check age of the different files
 binary_modtime = os.stat(mcbinary).st_mtime
-jobfile_modtime = os.stat(args.jobfile).st_mtime
+jobfile_modtime = os.stat(jobfile_name).st_mtime
 
 try:
-    f = next(glob.iglob('{}.data/*/*.h5'.format(args.jobfile))) # only check one of the output files for speed
+    f = next(glob.iglob('{}.data/*/*.h5'.format(jobfile_name))) # only check one of the output files for speed
     data_modtime = os.stat(f).st_mtime
 
     error = False
@@ -44,7 +49,7 @@ try:
         print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, mcbinary))
         error = True
     if jobfile_modtime > data_modtime:
-        print('{}: jobfile \'{}\' is newer than the checkpoint files.'.format(label, args.jobfile))
+        print('{}: jobfile \'{}\' is newer than the checkpoint files.'.format(label, jobfile_name))
         error = True
     if not args.force and error:
         print('Use ydelete to start from a blank run or use \'--force\' to proceed if you are sure\nthe changes you made are compatible.')
@@ -53,10 +58,10 @@ except StopIteration:
     pass
 
 if args.single:
-    cmd = [mcbinary, 'single', args.jobfile]
+    cmd = [mcbinary, 'single', jobfile_name]
     print('$ '+' '.join(cmd))
     subprocess.run(cmd)
 elif args.merge:
-    subprocess.run([mcbinary, 'merge', args.jobfile])
+    subprocess.run([mcbinary, 'merge', jobfile_name])
 else:
-    clusterutils.run(args.jobfile, jobconfig, [mcbinary, args.jobfile]) 
+    clusterutils.run(jobfile_name, jobconfig, [mcbinary, jobfile_name]) 

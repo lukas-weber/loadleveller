@@ -17,6 +17,12 @@ Dependencies
 - yaml-cpp >= 0.6 (fallback provided)
 - fmt (fallback provided)
 
+The python package requires
+
+- pyyaml
+- h5py
+- numpy
+
 Building loadleveller
 ^^^^^^^^^^^^^^^^^^^^^
 
