@@ -52,7 +52,7 @@ To use loadleveller effectively you should install the python package from the `
 How it works
 ------------
 
-For details on how to implement and use your MC simulation with loadleveller see the `example project <TODO>`_. After you build it and get an executable. You need to create a job file containing the set of parameters you want to calculate. This is conveniently done with the ``loadleveller.taskmaker`` module.
+For details on how to implement and use your MC simulation with loadleveller see the `example project <https://git.rwth-aachen.de/lukas.weber2/ising>`_. After you build it and get an executable. You need to create a job file containing the set of parameters you want to calculate. This is conveniently done with the ``loadleveller.taskmaker`` module.
 
 You can start it (either on a cluster batch system or locally) using the ``yrun JOBFILE`` command from the python package. It will calculate all the tasks defined in the jobfile in parallel. Measurements and checkpoints will be saved in the ``JOBFILE.data`` directory. After everything is done, measurements will be averaged and merged into the human-readable ``JOBFILE.results.yml`` file. You may use the ``loadleveller.mcextract`` module to conveniently extract results from it for further processing.
 
