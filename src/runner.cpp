@@ -50,7 +50,7 @@ static double parse_duration(std::string str) {
 		} else {
 			throw std::runtime_error{"seconds"};
 		}
-	} catch(std::exception e) {
+	} catch(std::exception &e) {
 		throw std::runtime_error{
 		    fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds: {}", str, e.what())};
 	}

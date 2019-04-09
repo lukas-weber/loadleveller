@@ -16,13 +16,12 @@ class JobProgress:
     def __init__(self, jobfile):
         self.jobfile = jobfile
         with open(jobfile, 'r') as f:
-            jobfile = yaml.load(f)
+            jobfile = yaml.safe_load(f)
 
         self.tasks = jobfile['tasks'].keys()
         self.restart = False
 
         self.progress = []
-        
         for task in self.tasks:
             tp = TaskProgress()
             
@@ -42,18 +41,18 @@ class JobProgress:
                     tp.therm_sweeps += f['/thermalization_sweeps'][0]
 
 
-            if sweeps < target_sweeps + target_therm:
+            if tp.sweeps < tp.target_sweeps + tp.target_therm:
                 self.restart = True
 
             self.progress.append(tp)
 
-    def needs_restart():
+    def needs_restart(self):
         return self.restart
         
-    def needs_merge():
+    def needs_merge(self):
         result_mtime = 0
         try:
-            result_mtime = os.path.getmtime(args.jobfile+'.results.yml')
+            result_mtime = os.path.getmtime(self.jobfile+'.results.yml')
         except FileNotFoundError:
             return True
 
@@ -98,7 +97,7 @@ def ystatus():
             return False
 
         for task, tp in zip(job_prog.tasks, job_prog.progress):
-            print('{t}: {tp.run_count} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {tp.therm_sweeps}/{tp.target_therm} thermalization'.format(t=task,tp=tp))
+            print('{t}: {tp.num_runs} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {tp.therm_sweeps}/{tp.target_therm} thermalization'.format(t=task,tp=tp))
         
     except FileNotFoundError as e:
         print("Error: jobfile '{}' not found.".format(args.jobfile))

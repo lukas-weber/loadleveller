@@ -11,7 +11,7 @@ args = parser.parse_args()
 
 
 with open(args.jobfile, 'r') as f:
-    jobfile = yaml.load(f)
+    jobfile = yaml.safe_load(f)
 
 try:
     shutil.rmtree('{}.data'.format(args.jobfile)) # adjust this if you adjust the task dir format in load-leveller
