@@ -22,37 +22,37 @@ enum {
 };
 
 // parses the duration '[[hours:]minutes:]seconds' into seconds
+// replace as soon as there is an alternative
 static double parse_duration(std::string str) {
-	int i1 = -1, i2 = -1, i3 = -1;
 	size_t idx;
 
 	try {
-		i1 = std::stoi(str, &idx, 10);
+		int i1 = std::stoi(str, &idx, 10);
 		if(idx == str.size()) {
 			return i1;
 		} else if(str[idx] == ':') {
-			std::string str1 = str.substr(idx);
-			i2 = std::stoi(str1, &idx, 10);
+			std::string str1 = str.substr(idx+1);
+			int i2 = std::stoi(str1, &idx, 10);
 
-			if(idx == str.size()) {
+			if(idx == str1.size()) {
 				return 60 * i1 + i2;
 			} else if(str[idx] == ':') {
-				std::string str2 = str.substr(idx);
-				i3 = std::stoi(str2, &idx, 10);
-				if(idx != str.size()) {
-					throw std::exception{};
+				std::string str2 = str1.substr(idx+1);
+				int i3 = std::stoi(str2, &idx, 10);
+				if(idx != str2.size()) {
+					throw std::runtime_error{"minutes"};
 				}
 
 				return 24 * 60 * i1 + 60 * i2 + i3;
 			} else {
-				throw std::exception{};
+				throw std::runtime_error{"hours"};
 			}
 		} else {
-			throw std::exception{};
+			throw std::runtime_error{"seconds"};
 		}
 	} catch(std::exception e) {
 		throw std::runtime_error{
-		    fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds", str)};
+		    fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds: {}", str, e.what())};
 	}
 }
 
