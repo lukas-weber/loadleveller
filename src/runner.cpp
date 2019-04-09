@@ -31,19 +31,19 @@ static double parse_duration(std::string str) {
 		if(idx == str.size()) {
 			return i1;
 		} else if(str[idx] == ':') {
-			str = str.substr(idx);
-			i2 = std::stoi(str, &idx, 10);
+			std::string str1 = str.substr(idx);
+			i2 = std::stoi(str1, &idx, 10);
 
 			if(idx == str.size()) {
-				return 60*i1+i2;
+				return 60 * i1 + i2;
 			} else if(str[idx] == ':') {
-				str = str.substr(idx);
-				i3 = std::stoi(str.substr(idx), &idx, 10);
+				std::string str2 = str.substr(idx);
+				i3 = std::stoi(str2, &idx, 10);
 				if(idx != str.size()) {
 					throw std::exception{};
 				}
 
-				return 24*60*i1 + 60*i2 + i3;
+				return 24 * 60 * i1 + 60 * i2 + i3;
 			} else {
 				throw std::exception{};
 			}
@@ -51,9 +51,9 @@ static double parse_duration(std::string str) {
 			throw std::exception{};
 		}
 	} catch(std::exception e) {
-		throw std::runtime_error{fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds")};
+		throw std::runtime_error{
+		    fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds", str)};
 	}
-
 }
 
 std::string jobinfo::taskdir(int task_id) const {
