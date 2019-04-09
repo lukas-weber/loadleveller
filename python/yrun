@@ -28,11 +28,11 @@ if args.single and args.merge:
     sys.exit(1)
 
 with open(jobfile_name, 'r') as f:
-    jobfile = yaml.safeload(f)
+    jobfile = yaml.safe_load(f)
 
 jobconfig_path = os.path.expandvars(os.path.expanduser(jobfile['jobconfig']))
 with open(jobconfig_path) as f:
-    jobconfig = yaml.safeload(f)
+    jobconfig = yaml.safe_load(f)
 
 mcbinary = os.path.expandvars(os.path.expanduser(jobconfig['mc_binary']))
 
