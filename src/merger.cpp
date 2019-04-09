@@ -46,7 +46,7 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 				continue;
 			}
 
-			if(res.observables.count(obs_name) == 0) 
+			if(res.observables.count(obs_name) == 0)
 				res.observables.emplace(obs_name, observable_result());
 			auto &obs = res.observables.at(obs_name);
 			obs.name = obs_name;

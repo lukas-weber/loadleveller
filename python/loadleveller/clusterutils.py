@@ -1,5 +1,6 @@
 import tempfile
 import os
+import sys
 
 batchscript_claix18 = '''
 #!/usr/bin/env zsh
@@ -17,7 +18,7 @@ batchscript_claix18 = '''
 
 {custom_cmds}
 
-$MPIEXEC $FLAGS_MPI_BATCH {cmd}
+{mpirun} $FLAGS_MPI_BATCH {cmd}
 '''
 
 batchscript_templates = {
@@ -31,15 +32,21 @@ batch_commands = {
 valid_systems = ['local', 'claix18']
 
 def generate_batchscript(template, cmd, jobname, jobconfig):
-    return template.format(
-        jobname=jobname,
-        mem_per_cpu=jobconfig['mem_per_cpu'],
-        walltime=jobconfig['walltime'],
-        project=jobconfig['project'],
-        num_cores=jobconfig['num_cores'],
-        custom_cmds=jobconfig['custom_cmds'],
-        mc_cmd=' '.join(cmd)
-    )
+    try:
+        return template.format(
+            jobname=jobname,
+            mpirun=jobconfig.get('mpirun','mpirun'),
+            mem_per_cpu=jobconfig.get('mem_per_cpu','2G'),
+            walltime=jobconfig['mc_walltime'],
+            project=jobconfig.get('project',''),
+            num_cores=jobconfig['num_cores'],
+            custom_cmds=jobconfig.get('custom_cmds',''),
+            mc_cmd=' '.join(cmd)
+        )
+    except KeyError as e:
+        print('Error: required key "{}" missing in jobconfig'.format(e.args[0]))
+        sys.exit(1)
+        
 
 def determine_system():
     sysinfo = os.environ.get('MCLL_SYSTEM_INFO')
