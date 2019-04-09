@@ -14,7 +14,7 @@ mpi_dep = dependency('mpi')
 cc = meson.get_compiler('cpp')
 hdf5_lib = cc.find_library('hdf5')
 
-should_install = meson.is_subproject()
+should_install = not meson.is_subproject()
 
 loadleveller_deps = [ fmt_dep, yamlcpp_dep, mpi_dep, hdf5_lib ]
 

@@ -21,6 +21,41 @@ enum {
 	A_PROCESS_DATA_NEW_JOB = 4,
 };
 
+// parses the duration '[[hours:]minutes:]seconds' into seconds
+static double parse_duration(std::string str) {
+	int i1 = -1, i2 = -1, i3 = -1;
+	size_t idx;
+
+	try {
+		i1 = std::stoi(str, &idx, 10);
+		if(idx == str.size()) {
+			return i1;
+		} else if(str[idx] == ':') {
+			str = str.substr(idx);
+			i2 = std::stoi(str, &idx, 10);
+
+			if(idx == str.size()) {
+				return 60*i1+i2;
+			} else if(str[idx] == ':') {
+				str = str.substr(idx);
+				i3 = std::stoi(str.substr(idx), &idx, 10);
+				if(idx != str.size()) {
+					throw std::exception{};
+				}
+
+				return 24*60*i1 + 60*i2 + i3;
+			} else {
+				throw std::exception{};
+			}
+		} else {
+			throw std::exception{};
+		}
+	} catch(std::exception e) {
+		throw std::runtime_error{fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds")};
+	}
+
+}
+
 std::string jobinfo::taskdir(int task_id) const {
 	return fmt::format("{}.data/{}", jobfile_name, task_names.at(task_id));
 }
@@ -58,8 +93,8 @@ jobinfo::jobinfo(const std::string &jobfile_name)
 	auto jobconfig_path = jobfile.get<std::string>("jobconfig");
 	parser jobconfig{jobconfig_path};
 
-	walltime = jobconfig.get<double>("mc_walltime");
-	checkpoint_time = jobconfig.get<double>("mc_checkpoint_time");
+	walltime = parse_duration(jobconfig.get<std::string>("mc_walltime"));
+	checkpoint_time = parse_duration(jobconfig.get<std::string>("mc_checkpoint_time"));
 }
 
 // This function lists files that could be run files being in the taskdir
