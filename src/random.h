@@ -8,13 +8,17 @@
 // in that case, also get rid of the macros and use templates to switch between different generators
 // or so.
 
-#ifdef MCL_RNG_MT
-
+namespace loadl {
 enum rng_type {
 	RNG_MersenneTwister = 0,
 };
+}
+
+#ifdef MCL_RNG_MT
 
 #include "MersenneTwister.h"
+namespace loadl {
+
 class randomnumbergenerator {
 public:
 	randomnumbergenerator();
@@ -37,6 +41,8 @@ private:
 	MTRand mtrand_;
 	uint64_t seed_;
 };
+}
+
 #endif
 
 #ifdef MCL_RNG_SPRNG_4

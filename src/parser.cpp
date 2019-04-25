@@ -1,5 +1,7 @@
 #include "parser.h"
 
+namespace loadl {
+
 parser::iterator::iterator(std::string filename, YAML::Node::iterator it)
     : filename_{std::move(filename)}, it_{std::move(it)} {}
 
@@ -83,4 +85,5 @@ parser parser::operator[](const std::string &key) {
 
 const YAML::Node &parser::get_yaml() {
 	return content_;
+}
 }

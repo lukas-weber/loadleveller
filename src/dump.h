@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace loadl {
+
 class iodump_exception : public std::exception {
 private:
 	std::string message_;
@@ -252,4 +254,5 @@ void iodump::group::read(const std::string &name, T &value) const {
 	std::vector<T> buf;
 	read(name, buf);
 	value = buf.at(0);
+}
 }

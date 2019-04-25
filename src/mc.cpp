@@ -1,13 +1,15 @@
 #include "mc.h"
 
-abstract_mc::abstract_mc(const std::string &jobfile, const std::string &taskname)
+namespace loadl {
+
+mc::mc(const std::string &jobfile, const std::string &taskname)
     : param{parser{jobfile}["tasks"][taskname]} {
 	therm_ = param.get<int>("thermalization");
 }
 
-void abstract_mc::write_output(const std::string &) {}
+void mc::write_output(const std::string &) {}
 
-void abstract_mc::random_init() {
+void mc::random_init() {
 	if(param.defined("seed")) {
 		rng.reset(new randomnumbergenerator(param.get<uint64_t>("seed")));
 	} else {
@@ -15,15 +17,15 @@ void abstract_mc::random_init() {
 	}
 }
 
-double abstract_mc::random01() {
+double mc::random01() {
 	return rng->d();
 }
 
-int abstract_mc::sweep() const {
+int mc::sweep() const {
 	return sweep_;
 }
 
-void abstract_mc::_init() {
+void mc::_init() {
 	// simple profiling support: measure the time spent for sweeps/measurements etc
 	measure.add_observable("_ll_checkpoint_read_time", 1);
 	measure.add_observable("_ll_checkpoint_write_time", 1);
@@ -33,7 +35,7 @@ void abstract_mc::_init() {
 	init();
 }
 
-void abstract_mc::_do_measurement() {
+void mc::_do_measurement() {
 	struct timespec tstart, tend;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
 
@@ -44,7 +46,7 @@ void abstract_mc::_do_measurement() {
 	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
 }
 
-void abstract_mc::_do_update() {
+void mc::_do_update() {
 	struct timespec tstart, tend;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
 	sweep_++;
@@ -55,7 +57,7 @@ void abstract_mc::_do_update() {
 	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
 }
 
-void abstract_mc::_write(const std::string &dir) {
+void mc::_write(const std::string &dir) {
 	struct timespec tstart, tend;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
 
@@ -77,7 +79,7 @@ void abstract_mc::_write(const std::string &dir) {
 	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
 }
 
-bool abstract_mc::_read(const std::string &dir) {
+bool mc::_read(const std::string &dir) {
 	try {
 		struct timespec tstart, tend;
 		clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
@@ -99,10 +101,11 @@ bool abstract_mc::_read(const std::string &dir) {
 	return true;
 }
 
-void abstract_mc::_write_output(const std::string &filename) {
+void mc::_write_output(const std::string &filename) {
 	write_output(filename);
 }
 
-bool abstract_mc::is_thermalized() {
+bool mc::is_thermalized() {
 	return sweep_ > therm_;
+}
 }

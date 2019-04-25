@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+namespace loadl {
+
 class evalable {
 public:
 	// Internally all observables are vectors, so you need a function
@@ -26,3 +28,4 @@ private:
 	const std::vector<std::string> used_observables_;
 	const func fun_;
 };
+}

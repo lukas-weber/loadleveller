@@ -1,6 +1,8 @@
 #include "dump.h"
 #include "runner.h"
 
+namespace loadl {
+
 runner_task::runner_task(int target_sweeps, int target_thermalization, int sweeps,
                          int scheduled_runs)
     : target_sweeps{target_sweeps}, target_thermalization{target_thermalization}, sweeps{sweeps},
@@ -8,4 +10,5 @@ runner_task::runner_task(int target_sweeps, int target_thermalization, int sweep
 
 bool runner_task::is_done() const {
 	return sweeps >= (target_sweeps + target_thermalization);
+}
 }

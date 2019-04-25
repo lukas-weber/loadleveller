@@ -3,6 +3,8 @@
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
+namespace loadl {
+
 void results::write_yaml(const std::string &filename, const std::string &taskdir,
                          const YAML::Node &params) {
 	YAML::Emitter out;
@@ -36,4 +38,5 @@ void results::write_yaml(const std::string &filename, const std::string &taskdir
 
 	std::ofstream file(filename);
 	file << out.c_str();
+}
 }

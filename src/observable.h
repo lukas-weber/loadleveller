@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+namespace loadl {
+
 class observable {
 public:
 	observable(std::string name, size_t bin_length = 1, size_t vector_length = 1,
@@ -67,4 +69,5 @@ void observable::add(const std::vector<T> &val) {
 		samples_.resize((current_bin_ + 1) * vector_length_);
 		current_bin_filling_ = 0;
 	}
+}
 }

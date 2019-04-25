@@ -1,6 +1,8 @@
 #include "observable.h"
 #include <fmt/format.h>
 
+namespace loadl {
+
 observable::observable(std::string name, size_t bin_length, size_t vector_length,
                        size_t initial_length)
     : name_{std::move(name)}, bin_length_{bin_length}, vector_length_{vector_length},
@@ -48,4 +50,5 @@ void observable::checkpoint_read(const iodump::group &d) {
 	d.read("current_bin_filling", current_bin_filling_);
 	d.read("samples", samples_);
 	current_bin_ = 0;
+}
 }

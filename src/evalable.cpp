@@ -3,6 +3,8 @@
 #include <fmt/format.h>
 #include <map>
 
+namespace loadl {
+
 evalable::evalable(std::string name, std::vector<std::string> used_observables, func fun)
     : name_{std::move(name)}, used_observables_{std::move(used_observables)}, fun_{std::move(fun)} {
 	// evalable names also should be valid HDF5 paths
@@ -133,4 +135,5 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 	for(size_t i = 0; i < obs_res.error.size(); i++) {
 		obs_res.error[i] = sqrt((bin_count - 1) * obs_res.error[i] / bin_count);
 	}
+}
 }

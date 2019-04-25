@@ -3,6 +3,8 @@
 #include <fmt/format.h>
 #include <yaml-cpp/yaml.h>
 
+namespace loadl {
+
 // This is mostly a wrapper around yaml-cpp with more helpful error handling.
 // For simplicity it does not support advanced yaml features such as complex-typed
 // keys in maps.
@@ -31,7 +33,7 @@ public:
 	parser(const std::string &filename);
 
 	template<typename T>
-	T get(const std::string &key) {
+	T get(const std::string &key) const {
 		if(!content_[key]) {
 			throw std::runtime_error(
 			    fmt::format("YAML: {}: required key '{}' not found.", filename_, key));
@@ -40,7 +42,7 @@ public:
 	}
 
 	template<typename T>
-	auto get(const std::string &key, T default_val) -> decltype(default_val) {
+	auto get(const std::string &key, T default_val) -> decltype(default_val) const {
 		return content_[key].as<T>(default_val);
 	}
 
@@ -55,3 +57,4 @@ public:
 	// This function is needed to dump the task settings into the result file for example.
 	const YAML::Node &get_yaml();
 };
+}

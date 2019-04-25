@@ -11,6 +11,8 @@
 #include "parser.h"
 #include "runner_task.h"
 
+namespace loadl {
+
 struct jobinfo {
 	std::string jobfile_name;
 	parser jobfile;
@@ -67,7 +69,7 @@ private:
 	jobinfo job_;
 
 	mc_factory mccreator_;
-	std::unique_ptr<abstract_mc> sys_;
+	std::unique_ptr<mc> sys_;
 
 	double time_last_checkpoint_{0};
 	double time_start_{0};
@@ -90,3 +92,4 @@ public:
 	runner_slave(jobinfo job, mc_factory mccreator);
 	void start();
 };
+}

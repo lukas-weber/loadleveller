@@ -6,6 +6,8 @@
 #include <regex>
 #include <sys/stat.h>
 
+namespace loadl {
+
 enum {
 	MASTER = 0,
 	T_STATUS = 1,
@@ -303,8 +305,7 @@ void runner_slave::start() {
 	int action = what_is_next(S_IDLE);
 	while(action != A_EXIT) {
 		if(action == A_NEW_JOB) {
-			sys_ = std::unique_ptr<abstract_mc>{
-			    mccreator_(job_.jobfile_name, job_.task_names[task_id_])};
+			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile_name, job_.task_names[task_id_])};
 			if(sys_->_read(job_.rundir(task_id_, run_id_))) {
 				job_.status << rank_ << " : L " << job_.rundir(task_id_, run_id_) << "\n";
 			} else {
@@ -402,4 +403,5 @@ void runner_slave::merge_measurements() {
 	job_.merge_task(task_id_, evalables);
 
 	job_.status << rank_ << " : M " << job_.taskdir(task_id_) << "\n";
+}
 }

@@ -7,6 +7,8 @@
 #include <iostream>
 #include <sys/stat.h>
 
+namespace loadl {
+
 int runner_single_start(jobinfo job, const mc_factory &mccreator, int, char **) {
 	runner_single r{std::move(job), mccreator};
 	r.start();
@@ -23,8 +25,7 @@ int runner_single::start() {
 	read();
 	task_id_ = get_new_task_id(task_id_);
 	while(task_id_ != -1 && !time_is_up()) {
-		sys = std::unique_ptr<abstract_mc>{
-		    mccreator_(job_.jobfile_name, job_.task_names.at(task_id_))};
+		sys = std::unique_ptr<mc>{mccreator_(job_.jobfile_name, job_.task_names.at(task_id_))};
 		if(sys->_read(job_.rundir(task_id_, 1))) {
 			job_.status << 0 << " : L " << job_.rundir(task_id_, 1) << "\n";
 		} else {
@@ -125,4 +126,5 @@ void runner_single::merge_measurements() {
 	job_.merge_task(task_id_, evalables);
 
 	job_.status << "0 : M " << job_.taskdir(task_id_) << "\n";
+}
 }

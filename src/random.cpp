@@ -1,5 +1,7 @@
 #include "random.h"
 
+namespace loadl {
+
 #ifdef MCL_RNG_MT
 randomnumbergenerator::randomnumbergenerator() {
 	seed_ = mtrand_.get_seed();
@@ -110,3 +112,4 @@ randomnumbergenerator::randomnumbergenerator(int seed) {
 	seed_ = seed;
 }
 #endif
+}

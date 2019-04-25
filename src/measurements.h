@@ -7,6 +7,8 @@
 #include <valarray>
 #include <vector>
 
+namespace loadl {
+
 class measurements {
 public:
 	static bool observable_name_is_legal(const std::string &name);
@@ -32,4 +34,5 @@ private:
 template<class T>
 void measurements::add(const std::string name, T value) {
 	observables_.at(name).add(value);
+}
 }

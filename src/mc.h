@@ -8,7 +8,9 @@
 #include <string>
 #include <vector>
 
-class abstract_mc {
+namespace loadl {
+
+class mc {
 private:
 	void random_init();
 
@@ -46,8 +48,9 @@ public:
 	bool is_thermalized();
 	measurements measure;
 
-	abstract_mc(const std::string &jobfile, const std::string &taskname);
-	virtual ~abstract_mc() = default;
+	mc(const std::string &jobfile, const std::string &taskname);
+	virtual ~mc() = default;
 };
 
-typedef std::function<abstract_mc *(const std::string &, const std::string &)> mc_factory;
+typedef std::function<mc *(const std::string &, const std::string &)> mc_factory;
+}

@@ -5,6 +5,8 @@
 #include <typeinfo>
 #include <unistd.h>
 
+namespace loadl {
+
 static bool filter_available(H5Z_filter_t filter) {
 	htri_t avail = H5Zfilter_avail(filter);
 	if(avail == 0) {
@@ -263,4 +265,5 @@ iodump::h5_handle::~h5_handle() {
 
 hid_t iodump::h5_handle::operator*() {
 	return handle_;
+}
 }

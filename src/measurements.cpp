@@ -1,6 +1,8 @@
 #include "measurements.h"
 #include <fmt/format.h>
 
+namespace loadl {
+
 bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	if(obs_name.find('/') != obs_name.npos) {
 		return false;
@@ -39,4 +41,5 @@ void measurements::samples_write(const iodump::group &meas_file) {
 		auto g = meas_file.open_group(obs.first);
 		obs.second.measurement_write(g);
 	}
+}
 }

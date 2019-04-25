@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+namespace loadl {
+
 static void evaluate_evalables(results &res, const std::vector<evalable> &evalables) {
 	std::vector<observable_result> evalable_results;
 	for(auto &eval : evalables) {
@@ -186,4 +188,5 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 	evaluate_evalables(res, evalables);
 
 	return res;
+}
 }

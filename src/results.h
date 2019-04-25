@@ -2,6 +2,12 @@
 #include <map>
 #include <vector>
 
+namespace YAML {
+class Node;
+}
+
+namespace loadl {
+
 struct observable_result {
 	std::string name;
 
@@ -24,9 +30,6 @@ struct observable_result {
 	std::vector<double> autocorrelation_time;
 };
 
-namespace YAML {
-class Node;
-}
 
 // results holds the means and errors merged from all the runs belonging to a task
 // this includes both regular observables and evalables.
@@ -37,3 +40,4 @@ struct results {
 	void write_yaml(const std::string &filename, const std::string &taskdir,
 	                const YAML::Node &params);
 };
+}

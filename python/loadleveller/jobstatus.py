@@ -93,11 +93,12 @@ def ystatus():
         if args.need_merge:
             if job_prog.needs_merge():
                 print('Needs merge!')
+                return True
             print('Job already merged.')
             return False
 
         for task, tp in zip(job_prog.tasks, job_prog.progress):
-            print('{t}: {tp.num_runs} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {tp.therm_sweeps}/{tp.target_therm} thermalization'.format(t=task,tp=tp))
+            print('{t}: {tp.num_runs} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {tp.therm_sweeps/tp.num_runs}/{tp.target_therm} thermalization'.format(t=task,tp=tp))
         
     except FileNotFoundError as e:
         print("Error: jobfile '{}' not found.".format(args.jobfile))

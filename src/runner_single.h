@@ -6,6 +6,8 @@
 #include <functional>
 #include <ostream>
 
+namespace loadl {
+
 int runner_single_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
 
 class runner_single {
@@ -13,7 +15,7 @@ private:
 	jobinfo job_;
 
 	mc_factory mccreator_;
-	std::unique_ptr<abstract_mc> sys;
+	std::unique_ptr<mc> sys;
 
 	int task_id_{-1};
 	std::vector<runner_task> tasks_;
@@ -36,3 +38,4 @@ public:
 	runner_single(jobinfo, mc_factory mccreator);
 	int start();
 };
+}
