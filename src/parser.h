@@ -42,7 +42,7 @@ public:
 	}
 
 	template<typename T>
-	auto get(const std::string &key, T default_val) -> decltype(default_val) const {
+	auto get(const std::string &key, T default_val) const {
 		return content_[key].as<T>(default_val);
 	}
 
