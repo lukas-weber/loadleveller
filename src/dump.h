@@ -121,6 +121,8 @@ public:
 
 template<typename T>
 constexpr hid_t iodump::h5_datatype() {
+	if(typeid(T) == typeid(char))
+		return H5T_NATIVE_CHAR;
 	if(typeid(T) == typeid(signed char))
 		return H5T_NATIVE_SCHAR;
 	if(typeid(T) == typeid(int))
