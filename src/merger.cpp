@@ -13,9 +13,13 @@ namespace loadl {
 static void evaluate_evalables(results &res, const std::vector<evalable> &evalables) {
 	std::vector<observable_result> evalable_results;
 	for(auto &eval : evalables) {
-		evalable_results.emplace_back();
+		observable_result o;
+		eval.jackknife(res, o);
 
-		eval.jackknife(res, evalable_results.back());
+		// don’t include empty results
+		if(o.rebinning_bin_count > 0) {
+			evalable_results.emplace_back(o);
+		}
 	}
 
 	for(auto &eval : evalable_results) {

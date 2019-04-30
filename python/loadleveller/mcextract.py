@@ -42,10 +42,10 @@ class MCArchive:
                     o.error = np.zeros([self.num_tasks, len(value['error'])]) + np.nan
 
                     if o.mean.shape != o.error.shape:
-                        raise 'observable "{}": dimension mismatch between mean and error'.format(obs)
+                        raise Exception('observable "{}": dimension mismatch between mean and error'.format(obs))
                 else:
                     if len(value['mean']) != o.mean.shape[1] or len(value['error']) != o.error.shape[1]:
-                        raise 'observable "{}": dimension mismatch between different tasks'.format(obs)
+                        raise Exception('observable "{}": dimension mismatch between different tasks'.format(obs))
 
                 o.mean[i,:] = value['mean']
                 o.error[i,:] = value['error']
