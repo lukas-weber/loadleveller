@@ -74,4 +74,9 @@ class MCArchive:
         selection.mean = orig.mean[mask,:]
         selection.error = orig.error[mask,:]
 
+        # if it is not a vector observable we can make it simpler for the user
+        if selection.mean.shape[-1] == 1:
+            selection.mean = selection.mean.flatten()
+            selection.error = selection.error.flatten()
+
         return selection
