@@ -3,7 +3,7 @@
 import yaml
 import argparse
 import subprocess
-from loadleveller import clusterutils
+from loadleveller import clusterutils, jobfile
 import glob
 import sys
 import os
@@ -27,17 +27,10 @@ if args.single and args.merge:
     print('Error: cannot merge and run in single mode at the same time.')
     sys.exit(1)
 
-with open(jobfile_name, 'r') as f:
-    jobfile = yaml.safe_load(f)
-
-jobconfig_path = os.path.expandvars(os.path.expanduser(jobfile['jobconfig']))
-with open(jobconfig_path) as f:
-    jobconfig = yaml.safe_load(f)
-
-mcbinary = os.path.expandvars(os.path.expanduser(jobconfig['mc_binary']))
+job = jobfile.JobFile(jobfile_name)
 
 # check age of the different files
-binary_modtime = os.stat(mcbinary).st_mtime
+binary_modtime = os.stat(job.mc_binary).st_mtime
 jobfile_modtime = os.stat(jobfile_name).st_mtime
 
 try:
@@ -47,7 +40,7 @@ try:
     error = False
     label = 'Warning' if args.force else 'Error'
     if binary_modtime > data_modtime:
-        print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, mcbinary))
+        print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, job.mc_binary))
         error = True
     if jobfile_modtime > data_modtime:
         print('{}: jobfile \'{}\' is newer than the checkpoint files.'.format(label, jobfile_name))
@@ -59,10 +52,10 @@ except StopIteration:
     pass
 
 if args.single:
-    cmd = [mcbinary, 'single', jobfile_name]
+    cmd = [job.mc_binary, 'single', jobfile_name]
     print('$ '+' '.join(cmd))
     subprocess.run(cmd)
 elif args.merge:
-    subprocess.run([mcbinary, 'merge', jobfile_name])
+    subprocess.run([job.mc_binary, 'merge', jobfile_name])
 else:
-    clusterutils.run(jobfile_name, jobconfig, [mcbinary, jobfile_name]) 
+    clusterutils.run(jobfile_name, job.jobconfig, [job.mc_binary, jobfile_name]) 

@@ -98,7 +98,8 @@ def ystatus():
             return False
 
         for task, tp in zip(job_prog.tasks, job_prog.progress):
-            print('{t}: {tp.num_runs} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {tp.therm_sweeps/tp.num_runs}/{tp.target_therm} thermalization'.format(t=task,tp=tp))
+            therm_per_run = tp.therm_sweeps/tp.num_runs if tp.num_runs > 0 else 0
+            print('{t}: {tp.num_runs} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {therm_per_run}/{tp.target_therm} thermalization'.format(t=task,tp=tp,therm_per_run=int(round(therm_per_run))))
         
     except FileNotFoundError as e:
         print("Error: jobfile '{}' not found.".format(args.jobfile))
