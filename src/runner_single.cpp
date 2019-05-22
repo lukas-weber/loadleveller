@@ -25,19 +25,16 @@ int runner_single::start() {
 	read();
 	task_id_ = get_new_task_id(task_id_);
 	while(task_id_ != -1 && !time_is_up()) {
-		sys = std::unique_ptr<mc>{mccreator_(job_.jobfile_name, job_.task_names.at(task_id_))};
-		if(sys->_read(job_.rundir(task_id_, 1))) {
-			job_.status << 0 << " : L " << job_.rundir(task_id_, 1) << "\n";
-		} else {
-			job_.status << 0 << " : I " << job_.rundir(task_id_, 1) << "\n";
-			sys->_init();
+		sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile_name, job_.task_names.at(task_id_))};
+		if(!sys_->_read(job_.rundir(task_id_, 1))) {
+			sys_->_init();
 		}
 
 		while(!tasks_[task_id_].is_done() && !time_is_up()) {
-			sys->_do_update();
+			sys_->_do_update();
 			tasks_[task_id_].sweeps++;
-			if(sys->is_thermalized()) {
-				sys->_do_measurement();
+			if(sys_->is_thermalized()) {
+				sys_->_do_measurement();
 			}
 
 			if(is_checkpoint_time()) {
@@ -49,7 +46,6 @@ int runner_single::start() {
 		merge_measurements();
 		task_id_ = get_new_task_id(task_id_);
 	}
-	end_of_run();
 
 	return 0;
 }
@@ -91,40 +87,23 @@ void runner_single::read() {
 
 		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, 0);
 	}
-	report();
-}
-
-void runner_single::end_of_run() {
-	report();
-	job_.status << 0 << " : finalized"
-	            << "\n";
-}
-
-void runner_single::report() {
-	for(size_t i = 0; i < tasks_.size(); i++) {
-		job_.status << fmt::format(
-		    "{:4d} {:3.0f}%\n", i,
-		    tasks_[i].sweeps /
-		        static_cast<double>(tasks_[i].target_sweeps + tasks_[i].target_thermalization) *
-		        100);
-	}
 }
 
 void runner_single::checkpointing() {
 	time_last_checkpoint_ = time(nullptr);
-	sys->_write(job_.rundir(task_id_, 1));
-	job_.status << "0 : C " << job_.rundir(task_id_, 1) << "\n";
+	sys_->_write(job_.rundir(task_id_, 1));
+	job_.log(fmt::format("* checkpointing {}", job_.rundir(task_id_, 1)));
 }
 
 void runner_single::merge_measurements() {
 	std::string unique_filename = job_.taskdir(task_id_);
-	sys->_write_output(unique_filename);
+	sys_->_write_output(unique_filename);
 
 	std::vector<evalable> evalables;
-	sys->register_evalables(evalables);
+	sys_->register_evalables(evalables);
 
+	job_.log(fmt::format("merging {}", job_.taskdir(task_id_)));
 	job_.merge_task(task_id_, evalables);
 
-	job_.status << "0 : M " << job_.taskdir(task_id_) << "\n";
 }
 }

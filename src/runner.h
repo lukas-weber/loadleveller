@@ -22,8 +22,6 @@ struct jobinfo {
 	double checkpoint_time;
 	double walltime;
 
-	std::ostream &status{std::cout};
-
 	jobinfo(const std::string &jobfile_name);
 
 	std::string rundir(int task_id, int run_id) const;
@@ -33,6 +31,7 @@ struct jobinfo {
 	                                               const std::string &file_ending);
 	void merge_task(int task_id, const std::vector<evalable> &evalables);
 	void concatenate_results();
+	void log(const std::string &message);
 };
 
 int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
@@ -55,10 +54,6 @@ private:
 
 	void react();
 	void send_action(int action, int destination);
-
-	void end_of_run();
-	void report();
-
 public:
 	runner_master(jobinfo job);
 	void start();

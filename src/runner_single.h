@@ -15,7 +15,7 @@ private:
 	jobinfo job_;
 
 	mc_factory mccreator_;
-	std::unique_ptr<mc> sys;
+	std::unique_ptr<mc> sys_;
 
 	int task_id_{-1};
 	std::vector<runner_task> tasks_;
@@ -24,9 +24,7 @@ private:
 	double time_last_checkpoint_{0};
 
 	void read();
-	void end_of_run();
 	int get_new_task_id(int old_id);
-	void report();
 
 	bool time_is_up() const;
 	bool is_checkpoint_time() const;

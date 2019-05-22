@@ -5,6 +5,7 @@
 #include <fstream>
 #include <regex>
 #include <sys/stat.h>
+#include <iomanip>
 
 namespace loadl {
 
@@ -146,6 +147,11 @@ void jobinfo::merge_task(int task_id, const std::vector<evalable> &evalables) {
 	results.write_yaml(result_filename, taskdir(task_id), jobfile["tasks"][task_name].get_yaml());
 }
 
+void jobinfo::log(const std::string &message) {
+	std::time_t t = std::time(nullptr);
+	std::cout << std::put_time(std::localtime(&t), "%F %T: ") << message << "\n";
+}
+
 int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
 	MPI_Init(&argc, &argv);
 
@@ -171,13 +177,12 @@ void runner_master::start() {
 	time_start_ = MPI_Wtime();
 	MPI_Comm_size(MPI_COMM_WORLD, &num_active_ranks_);
 
-	job_.status << fmt::format("0 : Starting job '{}'\n", job_.jobfile_name);
+	job_.log(fmt::format("Starting job '{}'", job_.jobfile_name));
 	read();
 
 	while(num_active_ranks_ > 1) {
 		react();
 	}
-	end_of_run();
 }
 
 int runner_master::get_new_task_id(int old_id) {
@@ -201,7 +206,6 @@ void runner_master::react() {
 	MPI_Status stat;
 	MPI_Recv(&node_status, 1, MPI_INT, MPI_ANY_SOURCE, T_STATUS, MPI_COMM_WORLD, &stat);
 	int node = stat.MPI_SOURCE;
-	// job_.status << "0 : Status " << node_status << " from " << node << "\n";
 	if(node_status == S_IDLE) {
 		if(time_is_up()) {
 			send_action(A_EXIT, node);
@@ -228,11 +232,17 @@ void runner_master::react() {
 
 		tasks_[task_id].sweeps += completed_sweeps;
 		if(tasks_[task_id].is_done()) {
-			job_.status << fmt::format("0 : {} done, scheduled_runs: {}\n",
-			                           job_.task_names[task_id], tasks_[task_id].scheduled_runs);
 			tasks_[task_id].scheduled_runs--;
-			send_action((tasks_[task_id].scheduled_runs == 0) ? A_PROCESS_DATA_NEW_JOB : A_NEW_JOB,
-			            node);
+			
+			if(tasks_[task_id].scheduled_runs > 0) {
+				job_.log(fmt::format("{} has enough sweeps. Waiting for {} busy ranks.",
+			                           job_.task_names[task_id], tasks_[task_id].scheduled_runs));
+				send_action(A_NEW_JOB, node);
+			} else {
+				job_.log(fmt::format("{} is done. Merging.", job_.task_names[task_id]));
+				
+				send_action(A_PROCESS_DATA_NEW_JOB, node);
+			}
 		} else if(time_is_up()) {
 			send_action(A_EXIT, node);
 			num_active_ranks_--;
@@ -241,11 +251,9 @@ void runner_master::react() {
 		}
 	}
 
-	// report(); // disable for production!!
 }
 
 void runner_master::send_action(int action, int destination) {
-	// job_.status << "0 : Action "<<action<<" destination " << to << "\n";
 	MPI_Send(&action, 1, MPI_INT, destination, T_ACTION, MPI_COMM_WORLD);
 }
 
@@ -278,20 +286,6 @@ void runner_master::read() {
 
 		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, scheduled_runs);
 	}
-	report();
-}
-
-void runner_master::end_of_run() {
-	report();
-}
-
-void runner_master::report() {
-	job_.status << "0 : Task progress: \n";
-	for(size_t i = 0; i < tasks_.size(); i++) {
-		job_.status << fmt::format("-- {}: {:4d} active runs: {:7d} sweeps of {:7d} target\n",
-		                           job_.task_names[i], tasks_[i].scheduled_runs, tasks_[i].sweeps,
-		                           tasks_[i].target_sweeps + tasks_[i].target_thermalization);
-	}
 }
 
 runner_slave::runner_slave(jobinfo job, mc_factory mccreator)
@@ -306,10 +300,7 @@ void runner_slave::start() {
 	while(action != A_EXIT) {
 		if(action == A_NEW_JOB) {
 			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile_name, job_.task_names[task_id_])};
-			if(sys_->_read(job_.rundir(task_id_, run_id_))) {
-				job_.status << rank_ << " : L " << job_.rundir(task_id_, run_id_) << "\n";
-			} else {
-				job_.status << rank_ << " : I " << job_.rundir(task_id_, run_id_) << "\n";
+			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
 				// checkpointing();
 			}
@@ -335,7 +326,7 @@ void runner_slave::start() {
 		checkpointing();
 		action = what_is_next(S_BUSY);
 	}
-	job_.status << rank_ << " : Done\n";
+	job_.log(fmt::format("rank {} out of work", rank_));
 }
 
 bool runner_slave::is_checkpoint_time() {
@@ -391,7 +382,7 @@ int runner_slave::recv_action() {
 void runner_slave::checkpointing() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
-	job_.status << rank_ << " : C " << job_.rundir(task_id_, run_id_) << "\n";
+	job_.log(fmt::format("* rank {}: checkpointing {}", rank_, job_.rundir(task_id_, run_id_)));
 }
 
 void runner_slave::merge_measurements() {
@@ -401,7 +392,6 @@ void runner_slave::merge_measurements() {
 	std::vector<evalable> evalables;
 	sys_->register_evalables(evalables);
 	job_.merge_task(task_id_, evalables);
-
-	job_.status << rank_ << " : M " << job_.taskdir(task_id_) << "\n";
 }
+
 }
