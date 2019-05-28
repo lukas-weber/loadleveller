@@ -48,9 +48,9 @@ public:
 	bool is_thermalized();
 	measurements measure;
 
-	mc(const parser& p);
+	mc(const parser &p);
 	virtual ~mc() = default;
 };
 
-typedef std::function<mc *(const parser&)> mc_factory;
+typedef std::function<mc *(const parser &)> mc_factory;
 }

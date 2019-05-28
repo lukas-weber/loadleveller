@@ -2,8 +2,7 @@
 
 namespace loadl {
 
-mc::mc(const parser &p)
-    : param{p} {
+mc::mc(const parser &p) : param{p} {
 	therm_ = param.get<int>("thermalization");
 }
 

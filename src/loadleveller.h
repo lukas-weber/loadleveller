@@ -43,9 +43,7 @@ inline int run_mc(int (*starter)(jobinfo job, const mc_factory &, int argc, char
 // run this function from main() in your code.
 template<class mc_implementation>
 int run(int argc, char **argv) {
-	auto mccreator = [&](const &parser p) -> mc * {
-		return new mc_implementation{p};
-	};
+	auto mccreator = [&](const parser &p) -> mc * { return new mc_implementation{p}; };
 
 	if(argc > 1 && std::string(argv[1]) == "merge") {
 		return run_mc(merge_only, mccreator, argc - 1, argv + 1);
