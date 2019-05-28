@@ -48,9 +48,9 @@ public:
 	bool is_thermalized();
 	measurements measure;
 
-	mc(const std::string &jobfile, const std::string &taskname);
+	mc(const parser& p);
 	virtual ~mc() = default;
 };
 
-typedef std::function<mc *(const std::string &, const std::string &)> mc_factory;
+typedef std::function<mc *(const parser&)> mc_factory;
 }

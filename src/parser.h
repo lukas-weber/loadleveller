@@ -47,7 +47,7 @@ public:
 	}
 
 	// is key defined?
-	bool defined(const std::string &key);
+	bool defined(const std::string &key) const;
 
 	parser operator[](const std::string &key);
 	iterator begin();

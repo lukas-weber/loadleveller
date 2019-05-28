@@ -10,7 +10,7 @@ namespace loadl {
 inline int merge_only(jobinfo job, const mc_factory &mccreator, int, char **) {
 	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
 		std::vector<evalable> evalables;
-		std::unique_ptr<mc> sys{mccreator(job.jobname, job.task_names[task_id])};
+		std::unique_ptr<mc> sys{mccreator(job.jobfile[job.task_names[task_id]])};
 		sys->register_evalables(evalables);
 		job.merge_task(task_id, evalables);
 
@@ -43,8 +43,8 @@ inline int run_mc(int (*starter)(jobinfo job, const mc_factory &, int argc, char
 // run this function from main() in your code.
 template<class mc_implementation>
 int run(int argc, char **argv) {
-	auto mccreator = [&](const std::string &jobfile, const std::string &taskname) -> mc * {
-		return new mc_implementation(jobfile, taskname);
+	auto mccreator = [&](const &parser p) -> mc * {
+		return new mc_implementation{p};
 	};
 
 	if(argc > 1 && std::string(argv[1]) == "merge") {

@@ -297,7 +297,7 @@ void runner_slave::start() {
 	int action = what_is_next(S_IDLE);
 	while(action != A_EXIT) {
 		if(action == A_NEW_JOB) {
-			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobname, job_.task_names[task_id_])};
+			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile[job_.task_names[task_id_]])};
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
 				// checkpointing();

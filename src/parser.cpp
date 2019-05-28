@@ -54,7 +54,7 @@ parser::iterator parser::end() {
 	return iterator{filename_, content_.end()};
 }
 
-bool parser::defined(const std::string &key) {
+bool parser::defined(const std::string &key) const {
 	if(!content_.IsMap()) {
 		return false;
 	}

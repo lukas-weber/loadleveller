@@ -2,8 +2,8 @@
 
 namespace loadl {
 
-mc::mc(const std::string &jobfile, const std::string &taskname)
-    : param{parser{jobfile}["tasks"][taskname]} {
+mc::mc(const parser &p)
+    : param{p} {
 	therm_ = param.get<int>("thermalization");
 }
 

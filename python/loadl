@@ -50,15 +50,15 @@ def run():
 
             label = 'Warning' if args_run.force else 'Error'
             if binary_modtime > data_modtime:
-                print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, job.mc_binary))
-                if not args.force:
+                print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, job.jobconfig['mc_binary']))
+                if not args_run.force:
                     print('Use \'--restart\' to start from a blank run or use \'--force\' to proceed if you are sure\nthe changes you made are compatible.')
                     sys.exit(1)
         except StopIteration:
             pass
 
     if args_run.single:
-        cmd = [job.mc_binary, 'single', jobname]
+        cmd = [job.jobconfig['mc_binary'], 'single', job.jobname]
         print('$ '+' '.join(cmd))
         subprocess.run(cmd)
     else:
@@ -66,10 +66,15 @@ def run():
 
 def delete():
     import shutil
-    print('$ rm -r {}.data'.format(job.jobname))
-    shutil.rmtree('{}.data'.format(job.jobname))
-    print('$ rm -r {}.results.yml'.format(job.jobname))
-    shutil.rmtree('{}.results.yml'.format(job.jobname))
+    datadir = '{}.data'.format(job.jobname)
+    results_file = '{}.results.yml'.format(job.jobname)
+
+    if os.path.exists(datadir):
+        print('$ rm -r {}'.format(datadir))
+        shutil.rmtree(datadir)
+    if os.path.exists(results_file):
+        print('$ rm {}'.format(results_file))
+        os.unlink(results_file)
 
 def merge():
     cmd = [job.jobconfig['mc_binary'], 'merge', job.jobname]
@@ -78,7 +83,7 @@ def merge():
 
 def status():
     from loadleveller import jobstatus
-    rc = jobstatus.print_status(job, sys.args[3:])
+    rc = jobstatus.print_status(job, sys.argv[3:])
     sys.exit(rc)
 
 

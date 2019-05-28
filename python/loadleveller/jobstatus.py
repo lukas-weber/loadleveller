@@ -70,7 +70,7 @@ def print_status(jobfile, args):
     parser.add_argument('--need-restart', action='store_true', help='Return 1 if the job is not completed yet and 0 otherwise.')
     parser.add_argument('--need-merge', action='store_true', help='Return 1 if the merged results are older than the raw data and 0 otherwise.')
     
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     try:
         job_prog = JobProgress(jobfile)
