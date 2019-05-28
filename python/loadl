@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+
+import sys
+import argparse
+import subprocess
+from loadleveller import jobfile
+import os
+
+parser = argparse.ArgumentParser(description='Helper script for running and managing loadleveller Monte Carlo jobs.', usage='''loadl <command> <jobfile> [<args>]
+
+<jobfile> is a script file containing the parameters for the job of interest.
+
+Possible commands and their shorthands are
+    delete, d  delete all data related to a job
+    merge, m   merges results of an unfinished job into an output file
+    run, r     runs the job
+    status, s  print job completion information''')
+    
+parser.add_argument('command')
+parser.add_argument('jobfile')
+
+args = parser.parse_args(sys.argv[1:3])
+
+jobdir = os.path.dirname(args.jobfile)
+jobfile_name = os.path.basename(args.jobfile)
+job = jobfile.JobFile(jobfile_name)
+
+if jobdir != '':
+    os.chdir(jobdir)
+
+def run():
+    import glob
+    from loadleveller import clusterutils
+    
+    parser = argparse.ArgumentParser(description='run a loadleveller job on a cluster or locally')
+
+    parser.add_argument('-s','--single', action='store_true', help='Run in the single core scheduler mode')
+    parser.add_argument('-f', '--force', action='store_true', help='Ignore warnings about possible job corruption')
+    parser.add_argument('-r', '--restart', action='store_true', help='Delete all existing job data before starting.')
+    args_run = parser.parse_args(sys.argv[3:])
+
+    if args_run.restart:
+        delete()
+    else:
+        # check age of the different files
+        binary_modtime = os.stat(job.jobconfig['mc_binary']).st_mtime
+        try:
+            f = next(glob.iglob('{}.data/*/*.h5'.format(job.jobname))) # only check one of the output files for speed
+            data_modtime = os.stat(f).st_mtime
+
+            label = 'Warning' if args_run.force else 'Error'
+            if binary_modtime > data_modtime:
+                print('{}: binary \'{}\' is newer than the checkpoint files.'.format(label, job.mc_binary))
+                if not args.force:
+                    print('Use \'--restart\' to start from a blank run or use \'--force\' to proceed if you are sure\nthe changes you made are compatible.')
+                    sys.exit(1)
+        except StopIteration:
+            pass
+
+    if args_run.single:
+        cmd = [job.mc_binary, 'single', jobname]
+        print('$ '+' '.join(cmd))
+        subprocess.run(cmd)
+    else:
+        clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], job.jobname])
+
+def delete():
+    import shutil
+    print('$ rm -r {}.data'.format(job.jobname))
+    shutil.rmtree('{}.data'.format(job.jobname))
+    print('$ rm -r {}.results.yml'.format(job.jobname))
+    shutil.rmtree('{}.results.yml'.format(job.jobname))
+
+def merge():
+    cmd = [job.jobconfig['mc_binary'], 'merge', job.jobname]
+    print('$ '+' '.join(cmd))
+    subprocess.run(cmd)
+
+def status():
+    from loadleveller import jobstatus
+    rc = jobstatus.print_status(job, sys.args[3:])
+    sys.exit(rc)
+
+
+
+
+
+if args.command == 'delete' or args.command == 'd':
+    delete()
+elif args.command == 'merge' or args.command == 'm':
+    merge()
+elif args.command == 'run' or args.command == 'r':
+    run()
+elif args.command == 'status' or args.command == 's':
+    status()
+else:
+    print('Unknown command \'{}\'.'.format(args.command))
+    parser.print_help()
+    sys.exit(1)
+

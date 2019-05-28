@@ -15,25 +15,22 @@ class TaskProgress:
 class JobProgress:
     def __init__(self, jobfile):
         self.jobfile = jobfile
-        with open(jobfile, 'r') as f:
-            jobfile = yaml.safe_load(f)
-
-        self.tasks = jobfile['tasks'].keys()
+        self.tasks = jobfile.tasks.keys()
         self.restart = False
 
         self.progress = []
         for task in self.tasks:
             tp = TaskProgress()
             
-            tp.target_sweeps = jobfile['tasks'][task]['sweeps']
-            tp.target_therm = jobfile['tasks'][task]['thermalization']
+            tp.target_sweeps = jobfile.tasks[task]['sweeps']
+            tp.target_therm = jobfile.tasks[task]['thermalization']
 
             tp.sweeps = 0
             tp.therm_sweeps = 0
 
             tp.num_runs = 0
             
-            for runfile in glob.iglob('{}.data/{}/run*.dump.h5'.format(self.jobfile,task)):
+            for runfile in glob.iglob('{}.data/{}/run*.dump.h5'.format(self.jobfile.jobname,task)):
                 tp.num_runs += 1
 
                 with h5py.File(runfile, 'r') as f:
@@ -52,32 +49,31 @@ class JobProgress:
     def needs_merge(self):
         result_mtime = 0
         try:
-            result_mtime = os.path.getmtime(self.jobfile+'.results.yml')
+            result_mtime = os.path.getmtime(self.jobfile.jobname+'.results.yml')
         except FileNotFoundError:
             return True
 
         for task in self.tasks:
-            for measfile in glob.iglob('{}.data/{}/run*.meas.h5'.format(self.jobfile,task)):
+            for measfile in glob.iglob('{}.data/{}/run*.meas.h5'.format(self.jobfile.jobname, task)):
                 if os.path.getmtime(measfile) > result_mtime:
                     return True
 
         return False
         
-def ystatus():
-    """ This function is exported as the ystatus command """
+def print_status(jobfile, args):
+    """ This function is exported as the loadl status command """
     
     import argparse
     import sys
 
     parser = argparse.ArgumentParser(description='Prints the status and progress of a loadleveller Monte Carlo job.')
-    parser.add_argument('jobfile', metavar='JOBFILE', help='Configuration file containing all the job information.')
     parser.add_argument('--need-restart', action='store_true', help='Return 1 if the job is not completed yet and 0 otherwise.')
     parser.add_argument('--need-merge', action='store_true', help='Return 1 if the merged results are older than the raw data and 0 otherwise.')
     
     args = parser.parse_args()
 
     try:
-        job_prog = JobProgress(args.jobfile)
+        job_prog = JobProgress(jobfile)
 
         if args.need_restart and args.need_merge:
             print("Error: only one option of '--need-restart' and '--need-merge' can appear at once", file=sys.stderr)

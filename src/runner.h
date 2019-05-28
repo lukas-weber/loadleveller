@@ -14,8 +14,8 @@
 namespace loadl {
 
 struct jobinfo {
-	std::string jobfile_name;
 	parser jobfile;
+	std::string jobname;
 
 	std::vector<std::string> task_names;
 

@@ -3,9 +3,9 @@
 #include <dirent.h>
 #include <fmt/format.h>
 #include <fstream>
+#include <iomanip>
 #include <regex>
 #include <sys/stat.h>
-#include <iomanip>
 
 namespace loadl {
 
@@ -60,21 +60,22 @@ static double parse_duration(std::string str) {
 }
 
 std::string jobinfo::taskdir(int task_id) const {
-	return fmt::format("{}.data/{}", jobfile_name, task_names.at(task_id));
+	return fmt::format("{}.data/{}", jobname, task_names.at(task_id));
 }
 
 std::string jobinfo::rundir(int task_id, int run_id) const {
 	return fmt::format("{}/run{:04d}", taskdir(task_id), run_id);
 }
 
-jobinfo::jobinfo(const std::string &jobfile_name)
-    : jobfile_name{jobfile_name}, jobfile{jobfile_name} {
+jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
 	for(auto node : jobfile["tasks"]) {
 		std::string task_name = node.first;
 		task_names.push_back(task_name);
 	}
 
-	std::string datadir = fmt::format("{}.data", jobfile_name);
+	jobname = jobfile.get<std::string>("jobname");
+
+	std::string datadir = fmt::format("{}.data", jobname);
 	int rc = mkdir(datadir.c_str(), 0755);
 	if(rc != 0 && errno != EEXIST) {
 		throw std::runtime_error{
@@ -91,10 +92,7 @@ jobinfo::jobinfo(const std::string &jobfile_name)
 		}
 	}
 
-	// The jobconfig file contains information about the launch options, walltime, number of cores
-	// etc... not sure if this is really the best way to solve the issue.
-	auto jobconfig_path = jobfile.get<std::string>("jobconfig");
-	parser jobconfig{jobconfig_path};
+	parser jobconfig{jobfile["jobconfig"]};
 
 	walltime = parse_duration(jobconfig.get<std::string>("mc_walltime"));
 	checkpoint_time = parse_duration(jobconfig.get<std::string>("mc_checkpoint_time"));
@@ -125,7 +123,7 @@ std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
 }
 
 void jobinfo::concatenate_results() {
-	std::ofstream cat_results{fmt::format("{}.results.yml", jobfile_name)};
+	std::ofstream cat_results{fmt::format("{}.results.yml", jobname)};
 	for(size_t i = 0; i < task_names.size(); i++) {
 		std::ifstream res_file{taskdir(i) + "/results.yml"};
 		res_file.seekg(0, res_file.end);
@@ -177,7 +175,7 @@ void runner_master::start() {
 	time_start_ = MPI_Wtime();
 	MPI_Comm_size(MPI_COMM_WORLD, &num_active_ranks_);
 
-	job_.log(fmt::format("Starting job '{}'", job_.jobfile_name));
+	job_.log(fmt::format("Starting job '{}'", job_.jobname));
 	read();
 
 	while(num_active_ranks_ > 1) {
@@ -233,14 +231,14 @@ void runner_master::react() {
 		tasks_[task_id].sweeps += completed_sweeps;
 		if(tasks_[task_id].is_done()) {
 			tasks_[task_id].scheduled_runs--;
-			
+
 			if(tasks_[task_id].scheduled_runs > 0) {
 				job_.log(fmt::format("{} has enough sweeps. Waiting for {} busy ranks.",
-			                           job_.task_names[task_id], tasks_[task_id].scheduled_runs));
+				                     job_.task_names[task_id], tasks_[task_id].scheduled_runs));
 				send_action(A_NEW_JOB, node);
 			} else {
 				job_.log(fmt::format("{} is done. Merging.", job_.task_names[task_id]));
-				
+
 				send_action(A_PROCESS_DATA_NEW_JOB, node);
 			}
 		} else if(time_is_up()) {
@@ -299,7 +297,7 @@ void runner_slave::start() {
 	int action = what_is_next(S_IDLE);
 	while(action != A_EXIT) {
 		if(action == A_NEW_JOB) {
-			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile_name, job_.task_names[task_id_])};
+			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobname, job_.task_names[task_id_])};
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
 				// checkpointing();
@@ -393,5 +391,4 @@ void runner_slave::merge_measurements() {
 	sys_->register_evalables(evalables);
 	job_.merge_task(task_id_, evalables);
 }
-
 }
