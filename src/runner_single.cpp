@@ -25,7 +25,7 @@ int runner_single::start() {
 	read();
 	task_id_ = get_new_task_id(task_id_);
 	while(task_id_ != -1 && !time_is_up()) {
-		sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile[job_.task_names.at(task_id_)])};
+		sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names.at(task_id_)])};
 		if(!sys_->_read(job_.rundir(task_id_, 1))) {
 			sys_->_init();
 		}

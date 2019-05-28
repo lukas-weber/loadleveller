@@ -10,7 +10,7 @@ namespace loadl {
 inline int merge_only(jobinfo job, const mc_factory &mccreator, int, char **) {
 	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
 		std::vector<evalable> evalables;
-		std::unique_ptr<mc> sys{mccreator(job.jobfile[job.task_names[task_id]])};
+		std::unique_ptr<mc> sys{mccreator(job.jobfile["tasks"][job.task_names[task_id]])};
 		sys->register_evalables(evalables);
 		job.merge_task(task_id, evalables);
 
