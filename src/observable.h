@@ -10,8 +10,7 @@ namespace loadl {
 
 class observable {
 public:
-	observable(std::string name, size_t bin_length = 1, size_t vector_length = 1,
-	           size_t initial_length = 1000);
+	observable(std::string name, size_t bin_length = 1, size_t vector_length = 1);
 
 	const std::string &name() const;
 
@@ -29,6 +28,8 @@ public:
 	void checkpoint_read(const iodump::group &dump_file);
 
 private:
+	static const size_t initial_bin_length = 1000;
+
 	std::string name_;
 	size_t bin_length_;
 	size_t vector_length_;

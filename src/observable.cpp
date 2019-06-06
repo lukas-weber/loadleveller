@@ -3,11 +3,9 @@
 
 namespace loadl {
 
-observable::observable(std::string name, size_t bin_length, size_t vector_length,
-                       size_t initial_length)
-    : name_{std::move(name)}, bin_length_{bin_length}, vector_length_{vector_length},
-      initial_length_{initial_length}, current_bin_{0}, current_bin_filling_{0} {
-	samples_.reserve(vector_length_ * initial_length_);
+observable::observable(std::string name, size_t bin_length, size_t vector_length)
+    : name_{std::move(name)}, bin_length_{bin_length}, vector_length_{vector_length}, current_bin_{0}, current_bin_filling_{0} {
+	samples_.reserve(vector_length_ * initial_bin_length);
 }
 
 const std::string &observable::name() const {
@@ -21,6 +19,9 @@ void observable::checkpoint_write(const iodump::group &dump_file) const {
 	// So if current_bin_ is not 0 here, we have made a mistake.
 	assert(current_bin_ == 0);
 
+	// Another sanity check: if there is a partial bin, the samples_ array should contain it.
+	assert(current_bin_filling_ > 0 && samples_.size() == 1);
+
 	dump_file.write("name", name_);
 	dump_file.write("vector_length", vector_length_);
 	dump_file.write("bin_length", bin_length_);
@@ -32,8 +33,8 @@ void observable::checkpoint_write(const iodump::group &dump_file) const {
 void observable::measurement_write(const iodump::group &meas_file) {
 	std::vector<double> current_bin_value;
 
-	// if there is not even one bin…
-	if(samples_.size() > vector_length_) {
+	// if there is at least one bin…
+	if(samples_.size() >= vector_length_) {
 		current_bin_value.assign(samples_.end() - vector_length_, samples_.end());
 		samples_.resize(current_bin_ * vector_length_);
 	}

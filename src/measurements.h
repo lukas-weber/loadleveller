@@ -13,8 +13,7 @@ class measurements {
 public:
 	static bool observable_name_is_legal(const std::string &name);
 
-	void add_observable(const std::string &name, size_t bin_size = 1, size_t vector_length = 1,
-	                    size_t initial_length = 1000);
+	void add_observable(const std::string &name, size_t bin_size = 1, size_t vector_length = 1);
 
 	// use this to add a measurement sample to an observable.
 	template<class T>

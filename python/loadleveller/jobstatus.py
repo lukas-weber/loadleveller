@@ -15,7 +15,8 @@ class TaskProgress:
 class JobProgress:
     def __init__(self, jobfile):
         self.jobfile = jobfile
-        self.tasks = jobfile.tasks.keys()
+        self.tasks = list(jobfile.tasks.keys())
+        self.tasks.sort()
         self.restart = False
 
         self.progress = []
@@ -34,11 +35,11 @@ class JobProgress:
                 tp.num_runs += 1
 
                 with h5py.File(runfile, 'r') as f:
-                    tp.sweeps += f['/sweeps'][0]
                     tp.therm_sweeps += f['/thermalization_sweeps'][0]
+                    tp.sweeps += f['/sweeps'][0]-f['/thermalization_sweeps'][0]
 
 
-            if tp.sweeps < tp.target_sweeps + tp.target_therm:
+            if tp.sweeps < tp.target_sweeps:
                 self.restart = True
 
             self.progress.append(tp)
@@ -95,7 +96,7 @@ def print_status(jobfile, args):
 
         for task, tp in zip(job_prog.tasks, job_prog.progress):
             therm_per_run = tp.therm_sweeps/tp.num_runs if tp.num_runs > 0 else 0
-            print('{t}: {tp.num_runs} runs, {tp.sweeps}/{tp.target_sweeps} sweeps, {therm_per_run}/{tp.target_therm} thermalization'.format(t=task,tp=tp,therm_per_run=int(round(therm_per_run))))
+            print('{t}: {tp.num_runs} runs, {tp.sweeps:8d}/{tp.target_sweeps} sweeps, {therm_per_run:8d}/{tp.target_therm} thermalization'.format(t=task,tp=tp,therm_per_run=int(round(therm_per_run))))
         
     except FileNotFoundError as e:
         print("Error: jobfile '{}' not found.".format(args.jobfile))

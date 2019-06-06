@@ -72,6 +72,7 @@ jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
 		std::string task_name = node.first;
 		task_names.push_back(task_name);
 	}
+	std::sort(task_names.begin(), task_names.end());
 
 	jobname = jobfile.get<std::string>("jobname");
 
@@ -297,7 +298,8 @@ void runner_slave::start() {
 	int action = what_is_next(S_IDLE);
 	while(action != A_EXIT) {
 		if(action == A_NEW_JOB) {
-			sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
+			sys_ =
+			    std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
 				// checkpointing();
@@ -324,7 +326,11 @@ void runner_slave::start() {
 		checkpointing();
 		action = what_is_next(S_BUSY);
 	}
-	job_.log(fmt::format("rank {} out of work", rank_));
+	if(time_is_up()) {
+		job_.log(fmt::format("rank {} exits: time limit reached", rank_));
+	} else {
+		job_.log(fmt::format("rank {} exits: out of work", rank_));
+	}
 }
 
 bool runner_slave::is_checkpoint_time() {

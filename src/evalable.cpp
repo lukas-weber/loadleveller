@@ -30,7 +30,7 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 		if(res.observables.count(obs_name) <= 0) {
 			std::cerr << fmt::format(
 			    "Warning: evalable '{}': used observable '{}' not found in Monte Carlo results. "
-			    "Skipping...",
+			    "Skipping...\n",
 			    name_, obs_name);
 			return;
 		}

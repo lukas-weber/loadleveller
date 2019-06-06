@@ -13,14 +13,13 @@ bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	return true;
 }
 
-void measurements::add_observable(const std::string &name, size_t bin_size, size_t vector_length,
-                                  size_t initial_length) {
+void measurements::add_observable(const std::string &name, size_t bin_size, size_t vector_length) {
 	if(!observable_name_is_legal(name)) {
 		throw std::runtime_error(
 		    fmt::format("Illegal observable name '{}': names must not contain / or .", name));
 	}
 
-	observables_.emplace(name, observable{name, bin_size, vector_length, initial_length});
+	observables_.emplace(name, observable{name, bin_size, vector_length});
 }
 
 void measurements::checkpoint_write(const iodump::group &dump_file) {

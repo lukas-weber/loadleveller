@@ -58,11 +58,11 @@ def run():
             pass
 
     if args_run.single:
-        cmd = [job.jobconfig['mc_binary'], 'single', job.jobname]
+        cmd = [job.jobconfig['mc_binary'], 'single', jobfile_name]
         print('$ '+' '.join(cmd))
         subprocess.run(cmd)
     else:
-        clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], job.jobname])
+        clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], jobfile_name])
 
 def delete():
     import shutil
@@ -77,7 +77,7 @@ def delete():
         os.unlink(results_file)
 
 def merge():
-    cmd = [job.jobconfig['mc_binary'], 'merge', job.jobname]
+    cmd = [job.jobconfig['mc_binary'], 'merge', jobfile_name]
     print('$ '+' '.join(cmd))
     subprocess.run(cmd)
 
@@ -85,9 +85,6 @@ def status():
     from loadleveller import jobstatus
     rc = jobstatus.print_status(job, sys.argv[3:])
     sys.exit(rc)
-
-
-
 
 
 if args.command == 'delete' or args.command == 'd':

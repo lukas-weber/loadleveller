@@ -9,7 +9,7 @@ batchscript_claix18 = '''#!/usr/bin/env zsh
 #SBATCH --job-name={jobname}
 #SBATCH --time={walltime}
 #SBATCH --mem-per-cpu={mem_per_cpu}
-##SBATCH -P {project} #TODO figure out how projects work
+##SBATCH --account={project} #TODO
 #SBATCH --ntasks={num_cores}
 #SBATCH --export=NONE
 #SBATCH --output=output.%x
@@ -71,7 +71,9 @@ def run(jobname, jobconfig, cmd):
         os.system(mpicmd)
     else:
         with tempfile.NamedTemporaryFile(mode='w',delete=False) as f:
-            f.write(generate_batchscript(batchscript_templates[sysinfo], cmd, jobname, jobconfig))
+            batchscript = generate_batchscript(batchscript_templates[sysinfo], cmd, jobname, jobconfig)
+            print(batchscript)
+            f.write(batchscript)
             bscriptname = f.name
         mpicmd = batch_commands[sysinfo].format(batchscript=bscriptname)
         print('$ '+mpicmd)
