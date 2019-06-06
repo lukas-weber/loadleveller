@@ -10,7 +10,7 @@ namespace loadl {
 
 class observable {
 public:
-	observable(std::string name, size_t bin_length = 1, size_t vector_length = 1);
+	observable(std::string name, size_t bin_length, size_t vector_length);
 
 	const std::string &name() const;
 
@@ -31,11 +31,10 @@ private:
 	static const size_t initial_bin_length = 1000;
 
 	std::string name_;
-	size_t bin_length_;
-	size_t vector_length_;
-	size_t initial_length_;
-	size_t current_bin_;
-	size_t current_bin_filling_;
+	size_t bin_length_{};
+	size_t vector_length_{};
+	size_t current_bin_{};
+	size_t current_bin_filling_{};
 
 	std::vector<double> samples_;
 };
@@ -48,13 +47,9 @@ void observable::add(T val) {
 
 template<class T>
 void observable::add(const std::vector<T> &val) {
-	// handle wrong vector length gracefully on first add
-	if(current_bin_ == 0 && current_bin_filling_ == 0) {
-		vector_length_ = val.size();
-		samples_.resize((current_bin_ + 1) * vector_length_, 0.);
-	} else if(vector_length_ != val.size()) {
+	if(vector_length_ != val.size()) {
 		throw std::runtime_error{fmt::format(
-		    "observable::add: added vector has different size ({}) than what was added before ({})",
+		    "observable::add: added vector has unexpected size ({}). Observable was initialized with vector length ({})",
 		    val.size(), vector_length_)};
 	}
 
@@ -63,9 +58,11 @@ void observable::add(const std::vector<T> &val) {
 	current_bin_filling_++;
 
 	if(current_bin_filling_ == bin_length_) { // need to start a new bin next time
-		if(bin_length_ > 1)
-			for(size_t j = 0; j < vector_length_; ++j)
+		if(bin_length_ > 1) {
+			for(size_t j = 0; j < vector_length_; ++j) {
 				samples_[current_bin_ * vector_length_ + j] /= bin_length_;
+			}
+		}
 		current_bin_++;
 		samples_.resize((current_bin_ + 1) * vector_length_);
 		current_bin_filling_ = 0;

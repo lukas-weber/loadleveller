@@ -6,9 +6,9 @@ import subprocess
 from loadleveller import jobfile
 import os
 
-parser = argparse.ArgumentParser(description='Helper script for running and managing loadleveller Monte Carlo jobs.', usage='''loadl <command> <jobfile> [<args>]
+parser = argparse.ArgumentParser(description='Helper script for running and managing loadleveller Monte Carlo jobs.', usage='''loadl <command> <jobscript> [<args>]
 
-<jobfile> is a script file containing the parameters for the job of interest.
+<jobscript> is an executable that prints the job parameter YAML-file to stdout. It is convenient to use the taskmaker python module for this purpose.
 
 Possible commands and their shorthands are
     delete, d  delete all data related to a job
@@ -19,14 +19,19 @@ Possible commands and their shorthands are
 parser.add_argument('command')
 parser.add_argument('jobfile')
 
-args = parser.parse_args(sys.argv[1:3])
+args, leftover_args = parser.parse_known_args()
 
+# all paths are relative to the jobscript
 jobdir = os.path.dirname(args.jobfile)
-jobfile_name = os.path.basename(args.jobfile)
-job = jobfile.JobFile(jobfile_name)
-
 if jobdir != '':
+    print('$ cd '+jobdir)
     os.chdir(jobdir)
+
+try:
+    job = jobfile.JobFile('./'+os.path.basename(args.jobfile))
+except jobfile.JobFileGenError as e:
+    print('Error: {}'.format(e))
+    sys.exit(1)
 
 def run():
     import glob
@@ -34,10 +39,10 @@ def run():
     
     parser = argparse.ArgumentParser(description='run a loadleveller job on a cluster or locally')
 
-    parser.add_argument('-s','--single', action='store_true', help='Run in the single core scheduler mode')
-    parser.add_argument('-f', '--force', action='store_true', help='Ignore warnings about possible job corruption')
-    parser.add_argument('-r', '--restart', action='store_true', help='Delete all existing job data before starting.')
-    args_run = parser.parse_args(sys.argv[3:])
+    parser.add_argument('-s','--single', action='store_true', help='run in the single core scheduler mode')
+    parser.add_argument('-f', '--force', action='store_true', help='ignore warnings about possible job corruption')
+    parser.add_argument('-r', '--restart', action='store_true', help='delete all existing job data before starting.')
+    args_run = parser.parse_args(leftover_args)
 
     if args_run.restart:
         delete()
@@ -57,12 +62,13 @@ def run():
         except StopIteration:
             pass
 
+    job_input_filename = job.write_job_input_file()
     if args_run.single:
-        cmd = [job.jobconfig['mc_binary'], 'single', jobfile_name]
+        cmd = [job.jobconfig['mc_binary'], 'single', job_input_filename]
         print('$ '+' '.join(cmd))
         subprocess.run(cmd)
     else:
-        clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], jobfile_name])
+        clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], job_input_filename])
 
 def delete():
     import shutil
@@ -77,13 +83,14 @@ def delete():
         os.unlink(results_file)
 
 def merge():
-    cmd = [job.jobconfig['mc_binary'], 'merge', jobfile_name]
+    job_input_filename = job.write_job_input_file()
+    cmd = [job.jobconfig['mc_binary'], 'merge', job_input_filename]
     print('$ '+' '.join(cmd))
     subprocess.run(cmd)
 
 def status():
     from loadleveller import jobstatus
-    rc = jobstatus.print_status(job, sys.argv[3:])
+    rc = jobstatus.print_status(job, leftover_args)
     sys.exit(rc)
 
 
