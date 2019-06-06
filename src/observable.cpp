@@ -4,7 +4,8 @@
 namespace loadl {
 
 observable::observable(std::string name, size_t bin_length, size_t vector_length)
-    : name_{std::move(name)}, bin_length_{bin_length}, vector_length_{vector_length}, current_bin_{0}, current_bin_filling_{0} {
+    : name_{std::move(name)}, bin_length_{bin_length}, vector_length_{vector_length},
+      current_bin_{0}, current_bin_filling_{0} {
 	samples_.reserve(vector_length_ * initial_bin_length);
 }
 
@@ -34,7 +35,7 @@ void observable::measurement_write(const iodump::group &meas_file) {
 	std::vector<double> current_bin_value;
 
 	// if there is at least one bin…
-	if(samples_.size() >= vector_length_) {
+	if(vector_length_ > 0 && samples_.size() >= vector_length_) {
 		current_bin_value.assign(samples_.end() - vector_length_, samples_.end());
 		samples_.resize(current_bin_ * vector_length_);
 	}
