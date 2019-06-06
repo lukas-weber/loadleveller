@@ -48,9 +48,10 @@ void observable::add(T val) {
 template<class T>
 void observable::add(const std::vector<T> &val) {
 	if(vector_length_ != val.size()) {
-		throw std::runtime_error{fmt::format(
-		    "observable::add: added vector has unexpected size ({}). Observable was initialized with vector length ({})",
-		    val.size(), vector_length_)};
+		throw std::runtime_error{
+		    fmt::format("observable::add: added vector has unexpected size ({}). Observable was "
+		                "initialized with vector length ({})",
+		                val.size(), vector_length_)};
 	}
 
 	for(size_t j = 0; j < vector_length_; ++j)

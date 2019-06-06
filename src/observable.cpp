@@ -33,7 +33,7 @@ void observable::checkpoint_write(const iodump::group &dump_file) const {
 void observable::measurement_write(const iodump::group &meas_file) {
 	if(samples_.size() > vector_length_) {
 		std::vector<double> current_bin_value(samples_.end() - vector_length_, samples_.end());
-		
+
 		samples_.resize(current_bin_ * vector_length_);
 		meas_file.insert_back("samples", samples_);
 		samples_ = current_bin_value;

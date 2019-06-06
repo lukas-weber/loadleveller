@@ -83,16 +83,16 @@ def print_status(jobfile, args):
         if args.need_restart:
             if job_prog.needs_restart():
                 print('Needs restart!')
-                return True
+                return 0
             print('Job completed.')
-            return False
+            return 1
 
         if args.need_merge:
             if job_prog.needs_merge():
                 print('Needs merge!')
-                return True
+                return 0
             print('Job already merged.')
-            return False
+            return 1
 
         for task, tp in zip(job_prog.tasks, job_prog.progress):
             therm_per_run = tp.therm_sweeps/tp.num_runs if tp.num_runs > 0 else 0

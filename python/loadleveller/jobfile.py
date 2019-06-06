@@ -1,6 +1,7 @@
 import yaml
 import os
 import subprocess
+import errno
 
 '''Helpers for handling loadleveller jobfiles/scripts. For lack of a better idea, the job description files of loadleveller are actually executables that output a more verbose yaml parameter file to stdout. Use the taskmaker module to write the input scripts.'''
 
