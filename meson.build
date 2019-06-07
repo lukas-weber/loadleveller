@@ -19,3 +19,4 @@ should_install = not meson.is_subproject()
 loadleveller_deps = [ fmt_dep, yamlcpp_dep, mpi_dep, hdf5_lib ]
 
 subdir('src')
+subdir('test')

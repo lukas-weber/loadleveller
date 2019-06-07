@@ -26,7 +26,7 @@ enum {
 
 // parses the duration '[[hours:]minutes:]seconds' into seconds
 // replace as soon as there is an alternative
-static double parse_duration(std::string str) {
+static int parse_duration(const std::string &str) {
 	size_t idx;
 
 	try {
@@ -46,7 +46,7 @@ static double parse_duration(std::string str) {
 					throw std::runtime_error{"minutes"};
 				}
 
-				return 24 * 60 * i1 + 60 * i2 + i3;
+				return 60 * 60 * i1 + 60 * i2 + i3;
 			} else {
 				throw std::runtime_error{"hours"};
 			}
