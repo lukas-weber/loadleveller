@@ -1,4 +1,5 @@
 #include "mc.h"
+#include <sys/stat.h>
 
 namespace loadl {
 
@@ -78,25 +79,31 @@ void mc::_write(const std::string &dir) {
 	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
 }
 
+static bool file_exists(const std::string &path) {
+	struct stat buf;
+	return stat(path.c_str(), &buf) == 0;
+
+}
+
 bool mc::_read(const std::string &dir) {
-	try {
-		struct timespec tstart, tend;
-		clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
-
-		iodump dump_file = iodump::open_readonly(dir + ".dump.h5");
-		auto g = dump_file.get_root();
-		measure.checkpoint_read(g.open_group("measurements"));
-		rng->checkpoint_read(g.open_group("random_number_generator"));
-		checkpoint_read(g.open_group("simulation"));
-
-		g.read("sweeps", sweep_);
-
-		clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
-		measure.add("_ll_checkpoint_read_time",
-		            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
-	} catch(const iodump_exception &e) {
+	if(!file_exists(dir)) {
 		return false;
 	}
+
+	struct timespec tstart, tend;
+	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
+
+	iodump dump_file = iodump::open_readonly(dir + ".dump.h5");
+	auto g = dump_file.get_root();
+	measure.checkpoint_read(g.open_group("measurements"));
+	rng->checkpoint_read(g.open_group("random_number_generator"));
+	checkpoint_read(g.open_group("simulation"));
+
+	g.read("sweeps", sweep_);
+
+	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
+	measure.add("_ll_checkpoint_read_time",
+	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
 	return true;
 }
 
