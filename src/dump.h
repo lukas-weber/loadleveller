@@ -240,6 +240,10 @@ void iodump::group::read(const std::string &name, std::vector<T> &data) const {
 		throw iodump_exception{"H5Sget_simple_extent_npoints"};
 	data.resize(size);
 
+	if(size == 0) { // handle empty dataset correctly
+		return;
+	}
+
 	herr_t status =
 	    H5Dread(*dataset, h5_datatype<T>(), H5S_ALL, H5P_DEFAULT, H5P_DEFAULT, data.data());
 	if(status < 0)

@@ -26,8 +26,8 @@ static herr_t H5Ewalk_cb(unsigned int n, const H5E_error2_t *err_desc, void *cli
 	char *maj_str = H5Eget_major(err_desc->maj_num);
 	s << fmt::format("#{}: {}:{} in {}(): {}\n", n, err_desc->file_name, err_desc->line,
 	                 err_desc->func_name, err_desc->desc);
-	s << fmt::format("    {}: {}\n", static_cast<int>(err_desc->maj_num), maj_str);
-	s << fmt::format("    {}: {}\n\n", static_cast<int>(err_desc->min_num), min_str);
+	s << fmt::format("    {}: {}\n", static_cast<int32_t>(err_desc->maj_num), maj_str);
+	s << fmt::format("    {}: {}\n\n", static_cast<int32_t>(err_desc->min_num), min_str);
 
 	free(min_str);
 	free(maj_str);
