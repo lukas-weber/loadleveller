@@ -1,7 +1,7 @@
-#ifndef MCL_SINGLE
 #include "mpi.h"
-#endif
 #include <cassert>
+#include <vector>
+#include <cstring>
 
 // MersenneTwister.h
 // Mersenne Twister random number generator -- a C++ class MTRand
