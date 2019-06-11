@@ -1,0 +1,3 @@
+#pragma once
+
+#define RNG_BACKEND @rng_backend@

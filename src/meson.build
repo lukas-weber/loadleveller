@@ -1,3 +1,15 @@
+rng_names = {
+  'stl_mt19937' : 'rng_stl<std::mt19937>',
+  'stl_mt19937_64' : 'rng_stl<std::mt19937_64>',
+  'internal_mersenne' : 'rng_internal_mersenne',
+}
+
+conf_data = configuration_data()
+conf_data.set('rng_backend', rng_names[get_option('rng_backend')])
+configure_file(input : 'config.h.in',
+  output : 'config.h',
+  configuration : conf_data)
+
 loadleveller_sources = files([
   'dump.cpp',
   'evalable.cpp',

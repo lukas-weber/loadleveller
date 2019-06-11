@@ -11,14 +11,14 @@ void mc::write_output(const std::string &) {}
 
 void mc::random_init() {
 	if(param.defined("seed")) {
-		rng.reset(new randomnumbergenerator(param.get<uint64_t>("seed")));
+		rng.reset(new random_number_generator(param.get<uint64_t>("seed")));
 	} else {
-		rng.reset(new randomnumbergenerator());
+		rng.reset(new random_number_generator());
 	}
 }
 
 double mc::random01() {
-	return rng->d();
+	return rng->random_double();
 }
 
 int mc::sweep() const {
@@ -82,7 +82,6 @@ void mc::_write(const std::string &dir) {
 static bool file_exists(const std::string &path) {
 	struct stat buf;
 	return stat(path.c_str(), &buf) == 0;
-
 }
 
 bool mc::_read(const std::string &dir) {

@@ -19,7 +19,7 @@ private:
 
 protected:
 	parser param;
-	std::unique_ptr<randomnumbergenerator> rng;
+	std::unique_ptr<random_number_generator> rng;
 
 	virtual void init() = 0;
 	virtual void checkpoint_write(const iodump::group &out) = 0;
