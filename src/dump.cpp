@@ -87,13 +87,13 @@ iodump::group::iterator::iterator(hid_t group, uint64_t idx) : group_(group), id
 
 std::string iodump::group::iterator::operator*() {
 	ssize_t name_size =
-	    H5Lget_name_by_idx(group_, "/", H5_INDEX_NAME, H5_ITER_INC, idx_, nullptr, 0, H5P_DEFAULT);
+	    H5Lget_name_by_idx(group_, ".", H5_INDEX_NAME, H5_ITER_INC, idx_, nullptr, 0, H5P_DEFAULT);
 	if(name_size < 0) {
 		throw iodump_exception{"H5Lget_name_by_idx"};
 	}
 
 	std::vector<char> buf(name_size + 1);
-	name_size = H5Lget_name_by_idx(group_, "/", H5_INDEX_NAME, H5_ITER_INC, idx_, buf.data(),
+	name_size = H5Lget_name_by_idx(group_, ".", H5_INDEX_NAME, H5_ITER_INC, idx_, buf.data(),
 	                               buf.size(), H5P_DEFAULT);
 	if(name_size < 0) {
 		throw iodump_exception{"H5Lget_name_by_idx"};

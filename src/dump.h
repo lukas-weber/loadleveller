@@ -261,6 +261,7 @@ template<class T>
 void iodump::group::read(const std::string &name, T &value) const {
 	std::vector<T> buf;
 	read(name, buf);
+	assert(buf.size() == 1);
 	value = buf.at(0);
 }
 }

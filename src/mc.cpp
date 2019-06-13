@@ -85,7 +85,7 @@ static bool file_exists(const std::string &path) {
 }
 
 bool mc::_read(const std::string &dir) {
-	if(!file_exists(dir)) {
+	if(!file_exists(dir + ".dump.h5")) {
 		return false;
 	}
 
@@ -94,8 +94,10 @@ bool mc::_read(const std::string &dir) {
 
 	iodump dump_file = iodump::open_readonly(dir + ".dump.h5");
 	auto g = dump_file.get_root();
-	measure.checkpoint_read(g.open_group("measurements"));
+
+	rng.reset(new random_number_generator());
 	rng->checkpoint_read(g.open_group("random_number_generator"));
+	measure.checkpoint_read(g.open_group("measurements"));
 	checkpoint_read(g.open_group("simulation"));
 
 	g.read("sweeps", sweep_);

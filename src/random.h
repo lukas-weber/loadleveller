@@ -48,13 +48,12 @@ public:
 	}
 
 	void checkpoint_write(const iodump::group &d) {
-		static_cast<base *>(this)->backend_checkpoint_write(d);
 		d.write("seed", seed_);
 		d.write("type", type());
+		static_cast<base *>(this)->backend_checkpoint_write(d);
 	}
 
 	void checkpoint_read(const iodump::group &d) {
-		static_cast<base *>(this)->backend_checkpoint_read(d);
 		d.read("seed", seed_);
 		std::string read_type;
 		d.read("type", read_type);
@@ -64,6 +63,7 @@ public:
 			                "loadleveller was built with backend '{}'",
 			                read_type, type()));
 		}
+		static_cast<base *>(this)->backend_checkpoint_read(d);
 	}
 
 	// implemented by base:
@@ -95,11 +95,11 @@ public:
 		std::stringstream buf;
 		buf << generator_;
 		buf << real_dist_;
-		dump_file.write("rng_state", buf.str());
+		dump_file.write("state", buf.str());
 	}
 	void backend_checkpoint_read(const iodump::group &dump_file) {
 		std::string state;
-		dump_file.read("rng_state", state);
+		dump_file.read("state", state);
 		std::stringstream buf(state);
 		buf >> generator_;
 		buf >> real_dist_;

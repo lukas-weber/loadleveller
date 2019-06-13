@@ -28,7 +28,11 @@ int runner_single::start() {
 		sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names.at(task_id_)])};
 		if(!sys_->_read(job_.rundir(task_id_, 1))) {
 			sys_->_init();
+			job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, 1)));
+		} else {
+			job_.log(fmt::format("* read {}", job_.rundir(task_id_, 1)));
 		}
+
 
 		while(!tasks_[task_id_].is_done() && !time_is_up()) {
 			sys_->_do_update();

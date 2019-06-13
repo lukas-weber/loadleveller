@@ -303,6 +303,9 @@ void runner_slave::start() {
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
 				// checkpointing();
+				job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_)));
+			} else {
+				job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_)));
 			}
 		} else {
 			if(!sys_) {
