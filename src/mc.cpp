@@ -42,8 +42,12 @@ void mc::_do_measurement() {
 	do_measurement();
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
-	measure.add("_ll_measurement_time",
-	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
+	
+	double measurement_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
+	measure.add("_ll_measurement_time", measurement_time);
+	if(measurement_time > max_meas_time_) {
+		max_meas_time_ = measurement_time;
+	}
 }
 
 void mc::_do_update() {
@@ -53,30 +57,49 @@ void mc::_do_update() {
 
 	do_update();
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
-	measure.add("_ll_sweep_time",
-	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
+
+	double sweep_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
+	measure.add("_ll_sweep_time", sweep_time);
+	if(sweep_time > max_sweep_time_) {
+		max_sweep_time_ = sweep_time;
+	}
 }
 
 void mc::_write(const std::string &dir) {
 	struct timespec tstart, tend;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
 
-	iodump meas_file = iodump::open_readwrite(dir + ".meas.h5");
-	measure.samples_write(meas_file.get_root());
+	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
+	{
+		iodump meas_file = iodump::open_readwrite(dir + ".meas.h5");
+		measure.samples_write(meas_file.get_root());
+	}
 
-	iodump dump_file = iodump::create(dir + ".dump.h5");
-	auto g = dump_file.get_root();
+	{
+		iodump dump_file = iodump::create(dir + ".dump.h5.tmp");
+		auto g = dump_file.get_root();
 
-	measure.checkpoint_write(g.open_group("measurements"));
-	rng->checkpoint_write(g.open_group("random_number_generator"));
-	checkpoint_write(g.open_group("simulation"));
+		measure.checkpoint_write(g.open_group("measurements"));
+		rng->checkpoint_write(g.open_group("random_number_generator"));
+		checkpoint_write(g.open_group("simulation"));
 
-	g.write("sweeps", sweep_);
-	g.write("thermalization_sweeps", std::min(therm_, sweep_)); // only for convenience
+		g.write("sweeps", sweep_);
+		g.write("thermalization_sweeps", std::min(therm_, sweep_)); // only for convenience
+	}
+	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
+	
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
-	measure.add("_ll_checkpoint_write_time",
-	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
+	double checkpoint_write_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
+	measure.add("_ll_checkpoint_write_time", checkpoint_write_time);
+	if(checkpoint_write_time > max_checkpoint_write_time_) {
+		max_checkpoint_write_time_ = checkpoint_write_time;
+	}
+}
+
+double mc::safe_exit_interval() {
+	// this is more or less guesswork in an attempt to make it safe for as many cases as possible
+	return 2*(max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
 }
 
 static bool file_exists(const std::string &path) {

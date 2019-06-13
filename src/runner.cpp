@@ -17,6 +17,7 @@ enum {
 
 	S_IDLE = 1,
 	S_BUSY = 2,
+	S_TIMEUP = 3,
 
 	A_EXIT = 1,
 	A_CONTINUE = 2,
@@ -173,7 +174,6 @@ int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **
 runner_master::runner_master(jobinfo job) : job_{std::move(job)} {}
 
 void runner_master::start() {
-	time_start_ = MPI_Wtime();
 	MPI_Comm_size(MPI_COMM_WORLD, &num_active_ranks_);
 
 	job_.log(fmt::format("Starting job '{}'", job_.jobname));
@@ -196,34 +196,26 @@ int runner_master::get_new_task_id(int old_id) {
 	return -1;
 }
 
-bool runner_master::time_is_up() const {
-	return MPI_Wtime() - time_start_ > job_.walltime;
-}
-
 void runner_master::react() {
 	int node_status;
 	MPI_Status stat;
 	MPI_Recv(&node_status, 1, MPI_INT, MPI_ANY_SOURCE, T_STATUS, MPI_COMM_WORLD, &stat);
 	int node = stat.MPI_SOURCE;
 	if(node_status == S_IDLE) {
-		if(time_is_up()) {
-			send_action(A_EXIT, node);
-		} else {
-			current_task_id_ = get_new_task_id(current_task_id_);
+		current_task_id_ = get_new_task_id(current_task_id_);
 
-			if(current_task_id_ < 0) {
-				send_action(A_EXIT, node);
-				num_active_ranks_--;
-			} else {
-				send_action(A_NEW_JOB, node);
-				tasks_[current_task_id_].scheduled_runs++;
-				int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
-				              tasks_[current_task_id_].target_sweeps};
-				MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB,
-				         MPI_COMM_WORLD);
-			}
+		if(current_task_id_ < 0) {
+			send_action(A_EXIT, node);
+			num_active_ranks_--;
+		} else {
+			send_action(A_NEW_JOB, node);
+			tasks_[current_task_id_].scheduled_runs++;
+			int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
+			              tasks_[current_task_id_].target_sweeps};
+			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB,
+			         MPI_COMM_WORLD);
 		}
-	} else { // S_BUSY
+	} else if(node_status == S_BUSY) {
 		int msg[2];
 		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_STATUS, MPI_COMM_WORLD, &stat);
 		int task_id = msg[0];
@@ -242,14 +234,12 @@ void runner_master::react() {
 
 				send_action(A_PROCESS_DATA_NEW_JOB, node);
 			}
-		} else if(time_is_up()) {
-			send_action(A_EXIT, node);
-			num_active_ranks_--;
 		} else {
 			send_action(A_CONTINUE, node);
 		}
+	} else { // S_TIMEUP
+		num_active_ranks_--;
 	}
-
 }
 
 void runner_master::send_action(int action, int destination) {
@@ -327,10 +317,17 @@ void runner_slave::start() {
 			}
 		}
 		checkpointing();
+
+		if(time_is_up()) {
+			what_is_next(S_TIMEUP);
+			break;
+		}
+		
 		action = what_is_next(S_BUSY);
 	}
+
 	if(time_is_up()) {
-		job_.log(fmt::format("rank {} exits: time limit reached", rank_));
+		job_.log(fmt::format("rank {} exits: walltime up", rank_));
 	} else {
 		job_.log(fmt::format("rank {} exits: out of work", rank_));
 	}
@@ -341,12 +338,18 @@ bool runner_slave::is_checkpoint_time() {
 }
 
 bool runner_slave::time_is_up() {
-	return MPI_Wtime() - time_start_ > job_.walltime;
+	double safe_interval = 0;
+	if(sys_ != nullptr) {
+		safe_interval = sys_->safe_exit_interval();
+	}
+	return MPI_Wtime() - time_start_ > job_.walltime-safe_interval;
 }
 
 int runner_slave::what_is_next(int status) {
 	MPI_Send(&status, 1, MPI_INT, MASTER, T_STATUS, MPI_COMM_WORLD);
-	if(status == S_IDLE) {
+	if(status == S_TIMEUP) {
+		return 0;
+	} else if(status == S_IDLE) {
 		int new_action = recv_action();
 		if(new_action == A_EXIT) {
 			return A_EXIT;
@@ -389,7 +392,7 @@ int runner_slave::recv_action() {
 void runner_slave::checkpointing() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format("* rank {}: checkpointing {}", rank_, job_.rundir(task_id_, run_id_)));
+	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
 }
 
 void runner_slave::merge_measurements() {

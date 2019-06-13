@@ -41,12 +41,9 @@ private:
 	jobinfo job_;
 
 	int num_active_ranks_{0};
-	int time_start_{0};
 
 	std::vector<runner_task> tasks_;
 	int current_task_id_{-1};
-
-	bool time_is_up() const;
 
 	void read();
 	int read_dump_progress(int task_id);
