@@ -1,1 +1,1 @@
-option('rng_backend', type : 'combo', choices : ['stl_mt19937', 'stl_mt19937_64', 'internal_mersenne'], description : 'The backend used for the random number generator provided by loadleveller')
+option('rng_backend', type : 'combo', choices : ['internal_mersenne', 'stl_mt19937', 'stl_mt19937_64'], description : 'The backend used for the random number generator provided by loadleveller')
