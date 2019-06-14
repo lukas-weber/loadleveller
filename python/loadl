@@ -64,9 +64,9 @@ def run():
 
     job_input_filename = job.write_job_input_file()
     if args_run.single:
-        cmd = [job.jobconfig['mc_binary'], 'single', job_input_filename]
-        print('$ '+' '.join(cmd))
-        subprocess.run(cmd)
+        cmd = '{} single "{}"'.format(job.jobconfig['mc_binary'], job_input_filename)
+        print('$ '+cmd)
+        subprocess.run(cmd, shell=True)
     else:
         clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], job_input_filename])
 
@@ -84,9 +84,9 @@ def delete():
 
 def merge():
     job_input_filename = job.write_job_input_file()
-    cmd = [job.jobconfig['mc_binary'], 'merge', job_input_filename]
-    print('$ '+' '.join(cmd))
-    subprocess.run(cmd)
+    cmd = '{} merge "{}"'.format(job.jobconfig['mc_binary'], job_input_filename)
+    print('$ '+cmd)
+    subprocess.run(cmd, shell=True)
 
 def status():
     from loadleveller import jobstatus
