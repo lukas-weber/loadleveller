@@ -292,8 +292,8 @@ void runner_slave::start() {
 			    std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
-				// checkpointing();
 				job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_)));
+				checkpointing();
 			} else {
 				job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_)));
 			}
@@ -320,15 +320,14 @@ void runner_slave::start() {
 
 		if(time_is_up()) {
 			what_is_next(S_TIMEUP);
+			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_, sys_->safe_exit_interval()));
 			break;
 		}
 		
 		action = what_is_next(S_BUSY);
 	}
 
-	if(time_is_up()) {
-		job_.log(fmt::format("rank {} exits: walltime up", rank_));
-	} else {
+	if(action == A_EXIT) {
 		job_.log(fmt::format("rank {} exits: out of work", rank_));
 	}
 }

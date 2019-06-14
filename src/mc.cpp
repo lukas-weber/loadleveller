@@ -83,6 +83,10 @@ void mc::_write(const std::string &dir) {
 		rng->checkpoint_write(g.open_group("random_number_generator"));
 		checkpoint_write(g.open_group("simulation"));
 
+		g.write("max_checkpoint_write_time", max_checkpoint_write_time_);
+		g.write("max_sweep_time", max_sweep_time_);
+		g.write("max_meas_time", max_meas_time_);
+
 		g.write("sweeps", sweep_);
 		g.write("thermalization_sweeps", std::min(therm_, sweep_)); // only for convenience
 	}
@@ -124,6 +128,10 @@ bool mc::_read(const std::string &dir) {
 	checkpoint_read(g.open_group("simulation"));
 
 	g.read("sweeps", sweep_);
+
+	g.read("max_checkpoint_write_time", max_checkpoint_write_time_);
+	g.read("max_sweep_time", max_sweep_time_);
+	g.read("max_meas_time", max_meas_time_);
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
 	measure.add("_ll_checkpoint_read_time",
