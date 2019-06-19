@@ -11,8 +11,8 @@ batchscript_claix18 = '''#!/usr/bin/env zsh
 #SBATCH --mem-per-cpu={mem_per_cpu}
 #SBATCH --ntasks={num_cores}
 #SBATCH --export=NONE
-#SBATCH --output=output.%x
-#SBATCH --error=error.%x
+#SBATCH --output={jobname}.data/stdout.log
+#SBATCH --error={jobname}.data/stderr.log
 
 {custom_cmds}
 {mpirun} $FLAGS_MPI_BATCH {mc_cmd}
