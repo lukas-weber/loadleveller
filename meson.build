@@ -4,12 +4,13 @@ project('load-leveller', 'c', 'cpp',
   default_options : [
     'cpp_std=c++17',
     'warning_level=3',
+    'cpp_std=c++17'
   ]
 )
 
 fmt_dep = dependency('fmt', fallback : ['fmt', 'fmt_dep'])
 yamlcpp_dep = dependency('yaml-cpp', version : '>=0.6.0', fallback : ['yaml-cpp', 'yamlcpp_dep'])
-mpi_dep = dependency('mpi')
+mpi_dep = dependency('mpi', language : 'cpp')
 
 # HDF5 is a pain
 #cc = meson.get_compiler('cpp')
