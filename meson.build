@@ -2,6 +2,7 @@ project('load-leveller', 'c', 'cpp',
   version : '2.0',
   meson_version : '>=0.50.0',
   default_options : [
+    'cpp_std=c++17',
     'warning_level=3',
   ]
 )
@@ -11,12 +12,14 @@ yamlcpp_dep = dependency('yaml-cpp', version : '>=0.6.0', fallback : ['yaml-cpp'
 mpi_dep = dependency('mpi')
 
 # HDF5 is a pain
-cc = meson.get_compiler('cpp')
-hdf5_lib = cc.find_library('hdf5')
+#cc = meson.get_compiler('cpp')
+#hdf5_lib = cc.find_library('hdf5')
+
+hdf5_dep = dependency('hdf5', fallback : ['hdf5', 'hdf5_dep'])
 
 should_install = not meson.is_subproject()
 
-loadleveller_deps = [ fmt_dep, yamlcpp_dep, mpi_dep, hdf5_lib ]
+loadleveller_deps = [ fmt_dep, yamlcpp_dep, mpi_dep, hdf5_dep ]
 
 subdir('src')
 subdir('test')
