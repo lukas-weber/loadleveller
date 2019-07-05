@@ -1,1 +1,3 @@
 option('rng_backend', type : 'combo', choices : ['internal_mersenne', 'stl_mt19937', 'stl_mt19937_64'], description : 'The backend used for the random number generator provided by loadleveller')
+
+option('force_hdf5_fallback', type : 'boolean', value : false,  description : 'Use the hdf5.wrap even if an installed versionwas found.')

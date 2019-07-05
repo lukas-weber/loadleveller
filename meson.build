@@ -17,7 +17,7 @@ cppc = meson.get_compiler('cpp')
 hdf5_dep = cppc.find_library('hdf5', required : false)
 
 # This should be a last resort because I hacked the meson.build for hdf5 together in an afternoon and am not sure if it works correctly ;)
-if not hdf5_dep.found()
+if not hdf5_dep.found() or get_option('force_hdf5_fallback')
   hdf5_proj = subproject('hdf5')
   hdf5_dep = hdf5_proj.get_variable('hdf5_dep')
 endif
