@@ -13,14 +13,21 @@ yamlcpp_dep = dependency('yaml-cpp', version : '>=0.6.0', fallback : ['yaml-cpp'
 mpi_dep = dependency('mpi', language : 'cpp')
 
 # HDF5 is a pain
-#cc = meson.get_compiler('cpp')
-#hdf5_lib = cc.find_library('hdf5')
+cppc = meson.get_compiler('cpp')
+hdf5_dep = cppc.find_library('hdf5', required : false)
 
-hdf5_dep = dependency('hdf5', fallback : ['hdf5', 'hdf5_dep'])
+# This should be a last resort because I hacked the meson.build for hdf5 together in an afternoon and am not sure if it works correctly ;)
+if not hdf5_dep.found()
+  hdf5_proj = subproject('hdf5')
+  hdf5_dep = hdf5_proj.get_variable('hdf5_dep')
+endif
 
 should_install = not meson.is_subproject()
 
 loadleveller_deps = [ fmt_dep, yamlcpp_dep, mpi_dep, hdf5_dep ]
 
 subdir('src')
-subdir('test')
+
+if not meson.is_subproject()
+	subdir('test')
+endif
