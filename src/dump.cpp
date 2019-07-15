@@ -266,4 +266,10 @@ iodump::h5_handle::~h5_handle() {
 hid_t iodump::h5_handle::operator*() {
 	return handle_;
 }
+
+bool file_exists(const std::string &path) {
+	struct stat buf;
+	return stat(path.c_str(), &buf) == 0;
+}
+
 }

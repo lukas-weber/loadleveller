@@ -2,8 +2,6 @@
 
 namespace loadl {
 
-class iodump;
-
 // used by the runner
 struct runner_task {
 	int target_sweeps;

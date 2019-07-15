@@ -4,6 +4,7 @@
 #include <hdf5.h>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
 
 namespace loadl {
 
@@ -264,4 +265,8 @@ void iodump::group::read(const std::string &name, T &value) const {
 	assert(buf.size() == 1);
 	value = buf.at(0);
 }
+
+// utility
+bool file_exists(const std::string &path);
+
 }

@@ -6,7 +6,7 @@
 #include <iomanip>
 #include <regex>
 #include <sys/stat.h>
-
+#include "runner_pt.h"
 namespace loadl {
 
 enum {
@@ -60,8 +60,12 @@ static int parse_duration(const std::string &str) {
 	}
 }
 
+std::string jobinfo::jobdir() const {
+	return jobname + ".data";
+}
+
 std::string jobinfo::taskdir(int task_id) const {
-	return fmt::format("{}.data/{}", jobname, task_names.at(task_id));
+	return fmt::format("{}/{}", jobdir(), task_names.at(task_id));
 }
 
 std::string jobinfo::rundir(int task_id, int run_id) const {
@@ -77,7 +81,7 @@ jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
 
 	jobname = jobfile.get<std::string>("jobname");
 
-	std::string datadir = fmt::format("{}.data", jobname);
+	std::string datadir = jobdir();
 	int rc = mkdir(datadir.c_str(), 0755);
 	if(rc != 0 && errno != EEXIST) {
 		throw std::runtime_error{
@@ -124,6 +128,22 @@ std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
 	return results;
 }
 
+int jobinfo::read_dump_progress(int task_id) const {
+	int sweeps = 0;
+	try {
+		for(auto &dump_name : list_run_files(taskdir(task_id), "dump\\.h5")) {
+			int dump_sweeps = 0;
+			iodump d = iodump::open_readonly(dump_name);
+			d.get_root().read("sweeps", dump_sweeps);
+			sweeps += dump_sweeps;
+		}
+	} catch(std::ios_base::failure &e) {
+		// might happen if the taskdir does not exist
+	}
+
+	return sweeps;
+}
+
 void jobinfo::concatenate_results() {
 	std::ofstream cat_results{fmt::format("{}.results.yml", jobname)};
 	for(size_t i = 0; i < task_names.size(); i++) {
@@ -153,6 +173,11 @@ void jobinfo::log(const std::string &message) {
 }
 
 int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
+	if(job.jobfile["jobconfig"].defined("parallel_tempering_parameter")) {
+		runner_pt_start(std::move(job), mccreator, argc, argv);
+		return 0;
+	}
+
 	MPI_Init(&argc, &argv);
 
 	int rank;
@@ -211,7 +236,7 @@ void runner_master::react() {
 			send_action(A_NEW_JOB, node);
 			tasks_[current_task_id_].scheduled_runs++;
 			int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
-			              tasks_[current_task_id_].target_sweeps};
+			              tasks_[current_task_id_].target_sweeps+tasks_[current_task_id_].target_thermalization-tasks_[current_task_id_].sweeps};
 			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB,
 			         MPI_COMM_WORLD);
 		}
@@ -246,31 +271,13 @@ void runner_master::send_action(int action, int destination) {
 	MPI_Send(&action, 1, MPI_INT, destination, T_ACTION, MPI_COMM_WORLD);
 }
 
-int runner_master::read_dump_progress(int task_id) {
-	int sweeps = 0;
-	try {
-		for(auto &dump_name : jobinfo::list_run_files(job_.taskdir(task_id), "dump\\.h5")) {
-			int dump_sweeps = 0;
-			iodump d = iodump::open_readonly(dump_name);
-			d.get_root().read("sweeps", dump_sweeps);
-			sweeps += dump_sweeps;
-		}
-	} catch(iodump_exception &e) {
-		// okay
-	} catch(std::ios_base::failure &e) {
-		// might happen if the taskdir does not exist
-	}
-
-	return sweeps;
-}
-
 void runner_master::read() {
 	for(size_t i = 0; i < job_.task_names.size(); i++) {
 		auto task = job_.jobfile["tasks"][job_.task_names[i]];
 
 		int target_sweeps = task.get<int>("sweeps");
 		int target_thermalization = task.get<int>("thermalization");
-		int sweeps = read_dump_progress(i);
+		int sweeps = job_.read_dump_progress(i);
 		int scheduled_runs = 0;
 
 		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, scheduled_runs);
@@ -293,7 +300,7 @@ void runner_slave::start() {
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
 				job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_)));
-				checkpointing();
+				write_checkpoint();
 			} else {
 				job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_)));
 			}
@@ -316,7 +323,7 @@ void runner_slave::start() {
 				break;
 			}
 		}
-		checkpointing();
+		write_checkpoint();
 
 		if(time_is_up()) {
 			what_is_next(S_TIMEUP);
@@ -388,7 +395,7 @@ int runner_slave::recv_action() {
 	return new_action;
 }
 
-void runner_slave::checkpointing() {
+void runner_slave::write_checkpoint() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
 	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));

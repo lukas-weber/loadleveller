@@ -1,6 +1,4 @@
 #include "mc.h"
-#include <sys/stat.h>
-
 namespace loadl {
 
 mc::mc(const parser &p) : param{p} {
@@ -65,6 +63,15 @@ void mc::_do_update() {
 	}
 }
 
+void mc::_pt_update_param(double new_param, const std::string &new_dir) {
+	// take over the bins of the new target dir
+	{
+		iodump dump_file = iodump::create(new_dir + ".dump.h5.tmp");
+		measure.checkpoint_read(dump_file.get_root().open_group("measurements"));
+	}
+	pt_update_param(new_param);
+}
+
 void mc::_write(const std::string &dir) {
 	struct timespec tstart, tend;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
@@ -106,10 +113,6 @@ double mc::safe_exit_interval() {
 	return 2*(max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
 }
 
-static bool file_exists(const std::string &path) {
-	struct stat buf;
-	return stat(path.c_str(), &buf) == 0;
-}
 
 bool mc::_read(const std::string &dir) {
 	if(!file_exists(dir + ".dump.h5")) {

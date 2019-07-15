@@ -75,16 +75,20 @@ public:
 
 // based on a dinosaur code in the MersenneTwister.h header
 class rng_internal_mersenne {
+private:
+	MTRand mtrand_;
 public:
 	void backend_checkpoint_write(const iodump::group &dump_file);
 	void backend_checkpoint_read(const iodump::group &dump_file);
 	void set_seed(uint64_t seed);
 
-	double random_double();
-	int random_integer(int bound);
-
-private:
-	MTRand mtrand_;
+	double random_double() {
+		return mtrand_.randDblExc(1);
+	}
+	
+	int random_integer(int bound) {
+		return mtrand_.randInt(bound - 1);
+	}
 };
 
 // based on the c++ stl implementation

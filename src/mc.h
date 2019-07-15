@@ -31,13 +31,19 @@ protected:
 	virtual void write_output(const std::string &filename);
 	virtual void do_update() = 0;
 	virtual void do_measurement() = 0;
-
+	virtual void pt_update_param(double /*new_param*/) {
+		throw std::runtime_error{"running parallel tempering, but pt_update_param not implemented"};
+	}
 public:
 	double random01();
 	int sweep() const;
 
 	virtual void register_evalables(std::vector<evalable> &evalables) = 0;
-
+	virtual double pt_weight_ratio(double /*new_param*/) {
+		throw std::runtime_error{"running parallel tempering, but pt_weight_ratio not implemented"};
+		return 1;
+	}
+	
 	// these functions do a little more, like taking care of the
 	// random number generator state, then call the child class versions.
 	void _init();
@@ -48,6 +54,7 @@ public:
 
 	void _do_update();
 	void _do_measurement();
+	void _pt_update_param(double new_param, const std::string &new_dir);
 
 	double safe_exit_interval();
 

@@ -26,6 +26,7 @@ loadleveller_sources = files([
   'runner.cpp',
   'runner_single.cpp',
   'runner_task.cpp',
+  'runner_pt.cpp',
 ])
 
 loadleveller_headers = files([
@@ -43,6 +44,7 @@ loadleveller_headers = files([
   'runner.h',
   'runner_single.h',
   'runner_task.h',
+  'runner_pt.h',
 ])
 
 libloadleveller = library('loadleveller',

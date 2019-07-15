@@ -83,12 +83,7 @@ void runner_single::read() {
 		int target_thermalization = task.get<int>("thermalization");
 		int sweeps = 0;
 
-		try {
-			iodump dump = iodump::open_readonly(job_.rundir(i, 1) + ".dump.h5");
-			dump.get_root().read("sweeps", sweeps);
-		} catch(iodump_exception &e) {
-		}
-
+		sweeps = job_.read_dump_progress(i);
 		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, 0);
 	}
 }
