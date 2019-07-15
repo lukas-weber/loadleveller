@@ -33,7 +33,8 @@ private:
 template<class T>
 void measurements::add(const std::string name, T value) {
 	if(observables_.count(name) == 0) {
-		throw std::runtime_error{fmt::format("tried to add to observable '{}' which was not registered!", name)};
+		throw std::runtime_error{
+		    fmt::format("tried to add to observable '{}' which was not registered!", name)};
 	}
 	observables_.at(name).add(value);
 }

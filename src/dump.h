@@ -3,8 +3,8 @@
 #include <fmt/format.h>
 #include <hdf5.h>
 #include <string>
-#include <vector>
 #include <sys/stat.h>
+#include <vector>
 
 namespace loadl {
 
@@ -114,7 +114,7 @@ public:
 
 	// TODO: once the intel compiler can do guaranteed copy elision,
 	// please uncomment this line! and be careful about bugs!
-	//iodump(iodump &) = delete;
+	// iodump(iodump &) = delete;
 	~iodump();
 
 	friend class group;
@@ -268,5 +268,4 @@ void iodump::group::read(const std::string &name, T &value) const {
 
 // utility
 bool file_exists(const std::string &path);
-
 }

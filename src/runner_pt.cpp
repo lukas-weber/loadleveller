@@ -23,34 +23,34 @@ enum {
 	T_NEW_JOB,
 	T_STATUS,
 
-	MASTER=0
+	MASTER = 0
 };
 
-pt_chain_run::pt_chain_run(const pt_chain& chain, int run_id) 
-	: id{chain.id}, run_id{run_id}, params{chain.start_params} {
+pt_chain_run::pt_chain_run(const pt_chain &chain, int run_id)
+    : id{chain.id}, run_id{run_id}, params{chain.start_params} {
 	node_to_pos.resize(params.size());
 	done.resize(params.size());
-	weight_ratios.resize(params.size());
+	weight_ratios.resize(params.size(), -1);
 
 	for(size_t i = 0; i < node_to_pos.size(); i++) {
 		node_to_pos[i] = i;
 	}
 }
 
-pt_chain_run pt_chain_run::checkpoint_read(const iodump::group& g) {
+pt_chain_run pt_chain_run::checkpoint_read(const iodump::group &g) {
 	pt_chain_run run;
 	g.read("id", run.id);
 	g.read("run_id", run.run_id);
 	g.read("params", run.params);
 	g.read("node_to_pos", run.node_to_pos);
 
-	run.weight_ratios.resize(run.params.size());
+	run.weight_ratios.resize(run.params.size(), -1);
 	run.done.resize(run.params.size());
 
 	return run;
 }
 
-void pt_chain_run::checkpoint_write(const iodump::group& g) {
+void pt_chain_run::checkpoint_write(const iodump::group &g) {
 	g.write("id", id);
 	g.write("run_id", run_id);
 	g.write("node_to_pos", node_to_pos);
@@ -58,7 +58,8 @@ void pt_chain_run::checkpoint_write(const iodump::group& g) {
 }
 
 bool pt_chain::is_done() {
-	return std::all_of(sweeps.begin(), sweeps.end(), [this](double s) { return s >= target_sweeps + target_thermalization;});
+	return std::all_of(sweeps.begin(), sweeps.end(),
+	                   [this](double s) { return s >= target_sweeps + target_thermalization; });
 }
 
 int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
@@ -80,35 +81,35 @@ int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **a
 	return 0;
 }
 
-
 runner_pt_master::runner_pt_master(jobinfo job) : job_{std::move(job)} {
 	rng_ = std::make_unique<random_number_generator>();
 }
 
 void runner_pt_master::construct_pt_chains() {
-	std::string pt_param = job_.jobfile["jobconfig"].get<std::string>("parallel_tempering_parameter");
-	
+	std::string pt_param =
+	    job_.jobfile["jobconfig"].get<std::string>("parallel_tempering_parameter");
+
 	for(size_t i = 0; i < job_.task_names.size(); i++) {
 		auto task = job_.jobfile["tasks"][job_.task_names[i]];
 
-		auto [chain_id, chain_pos] = task.get<std::pair<int, int>>("pt_chain");
+		auto[chain_id, chain_pos] = task.get<std::pair<int, int>>("pt_chain");
 		if(chain_id < 0 || chain_pos < 0) {
 			throw std::runtime_error{"parallel tempering pt_chain indices must be nonnegative"};
 		}
 
 		if(chain_id >= static_cast<int>(pt_chains_.size())) {
-			pt_chains_.resize(chain_id+1);
+			pt_chains_.resize(chain_id + 1);
 		}
 
 		auto &chain = pt_chains_.at(chain_id);
 		chain.id = chain_id;
 
 		if(chain_pos >= static_cast<int>(chain.task_ids.size())) {
-			chain.task_ids.resize(chain_pos+1, -1);
-			chain.start_params.resize(chain_pos+1);
-			chain.sweeps.resize(chain_pos+1);
+			chain.task_ids.resize(chain_pos + 1, -1);
+			chain.start_params.resize(chain_pos + 1);
+			chain.sweeps.resize(chain_pos + 1);
 		}
-		
+
 		if(chain.task_ids.at(chain_pos) != -1) {
 			throw std::runtime_error{"parallel tempering pt_chain map not unique"};
 		}
@@ -116,7 +117,8 @@ void runner_pt_master::construct_pt_chains() {
 		chain.start_params.at(chain_pos) = task.get<double>(pt_param);
 		chain.task_ids.at(chain_pos) = i;
 		chain.target_sweeps = std::max(chain.target_sweeps, task.get<int>("sweeps"));
-		chain.target_thermalization = std::max(chain.target_thermalization, task.get<int>("thermalization"));
+		chain.target_thermalization =
+		    std::max(chain.target_thermalization, task.get<int>("thermalization"));
 
 		chain.sweeps[chain_pos] = job_.read_dump_progress(chain_pos);
 	}
@@ -126,18 +128,22 @@ void runner_pt_master::construct_pt_chains() {
 		if(c.id == -1) {
 			throw std::runtime_error{"parallel tempering pt_chain map contains gaps"};
 		}
-		
+
 		if(chain_len_ != -1 && chain_len_ != static_cast<int>(c.task_ids.size())) {
 			throw std::runtime_error{"parallel tempering pt_chains do not have the same length"};
 		}
 		chain_len_ = c.task_ids.size();
 	}
 	if(chain_len_ == -1) {
-		throw std::runtime_error{"parallel tempering pt_chain mapping missing. You need to specify 'pt_chain: [chain_id, chain_position]' for every task in the job."};
+		throw std::runtime_error{
+		    "parallel tempering pt_chain mapping missing. You need to specify 'pt_chain: "
+		    "[chain_id, chain_position]' for every task in the job."};
 	}
 
-	if((num_active_ranks_-1) % chain_len_ != 0) {
-		throw std::runtime_error{"parallel tempering: number of ranks should be of the form chain_length*n+1 for best efficiency"};
+	if((num_active_ranks_ - 1) % chain_len_ != 0) {
+		throw std::runtime_error{
+		    "parallel tempering: number of ranks should be of the form chain_length*n+1 for best "
+		    "efficiency"};
 	}
 }
 
@@ -145,14 +151,15 @@ void runner_pt_master::checkpoint_read() {
 	construct_pt_chains();
 
 	std::string master_dump_name = job_.jobdir() + "/pt_master.dump.h5";
-	if(file_exists(master_dump_name)) {		
+	if(file_exists(master_dump_name)) {
 		iodump dump = iodump::open_readonly(master_dump_name);
 		auto g = dump.get_root();
 
 		rng_->checkpoint_read(g.open_group("random_number_generator"));
 		auto pt_chain_runs = g.open_group("pt_chain_runs");
 		for(std::string name : pt_chain_runs) {
-			pt_chain_runs_.emplace_back(pt_chain_run::checkpoint_read(pt_chain_runs.open_group(name)));
+			pt_chain_runs_.emplace_back(
+			    pt_chain_run::checkpoint_read(pt_chain_runs.open_group(name)));
 		}
 
 		g.read("current_chain_id", current_chain_id_);
@@ -166,14 +173,15 @@ void runner_pt_master::checkpoint_write() {
 	std::string master_dump_name = job_.jobdir() + "/pt_master.dump.h5";
 
 	job_.log(fmt::format("master: checkpoint {}", master_dump_name));
-	
+
 	iodump dump = iodump::create(master_dump_name);
 	auto g = dump.get_root();
 
 	rng_->checkpoint_write(g.open_group("random_number_generator"));
 	auto pt_chain_runs = g.open_group("pt_chain_runs");
 	for(auto &c : pt_chain_runs_) {
-		c.checkpoint_write(pt_chain_runs.open_group(fmt::format("chain{:04d}_run{:04d}", c.id, c.run_id)));
+		c.checkpoint_write(
+		    pt_chain_runs.open_group(fmt::format("chain{:04d}_run{:04d}", c.id, c.run_id)));
 	}
 
 	g.write("current_chain_id", current_chain_id_);
@@ -186,12 +194,12 @@ void runner_pt_master::start() {
 	job_.log(fmt::format("Starting job '{}'", job_.jobname));
 	checkpoint_read();
 
-	for(int node_section = 0; node_section < (num_active_ranks_-1)/chain_len_; node_section++) {
+	for(int node_section = 0; node_section < (num_active_ranks_ - 1) / chain_len_; node_section++) {
 		assign_new_chain(node_section);
 	}
 
 	time_last_checkpoint_ = MPI_Wtime();
-	
+
 	while(num_active_ranks_ > 1) {
 		react();
 		if(MPI_Wtime() - time_last_checkpoint_ > job_.checkpoint_time) {
@@ -209,7 +217,7 @@ int runner_pt_master::schedule_chain_run() {
 			int new_chain_id = (old_id + i) % nchains;
 			auto &chain = pt_chains_[new_chain_id];
 			chain.scheduled_runs++;
-			
+
 			int idx = 0;
 			for(auto &run : pt_chain_runs_) {
 				if(run.id == chain.id && run.run_id == chain.scheduled_runs) {
@@ -219,7 +227,7 @@ int runner_pt_master::schedule_chain_run() {
 			}
 
 			pt_chain_runs_.emplace_back(chain, chain.scheduled_runs);
-			return pt_chain_runs_.size()-1;
+			return pt_chain_runs_.size() - 1;
 		}
 	}
 
@@ -231,19 +239,20 @@ int runner_pt_master::assign_new_chain(int node_section) {
 	int chain_run_id = schedule_chain_run();
 
 	for(int target = 0; target < chain_len_; target++) {
-		int msg[3] = {-1,0,0};
+		int msg[3] = {-1, 0, 0};
 		if(chain_run_id >= 0) {
 			auto &chain_run = pt_chain_runs_[chain_run_id];
 			auto &chain = pt_chains_[chain_run.id];
 			msg[0] = chain.task_ids[target];
 			msg[1] = chain_run.run_id;
-			msg[2] = chain.target_sweeps+chain.target_thermalization-chain.sweeps[chain_run.node_to_pos[target]];
+			msg[2] = chain.target_sweeps + chain.target_thermalization -
+			         chain.sweeps[chain_run.node_to_pos[target]];
 		} else {
 			// this will prompt the slave to quit
 			num_active_ranks_--;
 		}
-		MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node_section*chain_len_+target+1, T_NEW_JOB,
-	         MPI_COMM_WORLD);
+		MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT,
+		         node_section * chain_len_ + target + 1, T_NEW_JOB, MPI_COMM_WORLD);
 	}
 	node_to_chain_run_[node_section] = chain_run_id;
 	return chain_run_id;
@@ -253,82 +262,108 @@ void runner_pt_master::react() {
 	int node_status;
 	MPI_Status stat;
 	MPI_Recv(&node_status, 1, MPI_INT, MPI_ANY_SOURCE, T_STATUS, MPI_COMM_WORLD, &stat);
-	int node = stat.MPI_SOURCE-1;
+	int node = stat.MPI_SOURCE - 1;
 	if(node_status == S_BUSY) {
 		int msg[1];
-		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node+1, T_STATUS, MPI_COMM_WORLD, &stat);
+		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node + 1, T_STATUS, MPI_COMM_WORLD,
+		         &stat);
 		int completed_sweeps = msg[0];
 
-		int chain_run_id = node_to_chain_run_[node/chain_len_];
+		int chain_run_id = node_to_chain_run_[node / chain_len_];
 		auto &chain_run = pt_chain_runs_[chain_run_id];
 		auto &chain = pt_chains_[chain_run.id];
 
-		chain.sweeps[chain_run.node_to_pos[node%chain_len_]] += completed_sweeps;
+		chain.sweeps[chain_run.node_to_pos[node % chain_len_]] += completed_sweeps;
 
 		if(chain.is_done()) {
-			chain_run.done[node%chain_len_] = true;
+			chain_run.done[node % chain_len_] = true;
 
-			if(std::all_of(chain_run.done.begin(), chain_run.done.end(), [](bool x) {return x;})) {
+			if(std::all_of(chain_run.done.begin(), chain_run.done.end(),
+			               [](bool x) { return x; })) {
 				chain.scheduled_runs--;
 				int action = A_NEW_JOB;
-				
+
 				if(chain.scheduled_runs > 0) {
-					job_.log(fmt::format("chain {} has enough sweeps. Waiting for {} busy rank sets.", chain.id, chain.scheduled_runs));
+					job_.log(
+					    fmt::format("chain {} has enough sweeps. Waiting for {} busy rank sets.",
+					                chain.id, chain.scheduled_runs));
 				} else {
-					job_.log(fmt::format("chain {} rank {} is done. Merging.", chain.id, node+1));
+					job_.log(fmt::format("chain {} rank {} is done. Merging.", chain.id, node + 1));
 					action = A_PROCESS_DATA_NEW_JOB;
 					checkpoint_write();
 				}
 				for(int target = 0; target < chain_len_; target++) {
-					send_action(action, node/chain_len_*chain_len_+target+1);
+					send_action(action, node / chain_len_ * chain_len_ + target + 1);
 				}
 				std::fill(chain_run.done.begin(), chain_run.done.end(), -1);
-				assign_new_chain(node/chain_len_);
+				assign_new_chain(node / chain_len_);
 			}
 		} else {
-			send_action(A_CONTINUE, node+1);
+			send_action(A_CONTINUE, node + 1);
 		}
 	} else if(node_status == S_READY_FOR_GLOBAL) {
-		int chain_run_id = node_to_chain_run_[node/chain_len_];
+		int chain_run_id = node_to_chain_run_[node / chain_len_];
 		auto &chain_run = pt_chain_runs_[chain_run_id];
 		auto &chain = pt_chains_[chain_run.id];
 
 		if(chain.is_done()) {
 			int exit = GA_DONE;
-			MPI_Send(&exit, 1, MPI_INT, node+1, T_GLOBAL, MPI_COMM_WORLD);
+			MPI_Send(&exit, 1, MPI_INT, node + 1, T_GLOBAL, MPI_COMM_WORLD);
+
+			// cancel all pending ranks as gracefully as possible
+			// TODO tidy this up
+			int node_section = node / chain_len_;
+
+			for(int target = 0; target < chain_len_; target++) {
+				if(chain_run.weight_ratios[chain_run.node_to_pos[target]] < 0) {
+					continue;
+				}
+				
+				int new_task_id = chain.task_ids[chain_run.node_to_pos[target]];
+				double new_param = chain_run.params[chain_run.node_to_pos[target]];
+				MPI_Send(&new_task_id, 1, MPI_INT, node_section * chain_len_ + target + 1,
+				         T_GLOBAL, MPI_COMM_WORLD);
+				MPI_Send(&new_param, 1, MPI_DOUBLE, node_section * chain_len_ + target + 1,
+				         T_GLOBAL, MPI_COMM_WORLD);
+			}
+			std::fill(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), -1);
 		} else {
-			int pos = chain_run.node_to_pos[node%chain_len_];
+			int pos = chain_run.node_to_pos[node % chain_len_];
 			// keep consistent with pt_global_update
-			int partner_pos = pos + (2*(pos&1)-1)*(2*pt_swap_odd_-1);
+			int partner_pos = pos + (2 * (pos & 1) - 1) * (2 * pt_swap_odd_ - 1);
 			if(partner_pos < 0 || partner_pos >= chain_len_) {
 				int response = GA_SKIP;
-				MPI_Send(&response, 1, MPI_INT, node+1, T_GLOBAL, MPI_COMM_WORLD);
-				chain_run.weight_ratios[chain_run.node_to_pos[node%chain_len_]] = 1;
+				MPI_Send(&response, 1, MPI_INT, node + 1, T_GLOBAL, MPI_COMM_WORLD);
+				chain_run.weight_ratios[chain_run.node_to_pos[node % chain_len_]] = 1;
 			} else {
 				int response = GA_CALC_WEIGHT;
-				MPI_Send(&response, 1, MPI_INT, node+1, T_GLOBAL, MPI_COMM_WORLD);
+				MPI_Send(&response, 1, MPI_INT, node + 1, T_GLOBAL, MPI_COMM_WORLD);
 
 				double partner_param = chain_run.params[partner_pos];
-				MPI_Send(&partner_param, 1, MPI_DOUBLE, node+1, T_GLOBAL, MPI_COMM_WORLD);
+				MPI_Send(&partner_param, 1, MPI_DOUBLE, node + 1, T_GLOBAL, MPI_COMM_WORLD);
 
 				double weight;
-				MPI_Recv(&weight, 1, MPI_DOUBLE, node+1, T_GLOBAL, MPI_COMM_WORLD, &stat);
-				chain_run.weight_ratios[chain_run.node_to_pos[node%chain_len_]] = weight;
+				MPI_Recv(&weight, 1, MPI_DOUBLE, node + 1, T_GLOBAL, MPI_COMM_WORLD, &stat);
+				assert(weight >= 0);
+				chain_run.weight_ratios[chain_run.node_to_pos[node % chain_len_]] = weight;
 			}
 
+			bool all_ready =
+			    std::all_of(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(),
+			                [](double w) { return w >= 0; });
 
-			bool all_ready = std::all_of(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), [](double w) { return w > 0; });
-			
 			if(all_ready) {
 				pt_global_update(chain, chain_run);
 				std::fill(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), -1);
-				int node_section = node/chain_len_;
+				int node_section = node / chain_len_;
 
 				for(int target = 0; target < chain_len_; target++) {
 					int new_task_id = chain.task_ids[chain_run.node_to_pos[target]];
 					double new_param = chain_run.params[chain_run.node_to_pos[target]];
-					MPI_Send(&new_task_id, 1, MPI_INT, node_section*chain_len_+target+1, T_GLOBAL, MPI_COMM_WORLD);
-					MPI_Send(&new_param, 1, MPI_DOUBLE, node_section*chain_len_+target+1, T_GLOBAL, MPI_COMM_WORLD);
+					MPI_Send(&new_task_id, 1, MPI_INT, node_section * chain_len_ + target + 1,
+					         T_GLOBAL, MPI_COMM_WORLD);
+					MPI_Send(&new_param, 1, MPI_DOUBLE, node_section * chain_len_ + target + 1,
+					         T_GLOBAL, MPI_COMM_WORLD);
 				}
 			}
 		}
@@ -337,18 +372,16 @@ void runner_pt_master::react() {
 	}
 }
 
-
-
 void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run) {
 	job_.log(fmt::format("global update on chain_run {}:{}", chain_run.id, chain_run.run_id));
-	for(int i = pt_swap_odd_; i < static_cast<int>(chain.task_ids.size())-1; i+=2) {
+	for(int i = pt_swap_odd_; i < static_cast<int>(chain.task_ids.size()) - 1; i += 2) {
 		double w1 = chain_run.weight_ratios[i];
-		double w2 = chain_run.weight_ratios[i+1];
+		double w2 = chain_run.weight_ratios[i + 1];
 
 		double r = rng_->random_double();
 
-		if(r < w1*w2) {
-			std::swap(chain_run.node_to_pos[i], chain_run.node_to_pos[i+1]);
+		if(r < w1 * w2) {
+			std::swap(chain_run.node_to_pos[i], chain_run.node_to_pos[i + 1]);
 		}
 	}
 
@@ -362,7 +395,6 @@ void runner_pt_slave::start() {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank_);
 	time_start_ = MPI_Wtime();
 	time_last_checkpoint_ = time_start_;
-
 
 	if(!accept_new_chain()) {
 		return;
@@ -385,13 +417,13 @@ void runner_pt_slave::start() {
 			if(is_checkpoint_time() || time_is_up()) {
 				break;
 			}
-			
 		}
 		checkpoint_write();
 
 		if(time_is_up()) {
 			send_status(S_TIMEUP);
-			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_, sys_->safe_exit_interval()));
+			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_,
+			                     sys_->safe_exit_interval()));
 			break;
 		}
 		action = what_is_next(S_BUSY);
@@ -412,25 +444,33 @@ void runner_pt_slave::pt_global_update() {
 
 	int response;
 	MPI_Recv(&response, 1, MPI_INT, MASTER, T_GLOBAL, MPI_COMM_WORLD, &stat);
+	job_.log(fmt::format(" * rank {}: ready for global update", rank_));
 
 	if(response == GA_DONE) {
+		job_.log(fmt::format(" * rank {}: everything done", rank_));
+		time_last_checkpoint_ = 0; // time to call back!
 		return;
 	} else if(response == GA_CALC_WEIGHT) {
-		job_.log(fmt::format(" * rank {}: ready for global update", rank_));
 		double partner_param;
 		MPI_Recv(&partner_param, 1, MPI_DOUBLE, MASTER, T_GLOBAL, MPI_COMM_WORLD, &stat);
 		double weight_ratio = sys_->pt_weight_ratio(partner_param);
 		MPI_Send(&weight_ratio, 1, MPI_DOUBLE, MASTER, T_GLOBAL, MPI_COMM_WORLD);
+		job_.log(fmt::format(" * rank {}: weight sent", rank_));
+	} else {
+		job_.log(fmt::format(" * rank {}: no weight needed", rank_));
 	}
+		
 
 	// this may be a long wait
 
 	double new_param;
 	MPI_Recv(&task_id_, 1, MPI_INT, MASTER, T_GLOBAL, MPI_COMM_WORLD, &stat);
 	MPI_Recv(&new_param, 1, MPI_DOUBLE, MASTER, T_GLOBAL, MPI_COMM_WORLD, &stat);
-	sweeps_per_global_update_ = job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>("pt_sweeps_per_global_update");
+	sweeps_per_global_update_ =
+	    job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>("pt_sweeps_per_global_update");
 
 	sys_->_pt_update_param(new_param, job_.rundir(task_id_, run_id_));
+	job_.log(fmt::format(" * rank {}: global update received param {}", rank_, new_param));
 }
 
 bool runner_pt_slave::accept_new_chain() {
@@ -445,10 +485,10 @@ bool runner_pt_slave::accept_new_chain() {
 		return false;
 	}
 
-	sweeps_per_global_update_ = job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>("pt_sweeps_per_global_update");
+	sweeps_per_global_update_ =
+	    job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>("pt_sweeps_per_global_update");
 
-	sys_ =
-	    std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
+	sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
 	if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 		sys_->_init();
 		job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_)));
@@ -467,7 +507,7 @@ int runner_pt_slave::what_is_next(int status) {
 	MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, T_STATUS, MPI_COMM_WORLD);
 	sweeps_since_last_query_ = 0;
 	int new_action = recv_action();
-	
+
 	if(new_action == A_EXIT) {
 		return A_EXIT;
 	}
@@ -519,7 +559,6 @@ bool runner_pt_slave::time_is_up() {
 	if(sys_ != nullptr) {
 		safe_interval = sys_->safe_exit_interval();
 	}
-	return MPI_Wtime() - time_start_ > job_.walltime-safe_interval;
+	return MPI_Wtime() - time_start_ > job_.walltime - safe_interval;
 }
-
 }

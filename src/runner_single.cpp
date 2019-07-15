@@ -33,7 +33,6 @@ int runner_single::start() {
 			job_.log(fmt::format("* read {}", job_.rundir(task_id_, 1)));
 		}
 
-
 		while(!tasks_[task_id_].is_done() && !time_is_up()) {
 			sys_->_do_update();
 			tasks_[task_id_].sweeps++;
@@ -103,6 +102,5 @@ void runner_single::merge_measurements() {
 
 	job_.log(fmt::format("merging {}", job_.taskdir(task_id_)));
 	job_.merge_task(task_id_, evalables);
-
 }
 }

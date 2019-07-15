@@ -17,5 +17,4 @@ void rng_internal_mersenne::backend_checkpoint_read(const iodump::group &d) {
 	d.read("state", rand_state);
 	mtrand_.load(rand_state);
 }
-
 }

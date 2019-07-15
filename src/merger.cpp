@@ -91,7 +91,8 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 			if(obs.total_sample_count <= min_bin_count) {
 				obs.rebinning_bin_count = obs.total_sample_count;
 			} else {
-				obs.rebinning_bin_count = min_bin_count + cbrt(obs.total_sample_count-min_bin_count);
+				obs.rebinning_bin_count =
+				    min_bin_count + cbrt(obs.total_sample_count - min_bin_count);
 			}
 		} else {
 			obs.rebinning_bin_count = rebinning_bin_count;

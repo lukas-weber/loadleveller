@@ -1,7 +1,7 @@
 #pragma once
-#include <vector>
-#include <map>
 #include "runner.h"
+#include <map>
+#include <vector>
 
 namespace loadl {
 
@@ -22,14 +22,15 @@ struct pt_chain {
 struct pt_chain_run {
 private:
 	pt_chain_run() = default;
+
 public:
 	int id;
 
 	int run_id;
 
-	pt_chain_run(const pt_chain& chain, int run_id);
-	static pt_chain_run checkpoint_read(const iodump::group& g);
-	void checkpoint_write(const iodump::group& g);
+	pt_chain_run(const pt_chain &chain, int run_id);
+	static pt_chain_run checkpoint_read(const iodump::group &g);
+	void checkpoint_write(const iodump::group &g);
 
 	std::vector<double> params;
 	std::vector<int> node_to_pos;
@@ -52,7 +53,7 @@ private:
 	int chain_len_;
 	std::unique_ptr<random_number_generator> rng_;
 
-	std::map<int,int> node_to_chain_run_;
+	std::map<int, int> node_to_chain_run_;
 	int current_chain_id_{-1};
 
 	void construct_pt_chains();
@@ -60,7 +61,7 @@ private:
 	void checkpoint_read();
 
 	int schedule_chain_run();
-	void pt_global_update(pt_chain& chain, pt_chain_run& chain_run);
+	void pt_global_update(pt_chain &chain, pt_chain_run &chain_run);
 
 	void react();
 	void send_action(int action, int destination);

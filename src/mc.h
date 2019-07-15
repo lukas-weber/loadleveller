@@ -12,15 +12,15 @@ namespace loadl {
 
 class mc {
 private:
-	void random_init();
-
 	int sweep_ = 0;
 	int therm_ = 0;
 
-	// The following times in seconds are used to estimate a safe exit interval before walltime is up.
+	// The following times in seconds are used to estimate a safe exit interval before walltime is
+	// up.
 	double max_checkpoint_write_time_{0};
 	double max_sweep_time_{0};
 	double max_meas_time_{0};
+
 protected:
 	parser param;
 	std::unique_ptr<random_number_generator> rng;
@@ -34,6 +34,7 @@ protected:
 	virtual void pt_update_param(double /*new_param*/) {
 		throw std::runtime_error{"running parallel tempering, but pt_update_param not implemented"};
 	}
+
 public:
 	double random01();
 	int sweep() const;
@@ -43,7 +44,7 @@ public:
 		throw std::runtime_error{"running parallel tempering, but pt_weight_ratio not implemented"};
 		return 1;
 	}
-	
+
 	// these functions do a little more, like taking care of the
 	// random number generator state, then call the child class versions.
 	void _init();

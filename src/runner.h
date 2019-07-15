@@ -52,6 +52,7 @@ private:
 
 	void react();
 	void send_action(int action, int destination);
+
 public:
 	runner_master(jobinfo job);
 	void start();

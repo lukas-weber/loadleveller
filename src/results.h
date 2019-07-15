@@ -30,7 +30,6 @@ struct observable_result {
 	std::vector<double> autocorrelation_time;
 };
 
-
 // results holds the means and errors merged from all the runs belonging to a task
 // this includes both regular observables and evalables.
 struct results {

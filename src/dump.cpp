@@ -271,5 +271,4 @@ bool file_exists(const std::string &path) {
 	struct stat buf;
 	return stat(path.c_str(), &buf) == 0;
 }
-
 }

@@ -7,14 +7,6 @@ mc::mc(const parser &p) : param{p} {
 
 void mc::write_output(const std::string &) {}
 
-void mc::random_init() {
-	if(param.defined("seed")) {
-		rng.reset(new random_number_generator(param.get<uint64_t>("seed")));
-	} else {
-		rng.reset(new random_number_generator());
-	}
-}
-
 double mc::random01() {
 	return rng->random_double();
 }
@@ -29,7 +21,17 @@ void mc::_init() {
 	measure.add_observable("_ll_checkpoint_write_time", 1);
 	measure.add_observable("_ll_measurement_time", 1000);
 	measure.add_observable("_ll_sweep_time", 1000);
-	random_init();
+
+	if(param.get<bool>("pt_statistics", false)) {
+		measure.add_observable("_ll_pt_rank", 1);
+	}
+		
+	if(param.defined("seed")) {
+		rng.reset(new random_number_generator(param.get<uint64_t>("seed")));
+	} else {
+		rng.reset(new random_number_generator());
+	}
+	
 	init();
 }
 
@@ -40,8 +42,9 @@ void mc::_do_measurement() {
 	do_measurement();
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
-	
-	double measurement_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
+
+	double measurement_time =
+	    (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
 	measure.add("_ll_measurement_time", measurement_time);
 	if(measurement_time > max_meas_time_) {
 		max_meas_time_ = measurement_time;
@@ -68,6 +71,12 @@ void mc::_pt_update_param(double new_param, const std::string &new_dir) {
 	{
 		iodump dump_file = iodump::create(new_dir + ".dump.h5.tmp");
 		measure.checkpoint_read(dump_file.get_root().open_group("measurements"));
+	}
+
+	if(param.get<bool>("pt_statistics", false)) {
+		int rank;
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+		measure.add("_ll_pt_rank", rank);
 	}
 	pt_update_param(new_param);
 }
@@ -98,10 +107,10 @@ void mc::_write(const std::string &dir) {
 		g.write("thermalization_sweeps", std::min(therm_, sweep_)); // only for convenience
 	}
 	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
-	
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
-	double checkpoint_write_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
+	double checkpoint_write_time =
+	    (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
 	measure.add("_ll_checkpoint_write_time", checkpoint_write_time);
 	if(checkpoint_write_time > max_checkpoint_write_time_) {
 		max_checkpoint_write_time_ = checkpoint_write_time;
@@ -110,9 +119,8 @@ void mc::_write(const std::string &dir) {
 
 double mc::safe_exit_interval() {
 	// this is more or less guesswork in an attempt to make it safe for as many cases as possible
-	return 2*(max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
+	return 2 * (max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
 }
-
 
 bool mc::_read(const std::string &dir) {
 	if(!file_exists(dir + ".dump.h5")) {

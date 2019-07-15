@@ -1,12 +1,12 @@
 #include "runner.h"
 #include "merger.h"
+#include "runner_pt.h"
 #include <dirent.h>
 #include <fmt/format.h>
 #include <fstream>
 #include <iomanip>
 #include <regex>
 #include <sys/stat.h>
-#include "runner_pt.h"
 namespace loadl {
 
 enum {
@@ -35,13 +35,13 @@ static int parse_duration(const std::string &str) {
 		if(idx == str.size()) {
 			return i1;
 		} else if(str[idx] == ':') {
-			std::string str1 = str.substr(idx+1);
+			std::string str1 = str.substr(idx + 1);
 			int i2 = std::stoi(str1, &idx, 10);
 
 			if(idx == str1.size()) {
 				return 60 * i1 + i2;
 			} else if(str[idx] == ':') {
-				std::string str2 = str1.substr(idx+1);
+				std::string str2 = str1.substr(idx + 1);
 				int i3 = std::stoi(str2, &idx, 10);
 				if(idx != str2.size()) {
 					throw std::runtime_error{"minutes"};
@@ -55,8 +55,8 @@ static int parse_duration(const std::string &str) {
 			throw std::runtime_error{"seconds"};
 		}
 	} catch(std::exception &e) {
-		throw std::runtime_error{
-		    fmt::format("'{}' does not fit time format [[hours:]minutes:]seconds: {}", str, e.what())};
+		throw std::runtime_error{fmt::format(
+		    "'{}' does not fit time format [[hours:]minutes:]seconds: {}", str, e.what())};
 	}
 }
 
@@ -236,9 +236,10 @@ void runner_master::react() {
 			send_action(A_NEW_JOB, node);
 			tasks_[current_task_id_].scheduled_runs++;
 			int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
-			              tasks_[current_task_id_].target_sweeps+tasks_[current_task_id_].target_thermalization-tasks_[current_task_id_].sweeps};
-			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB,
-			         MPI_COMM_WORLD);
+			              tasks_[current_task_id_].target_sweeps +
+			                  tasks_[current_task_id_].target_thermalization -
+			                  tasks_[current_task_id_].sweeps};
+			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB, MPI_COMM_WORLD);
 		}
 	} else if(node_status == S_BUSY) {
 		int msg[2];
@@ -327,10 +328,11 @@ void runner_slave::start() {
 
 		if(time_is_up()) {
 			what_is_next(S_TIMEUP);
-			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_, sys_->safe_exit_interval()));
+			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_,
+			                     sys_->safe_exit_interval()));
 			break;
 		}
-		
+
 		action = what_is_next(S_BUSY);
 	}
 
@@ -348,7 +350,7 @@ bool runner_slave::time_is_up() {
 	if(sys_ != nullptr) {
 		safe_interval = sys_->safe_exit_interval();
 	}
-	return MPI_Wtime() - time_start_ > job_.walltime-safe_interval;
+	return MPI_Wtime() - time_start_ > job_.walltime - safe_interval;
 }
 
 int runner_slave::what_is_next(int status) {
