@@ -334,7 +334,7 @@ void runner_pt_master::react() {
 			if(partner_pos < 0 || partner_pos >= chain_len_) {
 				int response = GA_SKIP;
 				MPI_Send(&response, 1, MPI_INT, node + 1, T_GLOBAL, MPI_COMM_WORLD);
-				chain_run.weight_ratios[chain_run.node_to_pos[node % chain_len_]] = 1;
+				chain_run.weight_ratios[pos] = 1;
 			} else {
 				int response = GA_CALC_WEIGHT;
 				MPI_Send(&response, 1, MPI_INT, node + 1, T_GLOBAL, MPI_COMM_WORLD);
@@ -345,7 +345,7 @@ void runner_pt_master::react() {
 				double weight;
 				MPI_Recv(&weight, 1, MPI_DOUBLE, node + 1, T_GLOBAL, MPI_COMM_WORLD, &stat);
 				assert(weight >= 0);
-				chain_run.weight_ratios[chain_run.node_to_pos[node % chain_len_]] = weight;
+				chain_run.weight_ratios[pos] = weight;
 			}
 
 			bool all_ready =
@@ -381,7 +381,13 @@ void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run
 		double r = rng_->random_double();
 
 		if(r < w1 * w2) {
-			std::swap(chain_run.node_to_pos[i], chain_run.node_to_pos[i + 1]);
+			for(auto &p : chain_run.node_to_pos) {
+				if(p == i) {
+					p = i+1;
+				} else if(p == i+1) {
+					p = i;
+				}
+			}
 		}
 	}
 
@@ -411,6 +417,7 @@ void runner_pt_slave::start() {
 			}
 
 			if(sys_->sweep() % sweeps_per_global_update_ == 0) {
+				checkpoint_write();
 				pt_global_update();
 			}
 
@@ -444,20 +451,20 @@ void runner_pt_slave::pt_global_update() {
 
 	int response;
 	MPI_Recv(&response, 1, MPI_INT, MASTER, T_GLOBAL, MPI_COMM_WORLD, &stat);
-	job_.log(fmt::format(" * rank {}: ready for global update", rank_));
+	//job_.log(fmt::format(" * rank {}: ready for global update", rank_));
 
 	if(response == GA_DONE) {
-		job_.log(fmt::format(" * rank {}: everything done", rank_));
+		//job_.log(fmt::format(" * rank {}: everything done", rank_));
 		time_last_checkpoint_ = 0; // time to call back!
 		return;
 	} else if(response == GA_CALC_WEIGHT) {
 		double partner_param;
 		MPI_Recv(&partner_param, 1, MPI_DOUBLE, MASTER, T_GLOBAL, MPI_COMM_WORLD, &stat);
-		double weight_ratio = sys_->pt_weight_ratio(partner_param);
+		double weight_ratio = sys_->_pt_weight_ratio(partner_param);
 		MPI_Send(&weight_ratio, 1, MPI_DOUBLE, MASTER, T_GLOBAL, MPI_COMM_WORLD);
-		job_.log(fmt::format(" * rank {}: weight sent", rank_));
+		//job_.log(fmt::format(" * rank {}: weight sent", rank_));
 	} else {
-		job_.log(fmt::format(" * rank {}: no weight needed", rank_));
+		//job_.log(fmt::format(" * rank {}: no weight needed", rank_));
 	}
 		
 
@@ -470,7 +477,6 @@ void runner_pt_slave::pt_global_update() {
 	    job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>("pt_sweeps_per_global_update");
 
 	sys_->_pt_update_param(new_param, job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format(" * rank {}: global update received param {}", rank_, new_param));
 }
 
 bool runner_pt_slave::accept_new_chain() {

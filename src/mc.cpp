@@ -24,6 +24,7 @@ void mc::_init() {
 
 	if(param.get<bool>("pt_statistics", false)) {
 		measure.add_observable("_ll_pt_rank", 1);
+		measure.add_observable("_ll_pt_weight_ratio", 1);
 	}
 		
 	if(param.defined("seed")) {
@@ -68,10 +69,10 @@ void mc::_do_update() {
 
 void mc::_pt_update_param(double new_param, const std::string &new_dir) {
 	// take over the bins of the new target dir
-	{
-		iodump dump_file = iodump::create(new_dir + ".dump.h5.tmp");
+	/*{
+		iodump dump_file = iodump::open_readonly(new_dir + ".dump.h5");
 		measure.checkpoint_read(dump_file.get_root().open_group("measurements"));
-	}
+	}*/
 
 	if(param.get<bool>("pt_statistics", false)) {
 		int rank;
@@ -79,6 +80,14 @@ void mc::_pt_update_param(double new_param, const std::string &new_dir) {
 		measure.add("_ll_pt_rank", rank);
 	}
 	pt_update_param(new_param);
+}
+
+double mc::_pt_weight_ratio(double new_param) {
+	double wr = pt_weight_ratio(new_param);
+	if(param.get<bool>("pt_statistics", false)) {
+		measure.add("_ll_pt_weight_ratio", wr);
+	}
+	return wr;
 }
 
 void mc::_write(const std::string &dir) {

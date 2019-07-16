@@ -34,20 +34,21 @@ protected:
 	virtual void pt_update_param(double /*new_param*/) {
 		throw std::runtime_error{"running parallel tempering, but pt_update_param not implemented"};
 	}
+	virtual double pt_weight_ratio(double /*new_param*/) {
+		throw std::runtime_error{"running parallel tempering, but pt_weight_ratio not implemented"};
+		return 1;
+	}
 
 public:
 	double random01();
 	int sweep() const;
 
 	virtual void register_evalables(std::vector<evalable> &evalables) = 0;
-	virtual double pt_weight_ratio(double /*new_param*/) {
-		throw std::runtime_error{"running parallel tempering, but pt_weight_ratio not implemented"};
-		return 1;
-	}
 
 	// these functions do a little more, like taking care of the
 	// random number generator state, then call the child class versions.
 	void _init();
+
 	void _write(const std::string &dir);
 	bool _read(const std::string &dir);
 
@@ -56,8 +57,12 @@ public:
 	void _do_update();
 	void _do_measurement();
 	void _pt_update_param(double new_param, const std::string &new_dir);
+	double _pt_weight_ratio(double new_param);
 
 	double safe_exit_interval();
+	
+	// write only measurement data (useful for parallel tempering)
+	void measurement_write(const std::string &dir);
 
 	bool is_thermalized();
 	measurements measure;
