@@ -10,7 +10,9 @@ class JobFileGenError(Exception):
 
 class JobFile:
     def __init__(self, filename):
-        result = subprocess.run([filename], stdout=subprocess.PIPE)
+        env = dict(os.environ)
+        env['PATH'] += ':.'
+        result = subprocess.run([filename], stdout=subprocess.PIPE, env=env)
 
         self.raw_jobfile = result.stdout.decode('utf-8')
         if result.returncode != 0:

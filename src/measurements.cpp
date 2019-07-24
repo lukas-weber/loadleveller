@@ -41,4 +41,13 @@ void measurements::samples_write(const iodump::group &meas_file) {
 		obs.second.measurement_write(g);
 	}
 }
+
+std::optional<std::string> measurements::is_unclean() const {
+	for(const auto &obs : observables_) {
+		if(!obs.second.is_clean()) {
+			return obs.first;
+		}
+	}
+	return std::nullopt;
+}
 }

@@ -1,5 +1,5 @@
 #include "merger.h"
-#include "dump.h"
+#include "iodump.h"
 #include "evalable.h"
 #include "mc.h"
 #include "measurements.h"

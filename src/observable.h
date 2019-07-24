@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dump.h"
+#include "iodump.h"
 #include <cmath>
 #include <map>
 #include <string>
@@ -26,6 +26,9 @@ public:
 	void measurement_write(const iodump::group &meas_file);
 
 	void checkpoint_read(const iodump::group &dump_file);
+
+	// true if there are no samples in the bin
+	bool is_clean() const;
 
 private:
 	static const size_t initial_bin_length = 1000;

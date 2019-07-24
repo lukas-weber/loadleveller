@@ -14,8 +14,9 @@ configure_file(input : 'config.h.in',
 config_inc = include_directories('.')
 
 loadleveller_sources = files([
-  'dump.cpp',
   'evalable.cpp',
+  'iodump.cpp',
+  'jobinfo.cpp',
   'mc.cpp',
   'measurements.cpp',
   'merger.cpp',
@@ -30,8 +31,9 @@ loadleveller_sources = files([
 ])
 
 loadleveller_headers = files([
-  'dump.h',
   'evalable.h',
+  'iodump.h',
+  'jobinfo.h',
   'loadleveller.h',
   'mc.h',
   'measurements.h',
@@ -58,7 +60,7 @@ libloadleveller = library('loadleveller',
 if should_install
   pkg = import('pkgconfig')
   pkg.generate(libloadleveller,
-    description : 'Framework for distributed (Quantum) Monte Carlo codes',
+    description : 'Framework for distributed (quantum) Monte Carlo codes',
   )
   
   install_headers(loadleveller_headers, subdir : 'loadleveller')

@@ -3,7 +3,7 @@
 #include "config.h"
 
 #include "MersenneTwister.h"
-#include "dump.h"
+#include "iodump.h"
 #include <random>
 #include <sstream>
 #include <typeinfo>

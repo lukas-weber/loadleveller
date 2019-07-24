@@ -2,7 +2,8 @@
 namespace loadl {
 
 mc::mc(const parser &p) : param{p} {
-	therm_ = param.get<int>("thermalization");
+	therm_ = p.get<int>("thermalization");
+	pt_sweeps_per_global_update_ = p.get<int>("pt_sweeps_per_global_update", -1);
 }
 
 void mc::write_output(const std::string &) {}
@@ -19,12 +20,13 @@ void mc::_init() {
 	// simple profiling support: measure the time spent for sweeps/measurements etc
 	measure.add_observable("_ll_checkpoint_read_time", 1);
 	measure.add_observable("_ll_checkpoint_write_time", 1);
-	measure.add_observable("_ll_measurement_time", 1000);
-	measure.add_observable("_ll_sweep_time", 1000);
+	measure.add_observable("_ll_measurement_time", pt_mode_ ? pt_sweeps_per_global_update_ : 1000);
+	measure.add_observable("_ll_sweep_time", pt_mode_ ? pt_sweeps_per_global_update_ : 1000);
 
-	if(param.get<bool>("pt_statistics", false)) {
-		measure.add_observable("_ll_pt_rank", 1);
-		measure.add_observable("_ll_pt_weight_ratio", 1);
+	if(pt_mode_) {
+		if(param.get<bool>("pt_statistics", false)) {
+			measure.add_observable("_ll_pt_rank", 1);
+		}
 	}
 		
 	if(param.defined("seed")) {
@@ -69,44 +71,54 @@ void mc::_do_update() {
 
 void mc::_pt_update_param(double new_param, const std::string &new_dir) {
 	// take over the bins of the new target dir
-	/*{
+	{
 		iodump dump_file = iodump::open_readonly(new_dir + ".dump.h5");
 		measure.checkpoint_read(dump_file.get_root().open_group("measurements"));
-	}*/
+	}
 
+	auto unclean = measure.is_unclean();
+	if(unclean) {
+		throw std::runtime_error(fmt::format("Unclean observable: {}\nIn parallel tempering mode you have to choose the binsize for all observables so that it is commensurate with pt_sweeps_per_global_update (so that all bins are empty once it happens). If you don’t like this limitation, implement it properly.", *unclean));
+	}
+
+	pt_update_param(new_param);
+}
+
+void mc::pt_measure_statistics() {
 	if(param.get<bool>("pt_statistics", false)) {
 		int rank;
 		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 		measure.add("_ll_pt_rank", rank);
 	}
-	pt_update_param(new_param);
 }
 
 double mc::_pt_weight_ratio(double new_param) {
 	double wr = pt_weight_ratio(new_param);
-	if(param.get<bool>("pt_statistics", false)) {
-		measure.add("_ll_pt_weight_ratio", wr);
-	}
 	return wr;
+}
+
+void mc::measurements_write(const std::string &dir) {
+	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
+	{
+		iodump meas_file = iodump::open_readwrite(dir + ".meas.h5");
+		auto g = meas_file.get_root();
+		measure.samples_write(g);
+	}
 }
 
 void mc::_write(const std::string &dir) {
 	struct timespec tstart, tend;
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
 
-	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
-	{
-		iodump meas_file = iodump::open_readwrite(dir + ".meas.h5");
-		measure.samples_write(meas_file.get_root());
-	}
+	measurements_write(dir);
 
 	{
 		iodump dump_file = iodump::create(dir + ".dump.h5.tmp");
 		auto g = dump_file.get_root();
 
-		measure.checkpoint_write(g.open_group("measurements"));
 		rng->checkpoint_write(g.open_group("random_number_generator"));
 		checkpoint_write(g.open_group("simulation"));
+		measure.checkpoint_write(g.open_group("measurements"));
 
 		g.write("max_checkpoint_write_time", max_checkpoint_write_time_);
 		g.write("max_sweep_time", max_sweep_time_);
@@ -130,6 +142,7 @@ double mc::safe_exit_interval() {
 	// this is more or less guesswork in an attempt to make it safe for as many cases as possible
 	return 2 * (max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
 }
+
 
 bool mc::_read(const std::string &dir) {
 	if(!file_exists(dir + ".dump.h5")) {
@@ -164,6 +177,11 @@ void mc::_write_output(const std::string &filename) {
 }
 
 bool mc::is_thermalized() {
-	return sweep_ > therm_;
+	int sweep = sweep_;
+	if(pt_mode_ && pt_sweeps_per_global_update_ > 0) {
+		sweep /= pt_sweeps_per_global_update_;
+	}
+		
+	return sweep >= therm_;
 }
 }

@@ -5,36 +5,13 @@
 #include <ostream>
 #include <vector>
 
-#include "dump.h"
 #include "mc.h"
 #include "measurements.h"
 #include "parser.h"
 #include "runner_task.h"
+#include "jobinfo.h"
 
 namespace loadl {
-
-struct jobinfo {
-	parser jobfile;
-	std::string jobname;
-
-	std::vector<std::string> task_names;
-
-	double checkpoint_time;
-	double walltime;
-
-	jobinfo(const std::string &jobfile_name);
-
-	std::string jobdir() const;
-	std::string rundir(int task_id, int run_id) const;
-	std::string taskdir(int task_id) const;
-
-	static std::vector<std::string> list_run_files(const std::string &taskdir,
-	                                               const std::string &file_ending);
-	int read_dump_progress(int task_id) const;
-	void merge_task(int task_id, const std::vector<evalable> &evalables);
-	void concatenate_results();
-	void log(const std::string &message);
-};
 
 int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
 
@@ -79,7 +56,7 @@ private:
 	void end_of_run();
 	int recv_action();
 	int what_is_next(int);
-	void write_checkpoint();
+	void checkpoint_write();
 	void merge_measurements();
 
 public:

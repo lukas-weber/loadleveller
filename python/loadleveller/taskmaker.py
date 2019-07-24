@@ -6,24 +6,28 @@ import numpy
 def _expand_path(path):
     return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
 
+def JobConfig(filename):
+    with open(_expand_path(filename), 'r') as f:
+        return yaml.safe_load(f)
+
 class TaskMaker:
     def __init__(self, name, jobconfig):
-        self._tm_name = os.path.splitext(name)[0]
+        self._tm_name = name
         self._tm_tasks = []
-        with open(_expand_path(jobconfig), 'r') as f:
-            self._tm_jobconfig = yaml.safe_load(f)
+        if type(jobconfig) == dict:
+            self._tm_jobconfig = jobconfig
+        elif type(jobconfig) == str:
+            self._tm_jobconfig = JobConfig(jobconfig)
 
         self._tm_jobconfig['mc_binary'] = _expand_path(self._tm_jobconfig['mc_binary'])
 
-        
     def task(self, **additional_parameters):
         self._tm_tasks.append({**self.__dict__, **additional_parameters})
 
     def write(self):
         filenames = []
         jobfile_dict = { 'jobname': self._tm_name, 'jobconfig': self._tm_jobconfig, 'tasks': {}}
-        
-        
+
         for i, t in enumerate(self._tm_tasks):
             task_name = f'task{i+1:04d}'
             task_dict = {}

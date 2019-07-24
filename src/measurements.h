@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dump.h"
+#include "iodump.h"
 #include "observable.h"
 #include <map>
 #include <string>
@@ -25,6 +25,10 @@ public:
 	// samples_write needs to be called before checkpoint_write and the meas_file
 	// should be opened in read/write mode.
 	void samples_write(const iodump::group &meas_file);
+
+	// returns nullopt if all observables are clean,
+	// otherwise the name of a non-empty observable 
+	std::optional<std::string> is_unclean() const;
 
 private:
 	std::map<std::string, observable> observables_;

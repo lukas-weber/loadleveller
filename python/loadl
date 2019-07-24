@@ -28,7 +28,7 @@ if jobdir != '':
     os.chdir(jobdir)
 
 try:
-    job = jobfile.JobFile('./'+os.path.basename(args.jobfile))
+    job = jobfile.JobFile(os.path.basename(args.jobfile))
 except jobfile.JobFileGenError as e:
     print('Error: {}'.format(e))
     sys.exit(1)

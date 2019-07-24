@@ -12,8 +12,9 @@ namespace loadl {
 
 class mc {
 private:
-	int sweep_ = 0;
-	int therm_ = 0;
+	int sweep_{0};
+	int therm_{0};
+	int pt_sweeps_per_global_update_{-1};
 
 	// The following times in seconds are used to estimate a safe exit interval before walltime is
 	// up.
@@ -40,6 +41,8 @@ protected:
 	}
 
 public:
+	bool pt_mode_{};
+
 	double random01();
 	int sweep() const;
 
@@ -52,6 +55,8 @@ public:
 	void _write(const std::string &dir);
 	bool _read(const std::string &dir);
 
+	void measurements_write(const std::string &dir);
+
 	void _write_output(const std::string &filename);
 
 	void _do_update();
@@ -59,10 +64,9 @@ public:
 	void _pt_update_param(double new_param, const std::string &new_dir);
 	double _pt_weight_ratio(double new_param);
 
+	void pt_measure_statistics();
+
 	double safe_exit_interval();
-	
-	// write only measurement data (useful for parallel tempering)
-	void measurement_write(const std::string &dir);
 
 	bool is_thermalized();
 	measurements measure;
