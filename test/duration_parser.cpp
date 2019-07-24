@@ -1,4 +1,4 @@
-#include "runner.cpp"
+#include "jobinfo.cpp"
 
 int main() {
 	using namespace loadl;

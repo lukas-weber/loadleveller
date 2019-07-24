@@ -5,11 +5,11 @@
 #include <ostream>
 #include <vector>
 
+#include "jobinfo.h"
 #include "mc.h"
 #include "measurements.h"
 #include "parser.h"
 #include "runner_task.h"
-#include "jobinfo.h"
 
 namespace loadl {
 

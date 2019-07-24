@@ -26,7 +26,7 @@ struct pt_chain {
 	void checkpoint_write(const iodump::group &g);
 
 	void clear_histograms();
-	void optimize_params();
+	void optimize_params(int linreg_len);
 };
 
 struct pt_chain_run {

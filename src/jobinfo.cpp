@@ -1,11 +1,11 @@
 #include "jobinfo.h"
+#include "merger.h"
 #include <ctime>
+#include <dirent.h>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <fstream>
 #include <regex>
-#include <dirent.h>
-#include "merger.h"
 
 namespace loadl {
 

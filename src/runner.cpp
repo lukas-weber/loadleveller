@@ -1,6 +1,6 @@
 #include "runner.h"
-#include "merger.h"
 #include "iodump.h"
+#include "merger.h"
 #include "runner_pt.h"
 #include <fmt/format.h>
 namespace loadl {

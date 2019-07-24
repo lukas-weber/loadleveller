@@ -1,6 +1,6 @@
 #include "merger.h"
-#include "iodump.h"
 #include "evalable.h"
+#include "iodump.h"
 #include "mc.h"
 #include "measurements.h"
 
@@ -107,7 +107,7 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 	for(auto &filename : filenames) {
 		iodump meas_file = iodump::open_readonly(filename);
 		auto g = meas_file.get_root();
-		for(auto & [obs_name, obs] : res.observables) {
+		for(auto &[obs_name, obs] : res.observables) {
 			std::vector<double> samples;
 			obs.name = obs_name;
 
@@ -143,7 +143,7 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 	for(auto &filename : filenames) {
 		iodump meas_file = iodump::open_readonly(filename);
 		auto g = meas_file.get_root();
-		for(auto & [obs_name, obs] : res.observables) {
+		for(auto &[obs_name, obs] : res.observables) {
 			std::vector<double> samples;
 			auto &obs_meta = metadata.at(obs_name);
 

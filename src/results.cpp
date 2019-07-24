@@ -13,7 +13,7 @@ void results::write_yaml(const std::string &filename, const std::string &taskdir
 	out << YAML::Key << "task" << YAML::Value << taskdir;
 	out << YAML::Key << "parameters" << YAML::Value << params;
 	out << YAML::Key << "results" << YAML::Value << YAML::BeginMap;
-	for(auto & [obs_name, obs] : observables) {
+	for(auto &[obs_name, obs] : observables) {
 		out << YAML::Key << obs_name;
 		if(obs.internal_bin_length == 0) {
 			out << YAML::Comment("evalable");

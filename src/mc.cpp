@@ -28,13 +28,13 @@ void mc::_init() {
 			measure.add_observable("_ll_pt_rank", 1);
 		}
 	}
-		
+
 	if(param.defined("seed")) {
 		rng.reset(new random_number_generator(param.get<uint64_t>("seed")));
 	} else {
 		rng.reset(new random_number_generator());
 	}
-	
+
 	init();
 }
 
@@ -78,7 +78,12 @@ void mc::_pt_update_param(double new_param, const std::string &new_dir) {
 
 	auto unclean = measure.is_unclean();
 	if(unclean) {
-		throw std::runtime_error(fmt::format("Unclean observable: {}\nIn parallel tempering mode you have to choose the binsize for all observables so that it is commensurate with pt_sweeps_per_global_update (so that all bins are empty once it happens). If you don’t like this limitation, implement it properly.", *unclean));
+		throw std::runtime_error(
+		    fmt::format("Unclean observable: {}\nIn parallel tempering mode you have to choose the "
+		                "binsize for all observables so that it is commensurate with "
+		                "pt_sweeps_per_global_update (so that all bins are empty once it happens). "
+		                "If you don’t like this limitation, implement it properly.",
+		                *unclean));
 	}
 
 	pt_update_param(new_param);
@@ -143,7 +148,6 @@ double mc::safe_exit_interval() {
 	return 2 * (max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
 }
 
-
 bool mc::_read(const std::string &dir) {
 	if(!file_exists(dir + ".dump.h5")) {
 		return false;
@@ -181,7 +185,7 @@ bool mc::is_thermalized() {
 	if(pt_mode_ && pt_sweeps_per_global_update_ > 0) {
 		sweep /= pt_sweeps_per_global_update_;
 	}
-		
+
 	return sweep >= therm_;
 }
 }

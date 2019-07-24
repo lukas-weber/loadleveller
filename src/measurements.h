@@ -27,7 +27,7 @@ public:
 	void samples_write(const iodump::group &meas_file);
 
 	// returns nullopt if all observables are clean,
-	// otherwise the name of a non-empty observable 
+	// otherwise the name of a non-empty observable
 	std::optional<std::string> is_unclean() const;
 
 private:
