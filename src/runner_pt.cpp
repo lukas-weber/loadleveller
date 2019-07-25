@@ -406,7 +406,7 @@ int runner_pt_master::assign_new_chain(int rank_section) {
 
 	for(int target = 0; target < chain_len_; target++) {
 		int msg[3] = {-1, 0, 0};
-		if(chain_run_id >= 0) {
+		if(chain_run_id > 0) {
 			auto &chain_run = pt_chain_runs_[chain_run_id];
 			auto &chain = pt_chains_[chain_run.id];
 			msg[0] = chain.task_ids[target];
@@ -634,10 +634,12 @@ void runner_pt_slave::pt_global_update() {
 	MPI_Recv(&response, 1, MPI_INT, MASTER, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	// job_.log(fmt::format(" * rank {}: ready for global update", rank_));
 
+	const std::string& param_name = job_.jobfile["jobconfig"].get<std::string>("parallel_tempering_parameter");
+
 	if(response == GA_CALC_WEIGHT) {
 		double partner_param;
 		MPI_Recv(&partner_param, 1, MPI_DOUBLE, MASTER, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		double weight_ratio = sys_->_pt_weight_ratio(partner_param);
+		double weight_ratio = sys_->_pt_weight_ratio(param_name, partner_param);
 		MPI_Send(&weight_ratio, 1, MPI_DOUBLE, MASTER, 0, MPI_COMM_WORLD);
 		// job_.log(fmt::format(" * rank {}: weight sent", rank_));
 	} else {
@@ -663,7 +665,7 @@ void runner_pt_slave::pt_global_update() {
 		task_id_ = new_task_id;
 		sweeps_per_global_update_ = job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>(
 		    "pt_sweeps_per_global_update");
-		sys_->_pt_update_param(new_param, job_.rundir(task_id_, run_id_));
+		sys_->_pt_update_param(param_name, new_param, job_.rundir(task_id_, run_id_));
 	}
 	current_param_ = new_param;
 }

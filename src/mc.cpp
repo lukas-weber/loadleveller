@@ -69,7 +69,7 @@ void mc::_do_update() {
 	}
 }
 
-void mc::_pt_update_param(double new_param, const std::string &new_dir) {
+void mc::_pt_update_param(const std::string& param_name, double new_param, const std::string &new_dir) {
 	// take over the bins of the new target dir
 	{
 		iodump dump_file = iodump::open_readonly(new_dir + ".dump.h5");
@@ -86,7 +86,7 @@ void mc::_pt_update_param(double new_param, const std::string &new_dir) {
 		                *unclean));
 	}
 
-	pt_update_param(new_param);
+	pt_update_param(param_name, new_param);
 }
 
 void mc::pt_measure_statistics() {
@@ -97,8 +97,8 @@ void mc::pt_measure_statistics() {
 	}
 }
 
-double mc::_pt_weight_ratio(double new_param) {
-	double wr = pt_weight_ratio(new_param);
+double mc::_pt_weight_ratio(const std::string& param_name, double new_param) {
+	double wr = pt_weight_ratio(param_name, new_param);
 	return wr;
 }
 
