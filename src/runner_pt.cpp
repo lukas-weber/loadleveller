@@ -104,7 +104,10 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 	new_params[0] = params[0];
 	new_params[params.size() - 1] = params[params.size() - 1];
 
-	double flinearity = 0;
+	double fnonlinearity = 0;
+	// in the worst case, f=0 or f=1 for [1,N-2]
+	int n = params.size();
+	double fnonlinearity_worst = sqrt((2*n+1./n-3)/6.)/n;
 	for(size_t i = 0; i < params.size(); i++) {
 		if(nup_histogram[i] + ndown_histogram[i] == 0) {
 			f[i] = 0;
@@ -113,9 +116,9 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 		}
 		
 		double ideal_f = 1-i/static_cast<double>(params.size());
-		flinearity += (f[i]-ideal_f)*(f[i]-ideal_f);
+		fnonlinearity += (f[i]-ideal_f)*(f[i]-ideal_f);
 	}
-	flinearity = sqrt(flinearity)/params.size();
+	fnonlinearity = sqrt(fnonlinearity)/params.size()/fnonlinearity_worst;
 
 	double norm = 0;
 	for(size_t i = 0; i < params.size() - 1; i++) {
@@ -150,7 +153,7 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 		params[i] = params[i]*(1-relaxation_fac) + relaxation_fac*new_params[i];
 	}
 
-	return std::tie(flinearity, convergence);
+	return std::tie(fnonlinearity, convergence);
 }
 
 bool pt_chain::is_done() {
@@ -406,7 +409,7 @@ int runner_pt_master::assign_new_chain(int rank_section) {
 
 	for(int target = 0; target < chain_len_; target++) {
 		int msg[3] = {-1, 0, 0};
-		if(chain_run_id > 0) {
+		if(chain_run_id >= 0) {
 			auto &chain_run = pt_chain_runs_[chain_run_id];
 			auto &chain = pt_chains_[chain_run.id];
 			msg[0] = chain.task_ids[target];
@@ -440,11 +443,11 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chai
 	}
 	chain.histogram_entries++;
 	if(chain.histogram_entries >= chain.entries_before_optimization) {
-		auto [flinearity, convergence] = chain.optimize_params(job_.jobfile["jobconfig"].get<int>(
+		auto [fnonlinearity, convergence] = chain.optimize_params(job_.jobfile["jobconfig"].get<int>(
 		    "pt_parameter_optimization_linreg_len", 2));
 		chain.clear_histograms();
-		job_.log(fmt::format("chain {}: pt param optimization: entries={}, f linearity={:.2g}, convergence={:.2g}",
-		                     chain.id, chain.entries_before_optimization, flinearity, convergence));
+		job_.log(fmt::format("chain {}: pt param optimization: entries={}, f nonlinearity={:.2g}, convergence={:.2g}",
+		                     chain.id, chain.entries_before_optimization, fnonlinearity, convergence));
 
 		chain.entries_before_optimization *= job_.jobfile["jobconfig"].get<double>(
 		    "pt_parameter_optimization_nsamples_growth", 1.5);

@@ -34,15 +34,15 @@ private:
 	pt_chain_run() = default;
 
 public:
-	int id;
-	int run_id;
+	int id{};
+	int run_id{};
 
 	pt_chain_run(const pt_chain &chain, int run_id);
 	static pt_chain_run checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
 
 	std::vector<int> rank_to_pos;
-	std::vector<int> weight_ratios;
+	std::vector<double> weight_ratios;
 
 	std::vector<int> last_visited;
 };
