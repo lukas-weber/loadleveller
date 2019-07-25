@@ -26,7 +26,7 @@ struct pt_chain {
 	void checkpoint_write(const iodump::group &g);
 
 	void clear_histograms();
-	void optimize_params(int linreg_len);
+	std::tuple<double, double> optimize_params(int linreg_len);
 };
 
 struct pt_chain_run {
@@ -73,6 +73,7 @@ private:
 
 	int schedule_chain_run();
 	void pt_global_update(pt_chain &chain, pt_chain_run &chain_run);
+	void pt_param_optimization(pt_chain &chain, pt_chain_run &chain_run);
 
 	void react();
 	void send_action(int action, int destination);
