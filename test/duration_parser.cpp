@@ -1,17 +1,11 @@
+#define CATCH_CONFIG_MAIN
+#include "catch.hpp"
 #include "jobinfo.cpp"
 
-int main() {
-	using namespace loadl;
+using namespace loadl;
 
-	if(parse_duration("20") != 20) {
-		return 1;
-	}
-	if(parse_duration("10:03") != 10 * 60 + 3) {
-		return 2;
-	}
-	if(parse_duration("24:06:10") != 60 * 60 * 24 + 60 * 6 + 10) {
-		return 3;
-	}
-
-	return 0;
+TEST_CASE("parse durations") {
+	REQUIRE(parse_duration("20") == 20);
+	REQUIRE(parse_duration("10:03") == 10 * 60 + 3);
+	REQUIRE(parse_duration("24:06:10") == 60 * 60 * 24 + 60 * 6 + 10);
 }
