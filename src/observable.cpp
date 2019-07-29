@@ -1,6 +1,5 @@
 #include "observable.h"
-#include <fmt/format.h>
-#include <iostream>
+#include <mpi.h>
 namespace loadl {
 
 observable::observable(std::string name, size_t bin_length, size_t vector_length)
@@ -23,7 +22,6 @@ void observable::checkpoint_write(const iodump::group &dump_file) const {
 	// Another sanity check: the samples_ array should contain one partial bin.
 	assert(samples_.size() == vector_length_);
 
-	dump_file.write("name", name_);
 	dump_file.write("vector_length", vector_length_);
 	dump_file.write("bin_length", bin_length_);
 	dump_file.write("current_bin_filling", current_bin_filling_);
@@ -48,8 +46,8 @@ void observable::measurement_write(const iodump::group &meas_file) {
 	current_bin_ = 0;
 }
 
-void observable::checkpoint_read(const iodump::group &d) {
-	d.read("name", name_);
+void observable::checkpoint_read(const std::string& name, const iodump::group &d) {
+	name_ = name;
 	d.read("vector_length", vector_length_);
 	d.read("bin_length", bin_length_);
 	d.read("current_bin_filling", current_bin_filling_);
@@ -57,11 +55,22 @@ void observable::checkpoint_read(const iodump::group &d) {
 	current_bin_ = 0;
 }
 
-bool observable::is_clean() const {
-	if(current_bin_filling_ != 0) {
-		std::cout << current_bin_filling_ << "\n";
-	}
-	return current_bin_ == 0 && current_bin_filling_ == 0;
+void observable::mpi_sendrecv(int target_rank) {
+	const int msg_size = 4;
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	unsigned long msg[msg_size] = {current_bin_, vector_length_, bin_length_, current_bin_filling_};
+	MPI_Sendrecv_replace(msg, msg_size, MPI_UNSIGNED_LONG, target_rank, 0, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	current_bin_ = msg[0];
+	vector_length_ = msg[1];
+	bin_length_ = msg[2];
+	current_bin_filling_ = msg[3];
+
+	std::vector<double> recvbuf((current_bin_+1)*vector_length_);
+	MPI_Sendrecv(samples_.data(), samples_.size(), MPI_DOUBLE, target_rank, 0, recvbuf.data(), recvbuf.size(), MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+	samples_ = recvbuf;
 }
 
 }

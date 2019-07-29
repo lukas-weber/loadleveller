@@ -20,8 +20,8 @@ void mc::_init() {
 	// simple profiling support: measure the time spent for sweeps/measurements etc
 	measure.add_observable("_ll_checkpoint_read_time", 1);
 	measure.add_observable("_ll_checkpoint_write_time", 1);
-	measure.add_observable("_ll_measurement_time", pt_mode_ ? pt_sweeps_per_global_update_ : 1000);
-	measure.add_observable("_ll_sweep_time", pt_mode_ ? pt_sweeps_per_global_update_ : 1000);
+	measure.add_observable("_ll_measurement_time", 1000);
+	measure.add_observable("_ll_sweep_time", 1000);
 
 	if(pt_mode_) {
 		if(param.get<bool>("pt_statistics", false)) {
@@ -69,23 +69,8 @@ void mc::_do_update() {
 	}
 }
 
-void mc::_pt_update_param(const std::string& param_name, double new_param, const std::string &new_dir) {
-	// take over the bins of the new target dir
-	{
-		iodump dump_file = iodump::open_readonly(new_dir + ".dump.h5");
-		measure.checkpoint_read(dump_file.get_root().open_group("measurements"));
-	}
-
-	auto unclean = measure.is_unclean();
-	if(unclean) {
-		throw std::runtime_error(
-		    fmt::format("Unclean observable: {}\nIn parallel tempering mode you have to choose the "
-		                "binsize for all observables so that it is commensurate with "
-		                "pt_sweeps_per_global_update (so that all bins are empty once it happens). "
-		                "If you don’t like this limitation, implement it properly.",
-		                *unclean));
-	}
-
+void mc::_pt_update_param(int target_rank, const std::string& param_name, double new_param) {
+	measure.mpi_sendrecv(target_rank);
 	pt_update_param(param_name, new_param);
 }
 
@@ -102,20 +87,16 @@ double mc::_pt_weight_ratio(const std::string& param_name, double new_param) {
 	return wr;
 }
 
-void mc::measurements_write(const std::string &dir) {
+void mc::_write(const std::string &dir) {
+	struct timespec tstart, tend;
+	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
+
 	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
 	{
 		iodump meas_file = iodump::open_readwrite(dir + ".meas.h5");
 		auto g = meas_file.get_root();
 		measure.samples_write(g);
 	}
-}
-
-void mc::_write(const std::string &dir) {
-	struct timespec tstart, tend;
-	clock_gettime(CLOCK_MONOTONIC_RAW, &tstart);
-
-	measurements_write(dir);
 
 	{
 		iodump dump_file = iodump::create(dir + ".dump.h5.tmp");

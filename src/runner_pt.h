@@ -9,17 +9,17 @@ struct pt_chain {
 	int id{};
 	std::vector<int> task_ids;
 	std::vector<double> params;
-	std::vector<int> nup_histogram;
-	std::vector<int> ndown_histogram;
 
 	int sweeps{-1};
 	int target_sweeps{-1};
 	int target_thermalization{-1};
-
+	int scheduled_runs{};
+	
+	// parameter optimization
+	std::vector<int> nup_histogram;
+	std::vector<int> ndown_histogram;
 	int entries_before_optimization{0};
 	int histogram_entries{};
-
-	int scheduled_runs{};
 
 	bool is_done();
 	void checkpoint_read(const iodump::group &g);
@@ -36,12 +36,14 @@ private:
 public:
 	int id{};
 	int run_id{};
+	bool swap_odd{};
 
 	pt_chain_run(const pt_chain &chain, int run_id);
 	static pt_chain_run checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
 
 	std::vector<int> rank_to_pos;
+	std::vector<int> switch_partners;
 	std::vector<double> weight_ratios;
 
 	std::vector<int> last_visited;
@@ -57,7 +59,6 @@ private:
 	double time_last_checkpoint_{0};
 
 	bool use_param_optimization_{};
-	bool pt_swap_odd_{};
 	std::vector<pt_chain> pt_chains_;
 	std::vector<pt_chain_run> pt_chain_runs_;
 	int chain_len_;
@@ -108,8 +109,8 @@ private:
 
 	void pt_global_update();
 
-	bool is_checkpoint_time();
-	bool time_is_up();
+	int negotiate_timeout();
+
 	void send_status(int status);
 	int recv_action();
 	void checkpoint_write();

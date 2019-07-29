@@ -55,13 +55,11 @@ public:
 	void _write(const std::string &dir);
 	bool _read(const std::string &dir);
 
-	void measurements_write(const std::string &dir);
-
 	void _write_output(const std::string &filename);
 
 	void _do_update();
 	void _do_measurement();
-	void _pt_update_param(const std::string& param_name, double new_param, const std::string &new_dir);
+	void _pt_update_param(int target_rank, const std::string& param_name, double new_param);
 	double _pt_weight_ratio(const std::string& param_name, double new_param);
 
 	void pt_measure_statistics();

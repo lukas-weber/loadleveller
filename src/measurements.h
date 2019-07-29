@@ -6,6 +6,7 @@
 #include <string>
 #include <valarray>
 #include <vector>
+#include <set>
 
 namespace loadl {
 
@@ -26,11 +27,11 @@ public:
 	// should be opened in read/write mode.
 	void samples_write(const iodump::group &meas_file);
 
-	// returns nullopt if all observables are clean,
-	// otherwise the name of a non-empty observable
-	std::optional<std::string> is_unclean() const;
-
+	// switches the content of the measurement buffers with the target_rank
+	// both ranks must have the same set of observables!
+	void mpi_sendrecv(int target_rank);
 private:
+	std::set<int> mpi_checked_targets_;
 	std::map<std::string, observable> observables_;
 };
 
