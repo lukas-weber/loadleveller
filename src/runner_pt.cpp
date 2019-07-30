@@ -302,7 +302,6 @@ void runner_pt_master::checkpoint_read() {
 			pt_chains_.at(id).checkpoint_read(pt_chains.open_group(name));
 		}
 
-		g.read("current_chain_id", current_chain_id_);
 	}
 }
 
@@ -339,8 +338,6 @@ void runner_pt_master::checkpoint_write() {
 	for(auto &c : pt_chains_) {
 		c.checkpoint_write(pt_chains.open_group(fmt::format("{:04d}", c.id)));
 	}
-
-	g.write("current_chain_id", current_chain_id_);
 
 	if(use_param_optimization_) {
 		write_params_yaml();
@@ -389,8 +386,8 @@ int runner_pt_master::schedule_chain_run() {
 	int nchains = pt_chains_.size();
 	for(int i = 1; i <= nchains; i++) {
 		if(!pt_chains_[(old_id + i) % nchains].is_done()) {
-			int new_chain_id = (old_id + i) % nchains;
-			auto &chain = pt_chains_[new_chain_id];
+			current_chain_id_ = (old_id + i) % nchains;
+			auto &chain = pt_chains_[current_chain_id_];
 			chain.scheduled_runs++;
 
 			int idx = 0;
@@ -774,7 +771,9 @@ int runner_pt_slave::what_is_next(int status) {
 void runner_pt_slave::checkpoint_write() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
+	if(chain_rank_ == 0) {
+		job_.log(fmt::format("* rank {}: chain checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
+	}
 }
 
 void runner_pt_master::send_action(int action, int destination) {

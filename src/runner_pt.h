@@ -37,16 +37,15 @@ public:
 	int id{};
 	int run_id{};
 	bool swap_odd{};
+	
+	std::vector<int> rank_to_pos;
+	std::vector<int> last_visited;
+	std::vector<int> switch_partners;
+	std::vector<double> weight_ratios;
 
 	pt_chain_run(const pt_chain &chain, int run_id);
 	static pt_chain_run checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
-
-	std::vector<int> rank_to_pos;
-	std::vector<int> switch_partners;
-	std::vector<double> weight_ratios;
-
-	std::vector<int> last_visited;
 };
 
 int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
@@ -66,6 +65,8 @@ private:
 
 	std::map<int, int> rank_to_chain_run_;
 	int current_chain_id_{-1};
+
+	measurements pt_meas_;
 
 	void construct_pt_chains();
 	void checkpoint_write();

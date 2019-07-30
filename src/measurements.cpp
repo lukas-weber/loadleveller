@@ -13,7 +13,7 @@ bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	return true;
 }
 
-void measurements::add_observable(const std::string &name, size_t bin_size, size_t vector_length) {
+void measurements::register_observable(const std::string &name, size_t bin_size, size_t vector_length) {
 	if(!observable_name_is_legal(name)) {
 		throw std::runtime_error(
 		    fmt::format("Illegal observable name '{}': names must not contain / or .", name));
@@ -30,7 +30,7 @@ void measurements::checkpoint_write(const iodump::group &dump_file) {
 
 void measurements::checkpoint_read(const iodump::group &dump_file) {
 	for(const auto &obs_name : dump_file) {
-		add_observable(obs_name);
+		register_observable(obs_name);
 		observables_.at(obs_name).checkpoint_read(obs_name, dump_file.open_group(obs_name));
 	}
 }

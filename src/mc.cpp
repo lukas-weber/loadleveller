@@ -18,14 +18,14 @@ int mc::sweep() const {
 
 void mc::_init() {
 	// simple profiling support: measure the time spent for sweeps/measurements etc
-	measure.add_observable("_ll_checkpoint_read_time", 1);
-	measure.add_observable("_ll_checkpoint_write_time", 1);
-	measure.add_observable("_ll_measurement_time", 1000);
-	measure.add_observable("_ll_sweep_time", 1000);
+	measure.register_observable("_ll_checkpoint_read_time", 1);
+	measure.register_observable("_ll_checkpoint_write_time", 1);
+	measure.register_observable("_ll_measurement_time", 1000);
+	measure.register_observable("_ll_sweep_time", 1000);
 
 	if(pt_mode_) {
 		if(param.get<bool>("pt_statistics", false)) {
-			measure.add_observable("_ll_pt_rank", 1);
+			measure.register_observable("_ll_pt_rank", 1);
 		}
 	}
 
