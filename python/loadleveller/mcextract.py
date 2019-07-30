@@ -10,9 +10,8 @@ class Observable:
         self.rebinning_bin_count = np.zeros(num_tasks)
         self.autocorrelation_time = np.zeros(num_tasks)+np.nan
 
-        # have to be set later because dimension is unknown
-        self.mean = None
-        self.error = None        
+        self.mean = [None for i in range(num_tasks)]
+        self.error = [None for i in range(num_tasks)]
 
 class MCArchive:
     def __init__(self, filename):
@@ -36,19 +35,8 @@ class MCArchive:
                 o.rebinning_bin_count[i] = value['rebinning_bin_count']
                 o.autocorrelation_time[i] = value['autocorrelation_time']
 
-                # fill in dimensions on first occurence of the observable
-                if np.all(o.mean == None):
-                    o.mean = np.zeros([self.num_tasks, len(value['mean'])]) + np.nan
-                    o.error = np.zeros([self.num_tasks, len(value['error'])]) + np.nan
-
-                    if o.mean.shape != o.error.shape:
-                        raise Exception('observable "{}": dimension mismatch between mean and error'.format(obs))
-                else:
-                    if len(value['mean']) != o.mean.shape[1] or len(value['error']) != o.error.shape[1]:
-                        raise Exception('observable "{}": dimension mismatch between different tasks'.format(obs))
-
-                o.mean[i,:] = value['mean']
-                o.error[i,:] = value['error']
+                o.mean[i] = value['mean']
+                o.error[i] = value['error']
 
     def filter_mask(self, filter):
         if not filter:
@@ -71,11 +59,15 @@ class MCArchive:
         selection.rebinning_bin_count = orig.rebinning_bin_count[mask]
         selection.rebinning_bin_length = orig.rebinning_bin_length[mask]
         selection.autocorrelation_time = orig.autocorrelation_time[mask]
-        selection.mean = orig.mean[mask,:]
-        selection.error = orig.error[mask,:]
+        
+        selection.mean = [m for i, m in enumerate(orig.mean) if mask[i]]
+        selection.error = [m for i, m in enumerate(orig.error) if mask[i]]
 
-        # if it is not a vector observable we can make it simpler for the user
-        if selection.mean.shape[-1] == 1:
+        if all(len(m) == len(selection.mean[0]) for m in selection.mean):
+            selection.mean = np.array(selection.mean)
+            selection.error = np.array(selection.error)
+
+        if selection.mean.shape[1] == 1:
             selection.mean = selection.mean.flatten()
             selection.error = selection.error.flatten()
 

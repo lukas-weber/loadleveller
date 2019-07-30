@@ -124,18 +124,19 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 				size_t vector_idx = i % vector_length;
 
 				obs.mean[vector_idx] += samples[i];
-				metadata[obs_name].sample_counter++;
+				if(vector_idx == vector_length-1) {
+					metadata[obs_name].sample_counter++;
+				}
 			}
 		}
 	}
 
-	for(auto &entry : res.observables) {
-		auto &obs = entry.second;
-		assert(metadata[entry.first].sample_counter ==
+	for(auto &[obs_name, obs] : res.observables) {
+		assert(metadata[obs_name].sample_counter ==
 		       obs.rebinning_bin_count * obs.rebinning_bin_length);
-
+		
 		for(auto &mean : obs.mean) {
-			mean /= metadata[entry.first].sample_counter;
+			mean /= metadata[obs_name].sample_counter;			
 		}
 	}
 
@@ -181,9 +182,8 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 		}
 	}
 
-	for(auto &entry : res.observables) {
-		auto &obs = entry.second;
-		assert(metadata[entry.first].current_rebin == obs.rebinning_bin_count);
+	for(auto &[obs_name, obs] : res.observables) {
+		assert(metadata[obs_name].current_rebin == obs.rebinning_bin_count);
 		for(size_t i = 0; i < obs.error.size(); i++) {
 			int used_samples = obs.rebinning_bin_count * obs.rebinning_bin_length;
 			double no_rebinning_error =
