@@ -8,10 +8,6 @@ mc::mc(const parser &p) : param{p} {
 
 void mc::write_output(const std::string &) {}
 
-double mc::random01() {
-	return rng->random_double();
-}
-
 int mc::sweep() const {
 	return sweep_;
 }

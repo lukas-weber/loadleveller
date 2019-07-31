@@ -40,10 +40,13 @@ protected:
 		return 1;
 	}
 
+	double random01() {
+		return rng->random_double();
+	}
+
 public:
 	bool pt_mode_{};
 
-	double random01();
 	int sweep() const;
 
 	virtual void register_evalables(std::vector<evalable> &evalables) = 0;
