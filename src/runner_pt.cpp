@@ -119,18 +119,18 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 	double fnonlinearity = 0;
 	// in the worst case, f=0 or f=1 for [1,N-2]
 	int n = params.size();
-	double fnonlinearity_worst = sqrt((2*n+1./n-3)/6.);
+	double fnonlinearity_worst = sqrt((2 * n + 1. / n - 3) / 6.);
 	for(size_t i = 0; i < params.size(); i++) {
 		if(nup_histogram[i] + ndown_histogram[i] == 0) {
 			f[i] = 0;
 		} else {
 			f[i] = nup_histogram[i] / static_cast<double>(nup_histogram[i] + ndown_histogram[i]);
 		}
-		
-		double ideal_f = 1-i/static_cast<double>(params.size());
-		fnonlinearity += (f[i]-ideal_f)*(f[i]-ideal_f);
+
+		double ideal_f = 1 - i / static_cast<double>(params.size());
+		fnonlinearity += (f[i] - ideal_f) * (f[i] - ideal_f);
 	}
-	fnonlinearity = sqrt(fnonlinearity)/fnonlinearity_worst;
+	fnonlinearity = sqrt(fnonlinearity) / fnonlinearity_worst;
 
 	double norm = 0;
 	for(size_t i = 0; i < params.size() - 1; i++) {
@@ -142,8 +142,8 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 	for(auto &v : eta) {
 		v /= norm;
 	}
-	
-	double convergence = 0;	
+
+	double convergence = 0;
 	for(size_t i = 1; i < params.size() - 1; i++) {
 		double target = static_cast<double>(i) / (params.size() - 1);
 		int etai = 0;
@@ -155,14 +155,14 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 			target -= deta;
 		}
 		new_params[i] = params[etai] + target / eta[etai];
-		convergence += (new_params[i]-params[i])*(new_params[i]-params[i]);
+		convergence += (new_params[i] - params[i]) * (new_params[i] - params[i]);
 	}
 
-	convergence = sqrt(convergence)/(params.size()-2);
+	convergence = sqrt(convergence) / (params.size() - 2);
 
 	for(size_t i = 0; i < params.size(); i++) {
 		double relaxation_fac = 1;
-		params[i] = params[i]*(1-relaxation_fac) + relaxation_fac*new_params[i];
+		params[i] = params[i] * (1 - relaxation_fac) + relaxation_fac * new_params[i];
 	}
 
 	return std::tie(fnonlinearity, convergence);
@@ -232,18 +232,22 @@ void runner_pt_master::construct_pt_chains() {
 
 		int target_sweeps = task.get<int>("sweeps");
 		if(chain.target_sweeps >= 0 && target_sweeps != chain.target_sweeps) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, "target_sweeps", chain.target_sweeps, target_sweeps)};
+			throw std::runtime_error{
+			    fmt::format(pt_sweep_error, "target_sweeps", chain.target_sweeps, target_sweeps)};
 		}
 		chain.target_sweeps = target_sweeps;
 
 		int target_thermalization = task.get<int>("thermalization");
-		if(chain.target_thermalization >= 0 &&target_thermalization != chain.target_thermalization) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, "thermalization", chain.target_thermalization, target_thermalization)};
+		if(chain.target_thermalization >= 0 &&
+		   target_thermalization != chain.target_thermalization) {
+			throw std::runtime_error{fmt::format(pt_sweep_error, "thermalization",
+			                                     chain.target_thermalization,
+			                                     target_thermalization)};
 		}
 		chain.target_thermalization = target_thermalization;
 
 		int sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
-		int sweeps = job_.read_dump_progress(i)/sweeps_per_global_update;
+		int sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
 		if(chain.sweeps >= 0 && sweeps != chain.sweeps) {
 			throw std::runtime_error{fmt::format(pt_sweep_error, "sweeps", chain.sweeps != sweeps)};
 		}
@@ -301,7 +305,6 @@ void runner_pt_master::checkpoint_read() {
 			int id = std::stoi(name);
 			pt_chains_.at(id).checkpoint_read(pt_chains.open_group(name));
 		}
-
 	}
 }
 
@@ -434,25 +437,24 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chai
 		if(chain_run.rank_to_pos[rank] == 0) {
 			chain_run.last_visited[rank] = 1;
 		}
-		if(chain_run.rank_to_pos[rank] ==
-		   static_cast<int>(chain_run.rank_to_pos.size()) - 1) {
+		if(chain_run.rank_to_pos[rank] == static_cast<int>(chain_run.rank_to_pos.size()) - 1) {
 			chain_run.last_visited[rank] = -1;
 		}
 
-		chain.ndown_histogram[chain_run.rank_to_pos[rank]] +=
-		    chain_run.last_visited[rank] == -1;
-		chain.nup_histogram[chain_run.rank_to_pos[rank]] +=
-		    chain_run.last_visited[rank] == 1;
+		chain.ndown_histogram[chain_run.rank_to_pos[rank]] += chain_run.last_visited[rank] == -1;
+		chain.nup_histogram[chain_run.rank_to_pos[rank]] += chain_run.last_visited[rank] == 1;
 	}
 	chain.histogram_entries++;
 	if(chain.histogram_entries >= chain.entries_before_optimization) {
-		auto [fnonlinearity, convergence] = chain.optimize_params(job_.jobfile["jobconfig"].get<int>(
-		    "pt_parameter_optimization_linreg_len", 2));
-		job_.log(fmt::format("chain {}: pt param optimization: entries={}, f nonlinearity={:.2g}, convergence={:.2g}",
-		                     chain.id, chain.entries_before_optimization, fnonlinearity, convergence));
+		auto [fnonlinearity, convergence] = chain.optimize_params(
+		    job_.jobfile["jobconfig"].get<int>("pt_parameter_optimization_linreg_len", 2));
+		job_.log(
+		    fmt::format("chain {}: pt param optimization: entries={}, f nonlinearity={:.2g}, "
+		                "convergence={:.2g}",
+		                chain.id, chain.entries_before_optimization, fnonlinearity, convergence));
 
-		chain.entries_before_optimization *= job_.jobfile["jobconfig"].get<double>(
-		    "pt_parameter_optimization_nsamples_growth", 1.5);
+		chain.entries_before_optimization *=
+		    job_.jobfile["jobconfig"].get<double>("pt_parameter_optimization_nsamples_growth", 1.5);
 		checkpoint_write();
 		chain.clear_histograms();
 	}
@@ -535,14 +537,13 @@ void runner_pt_master::react() {
 
 		pt_global_update(chain, chain_run);
 		std::fill(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), -1);
-		
 
 		for(int target = 0; target < chain_len_; target++) {
 			int new_task_id = chain.task_ids[chain_run.rank_to_pos[target]];
-			int partner_rank = rank_section*chain_len_ + chain_run.switch_partners[target] + 1;
+			int partner_rank = rank_section * chain_len_ + chain_run.switch_partners[target] + 1;
 			int msg[2] = {new_task_id, partner_rank};
-			MPI_Send(msg, sizeof(msg)/sizeof(msg[0]), MPI_INT, rank_section * chain_len_ + target + 1, 0,
-			         MPI_COMM_WORLD);
+			MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT,
+			         rank_section * chain_len_ + target + 1, 0, MPI_COMM_WORLD);
 			double new_param = chain.params[chain_run.rank_to_pos[target]];
 			MPI_Send(&new_param, 1, MPI_DOUBLE, rank_section * chain_len_ + target + 1, 0,
 			         MPI_COMM_WORLD);
@@ -554,7 +555,7 @@ void runner_pt_master::react() {
 
 void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run) {
 	int i = 0;
-	for(auto& p : chain_run.switch_partners) {
+	for(auto &p : chain_run.switch_partners) {
 		p = i++;
 	}
 	for(int i = chain_run.swap_odd; i < static_cast<int>(chain.task_ids.size()) - 1; i += 2) {
@@ -576,7 +577,7 @@ void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run
 				}
 				rank++;
 			}
-			chain_run.rank_to_pos[rank0] = i+1;
+			chain_run.rank_to_pos[rank0] = i + 1;
 			chain_run.rank_to_pos[rank1] = i;
 
 			chain_run.switch_partners[rank0] = rank1;
@@ -683,7 +684,8 @@ void runner_pt_slave::pt_global_update() {
 	MPI_Recv(&response, 1, MPI_INT, MASTER, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	// job_.log(fmt::format(" * rank {}: ready for global update", rank_));
 
-	const std::string& param_name = job_.jobfile["jobconfig"].get<std::string>("parallel_tempering_parameter");
+	const std::string &param_name =
+	    job_.jobfile["jobconfig"].get<std::string>("parallel_tempering_parameter");
 
 	if(response == GA_CALC_WEIGHT) {
 		double partner_param;
@@ -699,7 +701,8 @@ void runner_pt_slave::pt_global_update() {
 	// this may be a long wait
 
 	int msg[2];
-	MPI_Recv(&msg, sizeof(msg)/sizeof(msg[0]), MPI_INT, MASTER, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, MASTER, 0, MPI_COMM_WORLD,
+	         MPI_STATUS_IGNORE);
 	int new_task_id = msg[0];
 	int target_rank = msg[1];
 
@@ -771,9 +774,7 @@ int runner_pt_slave::what_is_next(int status) {
 void runner_pt_slave::checkpoint_write() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
-	if(chain_rank_ == 0) {
-		job_.log(fmt::format("* rank {}: chain checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
-	}
+	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
 }
 
 void runner_pt_master::send_action(int action, int destination) {

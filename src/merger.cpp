@@ -124,7 +124,7 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 				size_t vector_idx = i % vector_length;
 
 				obs.mean[vector_idx] += samples[i];
-				if(vector_idx == vector_length-1) {
+				if(vector_idx == vector_length - 1) {
 					metadata[obs_name].sample_counter++;
 				}
 			}
@@ -134,9 +134,9 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 	for(auto &[obs_name, obs] : res.observables) {
 		assert(metadata[obs_name].sample_counter ==
 		       obs.rebinning_bin_count * obs.rebinning_bin_length);
-		
+
 		for(auto &mean : obs.mean) {
-			mean /= metadata[obs_name].sample_counter;			
+			mean /= metadata[obs_name].sample_counter;
 		}
 	}
 

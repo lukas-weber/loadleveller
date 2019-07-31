@@ -25,11 +25,12 @@ public:
 	// This will empty the cache of already completed bins
 	void measurement_write(const iodump::group &meas_file);
 
-	void checkpoint_read(const std::string& name, const iodump::group &dump_file);
+	void checkpoint_read(const std::string &name, const iodump::group &dump_file);
 
 	// switch copy with target rank.
 	// useful for parallel tempering mode
 	void mpi_sendrecv(int target_rank);
+
 private:
 	static const size_t initial_bin_length = 1000;
 

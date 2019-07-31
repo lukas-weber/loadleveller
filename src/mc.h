@@ -32,10 +32,10 @@ protected:
 	virtual void write_output(const std::string &filename);
 	virtual void do_update() = 0;
 	virtual void do_measurement() = 0;
-	virtual void pt_update_param(const std::string& /*param_name*/, double /*new_param*/) {
+	virtual void pt_update_param(const std::string & /*param_name*/, double /*new_param*/) {
 		throw std::runtime_error{"running parallel tempering, but pt_update_param not implemented"};
 	}
-	virtual double pt_weight_ratio(const std::string& /*param_name*/, double /*new_param*/) {
+	virtual double pt_weight_ratio(const std::string & /*param_name*/, double /*new_param*/) {
 		throw std::runtime_error{"running parallel tempering, but pt_weight_ratio not implemented"};
 		return 1;
 	}
@@ -59,8 +59,8 @@ public:
 
 	void _do_update();
 	void _do_measurement();
-	void _pt_update_param(int target_rank, const std::string& param_name, double new_param);
-	double _pt_weight_ratio(const std::string& param_name, double new_param);
+	void _pt_update_param(int target_rank, const std::string &param_name, double new_param);
+	double _pt_weight_ratio(const std::string &param_name, double new_param);
 
 	void pt_measure_statistics();
 

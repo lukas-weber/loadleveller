@@ -14,7 +14,7 @@ struct pt_chain {
 	int target_sweeps{-1};
 	int target_thermalization{-1};
 	int scheduled_runs{};
-	
+
 	// parameter optimization
 	std::vector<int> nup_histogram;
 	std::vector<int> ndown_histogram;
@@ -37,7 +37,7 @@ public:
 	int id{};
 	int run_id{};
 	bool swap_odd{};
-	
+
 	std::vector<int> rank_to_pos;
 	std::vector<int> last_visited;
 	std::vector<int> switch_partners;

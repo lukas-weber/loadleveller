@@ -69,7 +69,7 @@ void mc::_do_update() {
 	}
 }
 
-void mc::_pt_update_param(int target_rank, const std::string& param_name, double new_param) {
+void mc::_pt_update_param(int target_rank, const std::string &param_name, double new_param) {
 	measure.mpi_sendrecv(target_rank);
 	pt_update_param(param_name, new_param);
 }
@@ -82,7 +82,7 @@ void mc::pt_measure_statistics() {
 	}
 }
 
-double mc::_pt_weight_ratio(const std::string& param_name, double new_param) {
+double mc::_pt_weight_ratio(const std::string &param_name, double new_param) {
 	double wr = pt_weight_ratio(param_name, new_param);
 	return wr;
 }

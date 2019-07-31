@@ -13,7 +13,8 @@ bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	return true;
 }
 
-void measurements::register_observable(const std::string &name, size_t bin_size, size_t vector_length) {
+void measurements::register_observable(const std::string &name, size_t bin_size,
+                                       size_t vector_length) {
 	if(!observable_name_is_legal(name)) {
 		throw std::runtime_error(
 		    fmt::format("Illegal observable name '{}': names must not contain / or .", name));
@@ -54,34 +55,42 @@ void measurements::mpi_sendrecv(int target_rank) {
 		if(rank < target_rank) {
 			unsigned long obscount = observables_.size();
 			MPI_Send(&obscount, 1, MPI_UNSIGNED_LONG, target_rank, 0, MPI_COMM_WORLD);
-			for(auto& [name, obs] : observables_) {
+			for(auto &[name, obs] : observables_) {
 				(void)obs;
-				int size = name.size()+1;
+				int size = name.size() + 1;
 				MPI_Send(&size, 1, MPI_INT, target_rank, 0, MPI_COMM_WORLD);
 				MPI_Send(name.c_str(), size, MPI_CHAR, target_rank, 0, MPI_COMM_WORLD);
 			}
 		} else {
 			unsigned long obscount;
-			MPI_Recv(&obscount, 1, MPI_UNSIGNED_LONG, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			MPI_Recv(&obscount, 1, MPI_UNSIGNED_LONG, target_rank, 0, MPI_COMM_WORLD,
+			         MPI_STATUS_IGNORE);
 			if(obscount != observables_.size()) {
-				throw std::runtime_error{fmt::format("ranks {}&{} have to contain identical sets of registered observables. But they contain different amounts of observables! {} != {}.", target_rank, rank, obscount, observables_.size())};
+				throw std::runtime_error{fmt::format(
+				    "ranks {}&{} have to contain identical sets of registered observables. But "
+				    "they contain different amounts of observables! {} != {}.",
+				    target_rank, rank, obscount, observables_.size())};
 			}
-			
-			for(auto& [name, obs] : observables_) {
+
+			for(auto &[name, obs] : observables_) {
 				(void)obs;
 				int size;
 				MPI_Recv(&size, 1, MPI_INT, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				std::vector<char> buf(size);
-				MPI_Recv(buf.data(), size, MPI_CHAR, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(buf.data(), size, MPI_CHAR, target_rank, 0, MPI_COMM_WORLD,
+				         MPI_STATUS_IGNORE);
 				if(std::string{buf.data()} != name) {
-					throw std::runtime_error{fmt::format("ranks {}&{} have to contain identical sets of registered observables. Found '{}' != '{}'.", target_rank, rank, name, std::string{buf.data()})};
+					throw std::runtime_error{
+					    fmt::format("ranks {}&{} have to contain identical sets of registered "
+					                "observables. Found '{}' != '{}'.",
+					                target_rank, rank, name, std::string{buf.data()})};
 				}
 			}
 		}
 		mpi_checked_targets_.insert(target_rank);
 	}
-	
-	for(auto& [name, obs] : observables_) {
+
+	for(auto &[name, obs] : observables_) {
 		(void)name;
 		obs.mpi_sendrecv(target_rank);
 	}

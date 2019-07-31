@@ -46,7 +46,7 @@ void observable::measurement_write(const iodump::group &meas_file) {
 	current_bin_ = 0;
 }
 
-void observable::checkpoint_read(const std::string& name, const iodump::group &d) {
+void observable::checkpoint_read(const std::string &name, const iodump::group &d) {
 	name_ = name;
 	d.read("vector_length", vector_length_);
 	d.read("bin_length", bin_length_);
@@ -61,14 +61,16 @@ void observable::mpi_sendrecv(int target_rank) {
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	unsigned long msg[msg_size] = {current_bin_, vector_length_, bin_length_, current_bin_filling_};
-	MPI_Sendrecv_replace(msg, msg_size, MPI_UNSIGNED_LONG, target_rank, 0, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Sendrecv_replace(msg, msg_size, MPI_UNSIGNED_LONG, target_rank, 0, target_rank, 0,
+	                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	current_bin_ = msg[0];
 	vector_length_ = msg[1];
 	bin_length_ = msg[2];
 	current_bin_filling_ = msg[3];
 
-	std::vector<double> recvbuf((current_bin_+1)*vector_length_);
-	MPI_Sendrecv(samples_.data(), samples_.size(), MPI_DOUBLE, target_rank, 0, recvbuf.data(), recvbuf.size(), MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	std::vector<double> recvbuf((current_bin_ + 1) * vector_length_);
+	MPI_Sendrecv(samples_.data(), samples_.size(), MPI_DOUBLE, target_rank, 0, recvbuf.data(),
+	             recvbuf.size(), MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	samples_ = recvbuf;
 }

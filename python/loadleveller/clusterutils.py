@@ -71,7 +71,7 @@ def run(jobname, jobconfig, cmd):
     print('running on system \'{}\''.format(sysinfo))
 
     if sysinfo == 'local':
-        mpicmd = '{} -n {} {}'.format(jobconfig['mpirun'], jobconfig['num_cores'], ' '.join(cmd))
+        mpicmd = '{} -n {} {}'.format(jobconfig.get('mpirun', 'mpirun'), jobconfig['num_cores'], ' '.join(cmd))
         print('$ '+mpicmd)
         os.system(mpicmd)
     else:
