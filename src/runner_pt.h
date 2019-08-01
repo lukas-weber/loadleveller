@@ -19,13 +19,13 @@ struct pt_chain {
 	std::vector<int> nup_histogram;
 	std::vector<int> ndown_histogram;
 	int entries_before_optimization{0};
-	int histogram_entries{};
 
 	bool is_done();
 	void checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
 
 	void clear_histograms();
+	int histogram_entries();
 	std::tuple<double, double> optimize_params(int linreg_len);
 };
 
