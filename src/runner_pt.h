@@ -26,7 +26,7 @@ struct pt_chain {
 
 	void clear_histograms();
 	int histogram_entries();
-	std::tuple<double, double> optimize_params(int linreg_len);
+	std::tuple<double, double> optimize_params(double relaxation_fac);
 };
 
 struct pt_chain_run {
@@ -57,7 +57,14 @@ private:
 
 	double time_last_checkpoint_{0};
 
-	bool use_param_optimization_{};
+	// parameter optimization
+	struct {
+		bool enabled{};
+		int nsamples_initial{};
+		double nsamples_growth{};
+		double relaxation_fac{};
+	} po_config_;
+
 	std::vector<pt_chain> pt_chains_;
 	std::vector<pt_chain_run> pt_chain_runs_;
 	int chain_len_;

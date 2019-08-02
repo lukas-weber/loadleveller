@@ -87,6 +87,7 @@ void pt_chain::clear_histograms() {
 	std::fill(ndown_histogram.begin(), ndown_histogram.end(), 0);
 }
 
+/*
 static double linear_regression(const std::vector<double> &x, const std::vector<double> &y, int i,
                                 int range) {
 	int lower = std::max(0, i - range + 1);
@@ -105,9 +106,19 @@ static double linear_regression(const std::vector<double> &x, const std::vector<
 
 	int n = upper - lower + 1;
 	return (sxy - sx * sy / n) / (sx2 - sx * sx / n);
+}*/
+
+// x and y are ordered
+static double linear_inverse(const std::vector<double> &x, const std::vector<double> &y, double y0) {
+	for(size_t i = 0; i < y.size()-1; i++) {
+		if((y[i]-y0)*(y[i+1]-y0) <= 0) {
+			return x[i]+(x[i+1]-x[i])/(y[i+1]-y[i])*(y0-y[i]);
+		}
+	}
+	throw std::out_of_range{"y0 outside of image of y(x)"};
 }
 
-std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
+std::tuple<double, double> pt_chain::optimize_params(double relaxation_fac) {
 	std::vector<double> eta(params.size());
 	std::vector<double> f(params.size());
 	std::vector<double> new_params(params.size());
@@ -120,7 +131,7 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 	double fnonlinearity = 0;
 	// in the worst case, f=0 or f=1 for [1,N-2]
 	int n = params.size();
-	double fnonlinearity_worst = sqrt((2 * n + 1. / n - 3) / 6.);
+	double fnonlinearity_worst = sqrt(n/3. + 1./(6*(n-1))-5./6.);
 	for(size_t i = 0; i < params.size(); i++) {
 		if(nup_histogram[i] + ndown_histogram[i] == 0) {
 			f[i] = 0;
@@ -128,11 +139,11 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 			f[i] = nup_histogram[i] / static_cast<double>(nup_histogram[i] + ndown_histogram[i]);
 		}
 
-		double ideal_f = 1 - i / static_cast<double>(params.size());
+		double ideal_f = 1 - i / static_cast<double>(params.size()-1);
 		fnonlinearity += (f[i] - ideal_f) * (f[i] - ideal_f);
 	}
 	fnonlinearity = sqrt(fnonlinearity) / fnonlinearity_worst;
-
+/*
 	double norm = 0;
 	for(size_t i = 0; i < params.size() - 1; i++) {
 		double dfdp = linear_regression(params, f, i, linreg_len);
@@ -157,12 +168,17 @@ std::tuple<double, double> pt_chain::optimize_params(int linreg_len) {
 		}
 		new_params[i] = params[etai] + target / eta[etai];
 		convergence += (new_params[i] - params[i]) * (new_params[i] - params[i]);
+	}*/
+	double convergence = 0;
+	for(size_t i = 1; i < params.size() - 1; i++) {
+		double target = 1-static_cast<double>(i) / (params.size()-1);
+		new_params[i] = linear_inverse(params, f, target);
+		convergence += (new_params[i] - params[i]) * (new_params[i] - params[i]);
 	}
 
 	convergence = sqrt(convergence) / (params.size() - 2);
 
 	for(size_t i = 0; i < params.size(); i++) {
-		double relaxation_fac = 1;
 		params[i] = params[i] * (1 - relaxation_fac) + relaxation_fac * new_params[i];
 	}
 
@@ -269,8 +285,10 @@ void runner_pt_master::construct_pt_chains() {
 
 		c.nup_histogram.resize(chain_len_);
 		c.ndown_histogram.resize(chain_len_);
-		c.entries_before_optimization =
-		    job_.jobfile["jobconfig"].get<int>("pt_parameter_optimization_nsamples_initial", 10000);
+
+		if(po_config_.enabled) {
+			c.entries_before_optimization = po_config_.nsamples_initial;
+		}
 	}
 	if(chain_len_ == -1) {
 		throw std::runtime_error{
@@ -343,7 +361,7 @@ void runner_pt_master::checkpoint_write() {
 		c.checkpoint_write(pt_chains.open_group(fmt::format("{:04d}", c.id)));
 	}
 
-	if(use_param_optimization_) {
+	if(po_config_.enabled) {
 		write_params_yaml();
 	}
 }
@@ -351,14 +369,19 @@ void runner_pt_master::checkpoint_write() {
 void runner_pt_master::start() {
 	MPI_Comm_size(MPI_COMM_WORLD, &num_active_ranks_);
 
+
+	po_config_.enabled =
+	    job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
+	if(po_config_.enabled) {
+		job_.log("using feedback parameter optimization");
+		const auto &po = job_.jobfile["jobconfig"]["pt_parameter_optimization"];
+		po_config_.nsamples_initial = po.get<int>("nsamples_initial");
+		po_config_.nsamples_growth = po.get<double>("nsamples_growth");
+		po_config_.relaxation_fac = po.get<double>("relaxation_fac");
+	}
+
 	job_.log(fmt::format("starting job '{}' in parallel tempering mode", job_.jobname));
 	checkpoint_read();
-
-	use_param_optimization_ =
-	    job_.jobfile["jobconfig"].get<bool>("pt_parameter_optimization", false);
-	if(use_param_optimization_) {
-		job_.log("using feedback parameter optimization");
-	}
 
 	std::vector<int> group_idx(num_active_ranks_);
 	for(int i = 1; i < num_active_ranks_; i++) {
@@ -446,19 +469,18 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chai
 		chain.nup_histogram[chain_run.rank_to_pos[rank]] += chain_run.last_visited[rank] == 1;
 	}
 	if(chain.histogram_entries() >= chain.entries_before_optimization) {
-		chain.entries_before_optimization *=
-		    job_.jobfile["jobconfig"].get<double>("pt_parameter_optimization_nsamples_growth", 1.5);
+		chain.entries_before_optimization *= po_config_.nsamples_growth;
 		if(std::any_of(chain_run.last_visited.begin(), chain_run.last_visited.end(), [](int label) { return label == 0; })) {
-			job_.log(fmt::format("chain {}: some ranks still have no label. holding off parameter optimization due to insufficient statistics"));
+			job_.log(fmt::format("chain {}: some ranks still have no label. holding off parameter optimization due to insufficient statistics", chain.id));
+			checkpoint_write();
 		} else {
-			auto [fnonlinearity, convergence] = chain.optimize_params(
-			    job_.jobfile["jobconfig"].get<int>("pt_parameter_optimization_linreg_len", 2));
+			auto [fnonlinearity, convergence] = chain.optimize_params(po_config_.relaxation_fac);
 			job_.log(
 			    fmt::format("chain {}: pt param optimization: entries={}, f nonlinearity={:.2g}, "
 			                "convergence={:.2g}",
-			                chain.id, chain.entries_before_optimization, fnonlinearity, convergence));
-
+			                chain.id, chain.histogram_entries(), fnonlinearity, convergence));
 			checkpoint_write();
+
 			chain.clear_histograms();
 		}
 	}
@@ -506,7 +528,7 @@ void runner_pt_master::react() {
 		auto &chain = pt_chains_[chain_run.id];
 		int rank_section = rank / chain_len_;
 
-		if(use_param_optimization_) {
+		if(po_config_.enabled) {
 			pt_param_optimization(chain, chain_run);
 		}
 
@@ -607,7 +629,7 @@ void runner_pt_slave::start() {
 	MPI_Comm_rank(chain_comm_, &chain_rank_);
 
 	bool use_param_optimization =
-	    job_.jobfile["jobconfig"].get<bool>("pt_parameter_optimization", false);
+	    job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
 
 	if(!accept_new_chain()) {
 		return;
@@ -796,7 +818,7 @@ void runner_pt_slave::merge_measurements() {
 	sys_->_write_output(unique_filename);
 
 	std::vector<evalable> evalables;
-	if(job_.jobfile["jobconfig"].get<bool>("pt_parameter_optimization", false)) {
+	if(job_.jobfile["jobconfig"].defined("pt_parameter_optimization")) {
 		if(rank_ == 1) {
 			job_.log("Running in parameter optimization mode. No evalables are calculated.");
 		}
