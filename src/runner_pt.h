@@ -46,6 +46,8 @@ public:
 	pt_chain_run(const pt_chain &chain, int run_id);
 	static pt_chain_run checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
+
+	void clear_histograms();
 };
 
 int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
@@ -79,6 +81,7 @@ private:
 	void checkpoint_write();
 	void checkpoint_read();
 	void write_params_yaml();
+	void write_param_optimization_stats();
 
 	int schedule_chain_run();
 	void pt_global_update(pt_chain &chain, pt_chain_run &chain_run);

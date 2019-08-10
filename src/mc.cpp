@@ -19,12 +19,6 @@ void mc::_init() {
 	measure.register_observable("_ll_measurement_time", 1000);
 	measure.register_observable("_ll_sweep_time", 1000);
 
-	if(pt_mode_) {
-		if(param.get<bool>("pt_statistics", false)) {
-			measure.register_observable("_ll_pt_rank", 1);
-		}
-	}
-
 	if(param.defined("seed")) {
 		rng.reset(new random_number_generator(param.get<uint64_t>("seed")));
 	} else {
@@ -68,14 +62,6 @@ void mc::_do_update() {
 void mc::_pt_update_param(int target_rank, const std::string &param_name, double new_param) {
 	measure.mpi_sendrecv(target_rank);
 	pt_update_param(param_name, new_param);
-}
-
-void mc::pt_measure_statistics() {
-	if(param.get<bool>("pt_statistics", false)) {
-		int rank;
-		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-		measure.add("_ll_pt_rank", rank);
-	}
 }
 
 double mc::_pt_weight_ratio(const std::string &param_name, double new_param) {

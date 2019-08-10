@@ -65,8 +65,6 @@ public:
 	void _pt_update_param(int target_rank, const std::string &param_name, double new_param);
 	double _pt_weight_ratio(const std::string &param_name, double new_param);
 
-	void pt_measure_statistics();
-
 	double safe_exit_interval();
 
 	bool is_thermalized();
