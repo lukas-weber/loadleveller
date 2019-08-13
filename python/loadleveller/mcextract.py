@@ -16,7 +16,7 @@ class Observable:
 class MCArchive:
     def __init__(self, filename):
         with open(filename, 'r') as f:
-            doc = yaml.load(f)
+            doc = yaml.safe_load(f)
 
         param_names = set(sum([list(task['parameters'].keys()) for task in doc], []))
         observable_names = set(sum([list(task['results'].keys()) for task in doc], []))
