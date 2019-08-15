@@ -1,5 +1,6 @@
 #include "runner_pt.h"
 #include <fstream>
+#include "util.h"
 
 namespace loadl {
 
@@ -70,6 +71,9 @@ void pt_chain_run::checkpoint_write(const iodump::group &g) {
 
 void pt_chain::checkpoint_read(const iodump::group &g) {
 	g.read("params", params);
+	g.read("rejection_rates", rejection_rates);
+	g.read("rejection_rate_entries", rejection_rate_entries);
+
 	g.read("nup_histogram", nup_histogram);
 	g.read("ndown_histogram", ndown_histogram);
 	g.read("entries_before_optimization", entries_before_optimization);
@@ -77,6 +81,8 @@ void pt_chain::checkpoint_read(const iodump::group &g) {
 
 void pt_chain::checkpoint_write(const iodump::group &g) {
 	g.write("params", params);
+	g.write("rejection_rates", rejection_rates);
+	g.write("rejection_rate_entries", rejection_rate_entries);
 	g.write("nup_histogram", nup_histogram);
 	g.write("ndown_histogram", ndown_histogram);
 	g.write("entries_before_optimization", entries_before_optimization);
@@ -87,114 +93,50 @@ int pt_chain::histogram_entries() {
 }
 
 void pt_chain::clear_histograms() {
+	rejection_rate_entries = 0;
+	std::fill(rejection_rates.begin(), rejection_rates.end(), 0);
 	std::fill(nup_histogram.begin(), nup_histogram.end(), 0);
 	std::fill(ndown_histogram.begin(), ndown_histogram.end(), 0);
 }
 
 
-static double linear_regression(const std::vector<double> &x, const std::vector<double> &y, int i,
-                                int range) {
-	int lower = std::max(0, i - range + 1);
-	int upper = std::min(static_cast<int>(y.size() - 1), i + range);
-
-	double sxy = 0;
-	double sx = 0, sy = 0;
-	double sx2 = 0;
-
-	for(int j = lower; j <= upper; j++) {
-		sxy += x[j] * y[j];
-		sx += x[j];
-		sy += y[j];
-		sx2 += x[j] * x[j];
+// https://arxiv.org/pdf/1905.02939.pdf
+std::tuple<double, double> pt_chain::optimize_params() {
+	std::vector<double> rejection_est(rejection_rates);
+	for(auto& r : rejection_est) {
+		r /= rejection_rate_entries/2;
 	}
 
-	int n = upper - lower + 1;
-	return (sxy - sx * sy / n) / (sx2 - sx * sx / n);
-}
+	std::vector<double> comm_barrier(params.size());
 
-/*
-// x and y are ordered
-static double linear_inverse(const std::vector<double> &x, const std::vector<double> &y, double y0) {
-	for(size_t i = 0; i < y.size()-1; i++) {
-		if((y[i]-y0)*(y[i+1]-y0) <= 0) {
-			return x[i]+(x[i+1]-x[i])/(y[i+1]-y[i])*(y0-y[i]);
-		}
+
+	double sum{};
+	for(size_t i = 0; i < comm_barrier.size()-1; i++) {
+		comm_barrier[i] = sum;
+		sum += rejection_est[i]; 
 	}
-	throw std::out_of_range{"y0 outside of image of y(x)"};
-}*/
+	comm_barrier[comm_barrier.size()-1] = sum;
 
-std::tuple<double, double> pt_chain::optimize_params(double relaxation_fac) {
-	std::vector<double> eta(params.size());
-	std::vector<double> f(params.size());
-	std::vector<double> new_params(params.size());
+	monotonic_interpolator lambda{comm_barrier, params};
+	double convergence{};
+	double nonlinearity = 0;
 
-	assert(params.size() > 1);
+	for(size_t i = 1; i < params.size()-1; i++) {
+		double new_param = lambda(sum*i/(params.size()-1));
+		double d = (new_param - params[i]);
+		
+		double ideal_comm_barrier = sum*i/(params.size()-1);
+		nonlinearity += pow(comm_barrier[i]-ideal_comm_barrier,2);
+		convergence += d*d;
+		params[i] = new_param;
+	}
 
-	new_params[0] = params[0];
-	new_params[params.size() - 1] = params[params.size() - 1];
-
-	double fnonlinearity = 0;
-	// in the worst case, f=0 or f=1 for [1,N-2]
 	int n = params.size();
-	double fnonlinearity_worst = sqrt(n/3. + 1./(6*(n-1))-5./6.);
-	for(size_t i = 0; i < params.size(); i++) {
-		if(nup_histogram[i] + ndown_histogram[i] == 0) {
-			f[i] = 0;
-		} else {
-			f[i] = nup_histogram[i] / static_cast<double>(nup_histogram[i] + ndown_histogram[i]);
-		}
+	double nonlinearity_worst = sqrt(n/3. + 1./(6*(n-1))-5./6.);
+	nonlinearity = sqrt(nonlinearity)/nonlinearity_worst;
+	convergence = sqrt(convergence)/params.size();
 
-		double ideal_f = 1 - i / static_cast<double>(params.size()-1);
-		fnonlinearity += (f[i] - ideal_f) * (f[i] - ideal_f);
-	}
-	fnonlinearity = sqrt(fnonlinearity) / fnonlinearity_worst;
-
-	double norm = 0;
-	for(size_t i = 0; i < params.size() - 1; i++) {
-		double dfdp = 0;
-		size_t linreg_len = 0;
-		double dp = params[i + 1] - params[i];
-		do {
-			linreg_len++;
-			dfdp = linear_regression(params, f, i, linreg_len);
-		} while(dfdp * dp > 0 && linreg_len < params.size()/2);
-			
-		eta[i] = sqrt(std::max(0.01, -dfdp / dp));
-		norm += eta[i] * dp;
-	}
-	for(auto &v : eta) {
-		v /= norm;
-	}
-
-	double convergence = 0;
-	for(size_t i = 1; i < params.size() - 1; i++) {
-		double target = static_cast<double>(i) / (params.size() - 1);
-		int etai = 0;
-		for(etai = 0; etai < static_cast<int>(params.size()) - 1; etai++) {
-			double deta = eta[etai] * (params[etai + 1] - params[etai]);
-			if(deta > target) {
-				break;
-			}
-			target -= deta;
-		}
-		new_params[i] = params[etai] + target / eta[etai];
-		convergence += (new_params[i] - params[i]) * (new_params[i] - params[i]);
-	}
-	/*
-	double convergence = 0;
-	for(size_t i = 1; i < params.size() - 1; i++) {
-		double target = 1-static_cast<double>(i) / (params.size()-1);
-		new_params[i] = linear_inverse(params, f, target);
-		convergence += (new_params[i] - params[i]) * (new_params[i] - params[i]);
-	}*/
-
-	convergence = sqrt(convergence) / (params.size() - 2);
-
-	for(size_t i = 0; i < params.size(); i++) {
-		params[i] = params[i] * (1 - relaxation_fac) + relaxation_fac * new_params[i];
-	}
-
-	return std::tie(fnonlinearity, convergence);
+	return std::tie(nonlinearity, convergence);
 }
 
 bool pt_chain::is_done() {
@@ -298,6 +240,8 @@ void runner_pt_master::construct_pt_chains() {
 		c.nup_histogram.resize(chain_len_);
 		c.ndown_histogram.resize(chain_len_);
 
+		c.rejection_rates.resize(chain_len_-1);
+
 		if(po_config_.enabled) {
 			c.entries_before_optimization = po_config_.nsamples_initial;
 		}
@@ -368,6 +312,13 @@ void runner_pt_master::write_param_optimization_stats() {
 		}
 		cg.insert_back("f", f);
 		cg.insert_back("params", chain.params);
+
+		std::vector<double> rejection_est(chain.rejection_rates);
+		for(auto &r : rejection_est) {
+			r /= chain.rejection_rate_entries/2.;
+		}
+
+		cg.insert_back("rejection_rates", rejection_est);
 	}
 }
 
@@ -407,7 +358,6 @@ void runner_pt_master::start() {
 		const auto &po = job_.jobfile["jobconfig"]["pt_parameter_optimization"];
 		po_config_.nsamples_initial = po.get<int>("nsamples_initial");
 		po_config_.nsamples_growth = po.get<double>("nsamples_growth");
-		po_config_.relaxation_fac = po.get<double>("relaxation_fac");
 	}
 
 	job_.log(fmt::format("starting job '{}' in parallel tempering mode", job_.jobname));
@@ -501,7 +451,7 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chai
 	if(chain.histogram_entries() >= chain.entries_before_optimization) {
 		chain.entries_before_optimization *= po_config_.nsamples_growth;
 
-		auto [fnonlinearity, convergence] = chain.optimize_params(po_config_.relaxation_fac);
+		auto [fnonlinearity, convergence] = chain.optimize_params();
 		job_.log(
 		    fmt::format("chain {}: pt param optimization: entries={}, f nonlinearity={:.2g}, "
 		                "convergence={:.2g}",
@@ -622,6 +572,8 @@ void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run
 
 		double r = rng_->random_double();
 
+		chain.rejection_rates[i] += 1 - std::min(w1 * w2, 1.);
+		chain.rejection_rate_entries++;
 		if(r < w1 * w2) {
 			int rank0{};
 			int rank1{};

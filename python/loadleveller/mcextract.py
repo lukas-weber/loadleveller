@@ -31,12 +31,12 @@ class MCArchive:
 
             for obs, value in task['results'].items():
                 o = self.observables[obs]
-                o.rebinning_bin_length[i] = value['rebinning_bin_length']
-                o.rebinning_bin_count[i] = value['rebinning_bin_count']
-                o.autocorrelation_time[i] = value['autocorrelation_time']
+                o.rebinning_bin_length[i] = int(value['rebinning_bin_length'])
+                o.rebinning_bin_count[i] = int(value['rebinning_bin_count'])
+                o.autocorrelation_time[i] = float(value['autocorrelation_time'])
 
-                o.mean[i] = value['mean']
-                o.error[i] = value['error']
+                o.mean[i] = np.array(value['mean'], dtype=float)
+                o.error[i] = np.array(value['error'], dtype=float)
 
     def filter_mask(self, filter):
         if not filter:

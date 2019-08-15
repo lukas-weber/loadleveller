@@ -25,9 +25,10 @@ loadleveller_sources = files([
   'random.cpp',
   'results.cpp',
   'runner.cpp',
+  'runner_pt.cpp',
   'runner_single.cpp',
   'runner_task.cpp',
-  'runner_pt.cpp',
+  'util.cpp',
 ])
 
 loadleveller_headers = files([
@@ -44,9 +45,10 @@ loadleveller_headers = files([
   'random.h',
   'results.h',
   'runner.h',
+  'runner_pt.h',
   'runner_single.h',
   'runner_task.h',
-  'runner_pt.h',
+  'util.h',
 ])
 
 libloadleveller = library('loadleveller',

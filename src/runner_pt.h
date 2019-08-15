@@ -20,13 +20,16 @@ struct pt_chain {
 	std::vector<int> ndown_histogram;
 	int entries_before_optimization{0};
 
+	std::vector<double> rejection_rates;
+	int rejection_rate_entries{0};
+
 	bool is_done();
 	void checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
 
 	void clear_histograms();
 	int histogram_entries();
-	std::tuple<double, double> optimize_params(double relaxation_fac);
+	std::tuple<double, double> optimize_params();
 };
 
 struct pt_chain_run {
@@ -64,7 +67,6 @@ private:
 		bool enabled{};
 		int nsamples_initial{};
 		double nsamples_growth{};
-		double relaxation_fac{};
 	} po_config_;
 
 	std::vector<pt_chain> pt_chains_;
