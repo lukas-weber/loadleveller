@@ -104,6 +104,9 @@ std::tuple<double, double> pt_chain::optimize_params() {
 	for(auto& r : rejection_est) {
 		r /= rejection_rate_entries[odd];
 		odd = !odd;
+		if(r == 0) { // ensure the comm_barrier is invertible
+			r = 1e-3;
+		}
 	}
 
 	std::vector<double> comm_barrier(params.size());
@@ -450,11 +453,11 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chai
 	if(std::min(chain.rejection_rate_entries[0], chain.rejection_rate_entries[1]) >= chain.entries_before_optimization) {
 		chain.entries_before_optimization *= po_config_.nsamples_growth;
 
-		auto [fnonlinearity, convergence] = chain.optimize_params();
+		auto [efficiency, convergence] = chain.optimize_params();
 		job_.log(
-		    fmt::format("chain {}: pt param optimization: entries={}, f nonlinearity={:.2g}, "
+		    fmt::format("chain {}: pt param optimization: entries={}, efficiency={:.2g}, "
 		                "convergence={:.2g}",
-		                chain.id, chain.rejection_rate_entries[0], fnonlinearity, convergence));
+		                chain.id, chain.rejection_rate_entries[0], efficiency, convergence));
 		checkpoint_write();
 		write_param_optimization_stats();
 		chain.clear_histograms();
