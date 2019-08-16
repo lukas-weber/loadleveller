@@ -54,11 +54,11 @@ double monotonic_interpolator::operator()(double x0) {
 	// replace by binary search if necessary!
 	size_t idx = 0;
 	assert(x0 < x_[x_.size()-1]);
-	while(x0 >= x_[idx]) {
-		idx++;
+	for(; idx < x_.size()-1; idx++) {
+		if((x0-x_[idx])*(x0-x_[idx+1]) <= 0) {
+			break;
+		}
 	}
-	assert(idx >= 1);
-	idx--;
 	assert(idx < x_.size()-1);
 
 	double del = x_[idx+1]-x_[idx];

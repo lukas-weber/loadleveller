@@ -1,8 +1,9 @@
 
-t1 = executable('test_duration_parser', 'duration_parser.cpp',
+t1 = executable('tests',
+  ['duration_parser.cpp', 'monotone_interpolator.cpp'],
   dependencies : loadleveller_dep,
   include_directories : include_directories('../src')
 )
 
-test('test duration parser', t1)
+test('tests', t1)
         

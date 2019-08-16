@@ -110,32 +110,30 @@ std::tuple<double, double> pt_chain::optimize_params() {
 
 
 	double sum{};
+	double efficiency{};
 	for(size_t i = 0; i < comm_barrier.size()-1; i++) {
 		comm_barrier[i] = sum;
 		sum += rejection_est[i]; 
+		efficiency += rejection_est[i]/(1-rejection_est[i]);
 	}
 	comm_barrier[comm_barrier.size()-1] = sum;
 
 	monotonic_interpolator lambda{comm_barrier, params};
 	double convergence{};
-	double nonlinearity = 0;
 
 	for(size_t i = 1; i < params.size()-1; i++) {
 		double new_param = lambda(sum*i/(params.size()-1));
 		double d = (new_param - params[i]);
 		
-		double ideal_comm_barrier = sum*i/(params.size()-1);
-		nonlinearity += pow(comm_barrier[i]-ideal_comm_barrier,2);
 		convergence += d*d;
 		params[i] = new_param;
 	}
 
-	int n = params.size();
-	double nonlinearity_worst = sqrt(n/3. + 1./(6*(n-1))-5./6.);
-	nonlinearity = sqrt(nonlinearity)/nonlinearity_worst;
 	convergence = sqrt(convergence)/params.size();
 
-	return std::tie(nonlinearity, convergence);
+	double round_trip_rate = (1+sum)/(1+efficiency);
+
+	return std::tie(round_trip_rate, convergence);
 }
 
 bool pt_chain::is_done() {
@@ -539,7 +537,6 @@ void runner_pt_master::react() {
 			if(chain_run.weight_ratios[pos] < 0) {
 				double weight;
 				MPI_Recv(&weight, 1, MPI_DOUBLE, target_rank, 0, MPI_COMM_WORLD, &stat);
-				assert(weight >= 0);
 				chain_run.weight_ratios[pos] = weight;
 			}
 		}
@@ -571,11 +568,11 @@ void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run
 		double w1 = chain_run.weight_ratios[i];
 		double w2 = chain_run.weight_ratios[i + 1];
 
+		double p = std::min(exp(w1+w2),1.);
 		double r = rng_->random_double();
 
-		chain.rejection_rates[i] += 1 - std::min(w1 * w2, 1.);
-		chain.rejection_rate_entries[chain_run.swap_odd]++;
-		if(r < w1 * w2) {
+		chain.rejection_rates[i] += 1 - p;
+		if(r < p) {
 			int rank0{};
 			int rank1{};
 
@@ -596,6 +593,7 @@ void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run
 		}
 	}
 
+	chain.rejection_rate_entries[chain_run.swap_odd]++;
 	chain_run.swap_odd = !chain_run.swap_odd;
 }
 
