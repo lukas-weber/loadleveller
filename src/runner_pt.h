@@ -21,7 +21,7 @@ struct pt_chain {
 	int entries_before_optimization{0};
 
 	std::vector<double> rejection_rates;
-	int rejection_rate_entries{0};
+	std::vector<int> rejection_rate_entries{0,0};
 
 	bool is_done();
 	void checkpoint_read(const iodump::group &g);
