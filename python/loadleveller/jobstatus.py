@@ -41,7 +41,7 @@ class JobProgress:
                     tp.sweeps += max(0,sweeps - tp.target_therm)
 
 
-            if tp.sweeps < tp.target_sweeps:
+            if tp.therm_sweeps < tp.target_therm or tp.sweeps < tp.target_sweeps:
                 self.restart = True
 
             self.progress.append(tp)

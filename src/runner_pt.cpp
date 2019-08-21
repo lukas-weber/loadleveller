@@ -516,6 +516,7 @@ void runner_pt_master::react() {
 			pt_param_optimization(chain, chain_run);
 		}
 
+		std::fill(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), -1);
 		for(int target = 0; target < chain_len_; target++) {
 			int target_rank = rank_section * chain_len_ + target + 1;
 			int pos = chain_run.rank_to_pos[target];
@@ -545,7 +546,6 @@ void runner_pt_master::react() {
 		}
 
 		pt_global_update(chain, chain_run);
-		std::fill(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), -1);
 
 		for(int target = 0; target < chain_len_; target++) {
 			int new_task_id = chain.task_ids[chain_run.rank_to_pos[target]];

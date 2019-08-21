@@ -28,7 +28,6 @@ struct pt_chain {
 	void checkpoint_write(const iodump::group &g);
 
 	void clear_histograms();
-	int histogram_entries();
 	std::tuple<double, double> optimize_params();
 };
 
