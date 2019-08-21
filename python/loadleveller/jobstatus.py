@@ -35,8 +35,10 @@ class JobProgress:
                 tp.num_runs += 1
 
                 with h5py.File(runfile, 'r') as f:
-                    tp.therm_sweeps += f['/thermalization_sweeps'][0]
-                    tp.sweeps += f['/sweeps'][0]-f['/thermalization_sweeps'][0]
+                    sweeps = f['/sweeps'][0]//jobfile.tasks[task].get('pt_sweeps_per_global_update',1)
+                    
+                    tp.therm_sweeps += min(sweeps,tp.target_therm)
+                    tp.sweeps += sweeps - tp.therm_sweeps
 
 
             if tp.sweeps < tp.target_sweeps:

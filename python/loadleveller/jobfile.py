@@ -32,10 +32,10 @@ class JobFile:
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
-            job_input_filename = os.path.join(datadir, 'parameters.yaml')
+            job_input_filename = os.path.join(datadir, 'parameters.yml')
             with open(job_input_filename, 'w') as f:
                 f.write(self.raw_jobfile)
         except Exception as e:
-            raise JobFileGenError('Could not write parameters.yaml: {}'.format(e))
+            raise JobFileGenError('Could not write parameters.yml: {}'.format(e))
 
         return job_input_filename

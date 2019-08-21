@@ -93,7 +93,6 @@ void mc::_write(const std::string &dir) {
 		g.write("max_meas_time", max_meas_time_);
 
 		g.write("sweeps", sweep_);
-		g.write("thermalization_sweeps", std::min(therm_, sweep_)); // only for convenience
 	}
 	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
 
