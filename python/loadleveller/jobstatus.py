@@ -38,7 +38,7 @@ class JobProgress:
                     sweeps = f['/sweeps'][0]//jobfile.tasks[task].get('pt_sweeps_per_global_update',1)
                     
                     tp.therm_sweeps += min(sweeps,tp.target_therm)
-                    tp.sweeps += sweeps - tp.therm_sweeps
+                    tp.sweeps += max(0,sweeps - tp.target_therm)
 
 
             if tp.sweeps < tp.target_sweeps:
