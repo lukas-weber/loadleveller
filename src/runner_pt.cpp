@@ -647,8 +647,7 @@ void runner_pt_slave::start() {
 
 		if(timeout == TR_TIMEUP) {
 			send_status(S_TIMEUP);
-			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_,
-			                     sys_->safe_exit_interval()));
+			job_.log(fmt::format("rank {} exits: time up", rank_));
 			break;
 		}
 		action = what_is_next(S_BUSY);
@@ -664,20 +663,13 @@ void runner_pt_slave::send_status(int status) {
 }
 
 int runner_pt_slave::negotiate_timeout() {
-	double safe_interval = 0, max_safe_interval = 0;
-	if(sys_ != nullptr) {
-		safe_interval = sys_->safe_exit_interval();
-	}
-
-	MPI_Reduce(&safe_interval, &max_safe_interval, 1, MPI_DOUBLE, MPI_MAX, 0, chain_comm_);
-
 	int result = TR_CONTINUE;
 	if(chain_rank_ == 0) {
 		if(MPI_Wtime() - time_last_checkpoint_ > job_.checkpoint_time) {
 			result = TR_CHECKPOINT;
 		}
 
-		if(MPI_Wtime() - time_start_ > job_.walltime - max_safe_interval) {
+		if(MPI_Wtime() - time_start_ > job_.runtime) {
 			result = TR_TIMEUP;
 		}
 	}

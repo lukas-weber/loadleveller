@@ -177,8 +177,7 @@ void runner_slave::start() {
 
 		if(time_is_up()) {
 			what_is_next(S_TIMEUP);
-			job_.log(fmt::format("rank {} exits: walltime up (safety interval = {} s)", rank_,
-			                     sys_->safe_exit_interval()));
+			job_.log(fmt::format("rank {} exits: time up"));
 			break;
 		}
 
@@ -195,11 +194,7 @@ bool runner_slave::is_checkpoint_time() {
 }
 
 bool runner_slave::time_is_up() {
-	double safe_interval = 0;
-	if(sys_ != nullptr) {
-		safe_interval = sys_->safe_exit_interval();
-	}
-	return MPI_Wtime() - time_start_ > job_.walltime - safe_interval;
+	return MPI_Wtime() - time_start_ > job_.runtime;
 }
 
 int runner_slave::what_is_next(int status) {

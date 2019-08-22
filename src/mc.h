@@ -15,13 +15,6 @@ private:
 	int sweep_{0};
 	int therm_{0};
 	int pt_sweeps_per_global_update_{-1};
-
-	// The following times in seconds are used to estimate a safe exit interval before walltime is
-	// up.
-	double max_checkpoint_write_time_{0};
-	double max_sweep_time_{0};
-	double max_meas_time_{0};
-
 protected:
 	parser param;
 	std::unique_ptr<random_number_generator> rng;
@@ -64,8 +57,6 @@ public:
 	void _do_measurement();
 	void _pt_update_param(int target_rank, const std::string &param_name, double new_param);
 	double _pt_weight_ratio(const std::string &param_name, double new_param);
-
-	double safe_exit_interval();
 
 	bool is_thermalized();
 	measurements measure;

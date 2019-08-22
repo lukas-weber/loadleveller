@@ -14,8 +14,8 @@ struct jobinfo {
 
 	std::vector<std::string> task_names;
 
-	double checkpoint_time;
-	double walltime;
+	double checkpoint_time{};
+	double runtime{};
 
 	jobinfo(const std::string &jobfile_name);
 

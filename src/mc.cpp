@@ -39,9 +39,6 @@ void mc::_do_measurement() {
 	double measurement_time =
 	    (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
 	measure.add("_ll_measurement_time", measurement_time);
-	if(measurement_time > max_meas_time_) {
-		max_meas_time_ = measurement_time;
-	}
 }
 
 void mc::_do_update() {
@@ -54,9 +51,6 @@ void mc::_do_update() {
 
 	double sweep_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
 	measure.add("_ll_sweep_time", sweep_time);
-	if(sweep_time > max_sweep_time_) {
-		max_sweep_time_ = sweep_time;
-	}
 }
 
 void mc::_pt_update_param(int target_rank, const std::string &param_name, double new_param) {
@@ -88,10 +82,6 @@ void mc::_write(const std::string &dir) {
 		checkpoint_write(g.open_group("simulation"));
 		measure.checkpoint_write(g.open_group("measurements"));
 
-		g.write("max_checkpoint_write_time", max_checkpoint_write_time_);
-		g.write("max_sweep_time", max_sweep_time_);
-		g.write("max_meas_time", max_meas_time_);
-
 		g.write("sweeps", sweep_);
 	}
 	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
@@ -100,14 +90,6 @@ void mc::_write(const std::string &dir) {
 	double checkpoint_write_time =
 	    (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
 	measure.add("_ll_checkpoint_write_time", checkpoint_write_time);
-	if(checkpoint_write_time > max_checkpoint_write_time_) {
-		max_checkpoint_write_time_ = checkpoint_write_time;
-	}
-}
-
-double mc::safe_exit_interval() {
-	// this is more or less guesswork in an attempt to make it safe for as many cases as possible
-	return 2 * (max_checkpoint_write_time_ + max_sweep_time_ + max_meas_time_) + 2;
 }
 
 bool mc::_read(const std::string &dir) {
@@ -127,10 +109,6 @@ bool mc::_read(const std::string &dir) {
 	checkpoint_read(g.open_group("simulation"));
 
 	g.read("sweeps", sweep_);
-
-	g.read("max_checkpoint_write_time", max_checkpoint_write_time_);
-	g.read("max_sweep_time", max_sweep_time_);
-	g.read("max_meas_time", max_meas_time_);
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
 	measure.add("_ll_checkpoint_read_time",

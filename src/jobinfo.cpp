@@ -84,7 +84,7 @@ jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
 
 	parser jobconfig{jobfile["jobconfig"]};
 
-	walltime = parse_duration(jobconfig.get<std::string>("mc_walltime"));
+	runtime = parse_duration(jobconfig.get<std::string>("mc_runtime"));
 	checkpoint_time = parse_duration(jobconfig.get<std::string>("mc_checkpoint_time"));
 }
 

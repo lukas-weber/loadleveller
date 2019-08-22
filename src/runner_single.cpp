@@ -58,7 +58,7 @@ bool runner_single::is_checkpoint_time() const {
 }
 
 bool runner_single::time_is_up() const {
-	return time(nullptr) - time_start_ > job_.walltime;
+	return time(nullptr) - time_start_ > job_.runtime;
 }
 
 int runner_single::get_new_task_id(int old_id) {
