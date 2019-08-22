@@ -16,8 +16,6 @@ struct pt_chain {
 	int scheduled_runs{};
 
 	// parameter optimization
-	std::vector<int> nup_histogram;
-	std::vector<int> ndown_histogram;
 	int entries_before_optimization{0};
 
 	std::vector<double> rejection_rates;
@@ -41,15 +39,12 @@ public:
 	bool swap_odd{};
 
 	std::vector<int> rank_to_pos;
-	std::vector<int> last_visited;
 	std::vector<int> switch_partners;
 	std::vector<double> weight_ratios;
 
 	pt_chain_run(const pt_chain &chain, int run_id);
 	static pt_chain_run checkpoint_read(const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
-
-	void clear_histograms();
 };
 
 int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv);
@@ -86,7 +81,7 @@ private:
 
 	int schedule_chain_run();
 	void pt_global_update(pt_chain &chain, pt_chain_run &chain_run);
-	void pt_param_optimization(pt_chain &chain, pt_chain_run &chain_run);
+	void pt_param_optimization(pt_chain &chain);
 
 	void react();
 	void send_action(int action, int destination);

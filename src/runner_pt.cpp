@@ -5,7 +5,6 @@
 namespace loadl {
 
 enum {
-	S_IDLE,
 	S_BUSY,
 	S_READY_FOR_GLOBAL,
 	S_TIMEUP,
@@ -34,15 +33,9 @@ pt_chain_run::pt_chain_run(const pt_chain &chain, int run_id) : id{chain.id}, ru
 	weight_ratios.resize(chain.params.size(), -1);
 	switch_partners.resize(chain.params.size());
 
-	last_visited.resize(chain.params.size());
-
 	for(size_t i = 0; i < rank_to_pos.size(); i++) {
 		rank_to_pos[i] = i;
 	}
-}
-
-void pt_chain_run::clear_histograms() {
-	std::fill(last_visited.begin(), last_visited.end(), 0);
 }
 
 pt_chain_run pt_chain_run::checkpoint_read(const iodump::group &g) {
@@ -50,7 +43,6 @@ pt_chain_run pt_chain_run::checkpoint_read(const iodump::group &g) {
 	g.read("id", run.id);
 	g.read("run_id", run.run_id);
 	g.read("rank_to_pos", run.rank_to_pos);
-	g.read("last_visited", run.last_visited);
 	uint8_t swap_odd;
 	g.read("swap_odd", swap_odd);
 	run.swap_odd = swap_odd;
@@ -65,7 +57,6 @@ void pt_chain_run::checkpoint_write(const iodump::group &g) {
 	g.write("id", id);
 	g.write("run_id", run_id);
 	g.write("rank_to_pos", rank_to_pos);
-	g.write("last_visited", last_visited);
 	g.write("swap_odd", static_cast<uint8_t>(swap_odd));
 }
 
@@ -73,9 +64,6 @@ void pt_chain::checkpoint_read(const iodump::group &g) {
 	g.read("params", params);
 	g.read("rejection_rates", rejection_rates);
 	g.read("rejection_rate_entries", rejection_rate_entries);
-
-	g.read("nup_histogram", nup_histogram);
-	g.read("ndown_histogram", ndown_histogram);
 	g.read("entries_before_optimization", entries_before_optimization);
 }
 
@@ -83,8 +71,6 @@ void pt_chain::checkpoint_write(const iodump::group &g) {
 	g.write("params", params);
 	g.write("rejection_rates", rejection_rates);
 	g.write("rejection_rate_entries", rejection_rate_entries);
-	g.write("nup_histogram", nup_histogram);
-	g.write("ndown_histogram", ndown_histogram);
 	g.write("entries_before_optimization", entries_before_optimization);
 }
 
@@ -92,8 +78,6 @@ void pt_chain::clear_histograms() {
 	rejection_rate_entries[0] = 0;
 	rejection_rate_entries[1] = 0;
 	std::fill(rejection_rates.begin(), rejection_rates.end(), 0);
-	std::fill(nup_histogram.begin(), nup_histogram.end(), 0);
-	std::fill(ndown_histogram.begin(), ndown_histogram.end(), 0);
 }
 
 
@@ -237,9 +221,6 @@ void runner_pt_master::construct_pt_chains() {
 
 		chain_len_ = c.task_ids.size();
 
-		c.nup_histogram.resize(chain_len_);
-		c.ndown_histogram.resize(chain_len_);
-
 		c.rejection_rates.resize(chain_len_-1);
 
 		if(po_config_.enabled) {
@@ -306,11 +287,6 @@ void runner_pt_master::write_param_optimization_stats() {
 	
 	for(auto &chain : pt_chains_) {
 		auto cg = g.open_group(fmt::format("chain{:04d}", chain.id));
-		std::vector<double> f(chain_len_);
-		for(size_t i = 0; i < f.size(); i++) {
-			f[i] = chain.nup_histogram[i]*1./(chain.ndown_histogram[i] + chain.nup_histogram[i]);
-		}
-		cg.insert_back("f", f);
 		cg.insert_back("params", chain.params);
 
 		std::vector<double> rejection_est(chain.rejection_rates);
@@ -438,18 +414,7 @@ int runner_pt_master::assign_new_chain(int rank_section) {
 	return chain_run_id;
 }
 
-void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chain_run) {
-	for(size_t rank = 0; rank < chain_run.rank_to_pos.size(); rank++) {
-		if(chain_run.rank_to_pos[rank] == 0) {
-			chain_run.last_visited[rank] = 1;
-		}
-		if(chain_run.rank_to_pos[rank] == static_cast<int>(chain_run.rank_to_pos.size()) - 1) {
-			chain_run.last_visited[rank] = -1;
-		}
-
-		chain.ndown_histogram[chain_run.rank_to_pos[rank]] += chain_run.last_visited[rank] == -1;
-		chain.nup_histogram[chain_run.rank_to_pos[rank]] += chain_run.last_visited[rank] == 1;
-	}
+void runner_pt_master::pt_param_optimization(pt_chain &chain) {
 	if(std::min(chain.rejection_rate_entries[0], chain.rejection_rate_entries[1]) >= chain.entries_before_optimization) {
 		chain.entries_before_optimization *= po_config_.nsamples_growth;
 
@@ -461,12 +426,6 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain, pt_chain_run &chai
 		checkpoint_write();
 		write_param_optimization_stats();
 		chain.clear_histograms();
-
-		for(auto &cr : pt_chain_runs_) {
-			if(cr.id == chain.id) {
-				cr.clear_histograms();
-			}
-		}
 	}
 }
 
@@ -513,7 +472,7 @@ void runner_pt_master::react() {
 		int rank_section = rank / chain_len_;
 
 		if(po_config_.enabled) {
-			pt_param_optimization(chain, chain_run);
+			pt_param_optimization(chain);
 		}
 
 		std::fill(chain_run.weight_ratios.begin(), chain_run.weight_ratios.end(), -1);

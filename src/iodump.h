@@ -15,7 +15,7 @@ private:
 public:
 	iodump_exception(const std::string &msg);
 
-	const char *what() const noexcept;
+	const char *what() const noexcept override;
 };
 
 // This thing is a wrapper around an HDF5 file which can do both reading and
