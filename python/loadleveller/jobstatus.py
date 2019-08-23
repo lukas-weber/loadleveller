@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 import glob
-import h5py
-import os
-import yaml
 
 """
 This module extracts progress information from job data.
@@ -14,6 +11,7 @@ class TaskProgress:
 
 class JobProgress:
     def __init__(self, jobfile):
+        import h5py
         self.jobfile = jobfile
         self.tasks = list(jobfile.tasks.keys())
         self.tasks.sort()
@@ -46,22 +44,24 @@ class JobProgress:
 
             self.progress.append(tp)
 
-    def needs_restart(self):
+    def need_restart(self):
         return self.restart
         
-    def needs_merge(self):
-        result_mtime = 0
-        try:
-            result_mtime = os.path.getmtime(self.jobfile.jobname+'.results.yml')
-        except FileNotFoundError:
-            return True
+def job_need_merge(jobfile):
+    import os
 
-        for task in self.tasks:
-            for measfile in glob.iglob('{}.data/{}/run*.meas.h5'.format(self.jobfile.jobname, task)):
-                if os.path.getmtime(measfile) > result_mtime:
-                    return True
+    result_mtime = 0
+    try:
+        result_mtime = os.path.getmtime(jobfile.jobname+'.results.yml')
+    except FileNotFoundError:
+        return True
 
-        return False
+    for task in jobfile.tasks:
+        for measfile in glob.iglob('{}.data/{}/run*.meas.h5'.format(jobfile.jobname, task)):
+            if os.path.getmtime(measfile) > result_mtime:
+                return True
+
+    return False
         
 def print_status(jobfile, args):
     """ This function is exported as the loadl status command """
@@ -76,25 +76,25 @@ def print_status(jobfile, args):
     args = parser.parse_args(args)
 
     try:
+        if args.need_merge:
+            if job_need_merge(jobfile):
+                print('Needs merge!')
+                return 0
+            print('Job already merged.')
+            return 1
+        
         job_prog = JobProgress(jobfile)
-
         if args.need_restart and args.need_merge:
             print("Error: only one option of '--need-restart' and '--need-merge' can appear at once", file=sys.stderr)
             sys.exit(-1)
 
         if args.need_restart:
-            if job_prog.needs_restart():
+            if job_prog.need_restart():
                 print('Needs restart!')
                 return 0
             print('Job completed.')
             return 1
 
-        if args.need_merge:
-            if job_prog.needs_merge():
-                print('Needs merge!')
-                return 0
-            print('Job already merged.')
-            return 1
 
         for task, tp in zip(job_prog.tasks, job_prog.progress):
             therm_per_run = tp.therm_sweeps/tp.num_runs if tp.num_runs > 0 else 0
