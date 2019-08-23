@@ -10,13 +10,13 @@ class Observable:
         self.rebinning_bin_count = np.zeros(num_tasks)
         self.autocorrelation_time = np.zeros(num_tasks)+np.nan
 
-        self.mean = [None for i in range(num_tasks)]
-        self.error = [None for i in range(num_tasks)]
+        self.mean = [np.array([np.nan]) for i in range(num_tasks)]
+        self.error = [np.array([np.nan]) for i in range(num_tasks)]
 
 class MCArchive:
     def __init__(self, filename):
         with open(filename, 'r') as f:
-            doc = yaml.safe_load(f)
+            doc = yaml.load(f, Loader=yaml.CSafeLoader)
 
         param_names = set(sum([list(task['parameters'].keys()) for task in doc], []))
         observable_names = set(sum([list(task['results'].keys()) for task in doc], []))
@@ -67,8 +67,8 @@ class MCArchive:
             selection.mean = np.array(selection.mean)
             selection.error = np.array(selection.error)
 
-        if selection.mean.shape[1] == 1:
-            selection.mean = selection.mean.flatten()
-            selection.error = selection.error.flatten()
+            if selection.mean.shape[1] == 1:
+                selection.mean = selection.mean.flatten()
+                selection.error = selection.error.flatten()
 
         return selection
