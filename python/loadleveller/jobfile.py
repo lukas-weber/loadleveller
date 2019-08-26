@@ -19,7 +19,7 @@ class JobFile:
             raise JobFileGenError('Generation script "{}" had a non-zero return code. Treating as error.'.format(filename))
  
         try:
-            parsed_job = yaml.safe_load(self.raw_jobfile)
+            parsed_job = yaml.load(self.raw_jobfile, Loader=yaml.CSafeLoader)
             self.__dict__.update(parsed_job)
         except Exception as e: 
             raise JobFileGenError('Could not parse job generation script output: {}'.format(e))

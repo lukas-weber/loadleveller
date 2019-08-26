@@ -8,7 +8,7 @@ def _expand_path(path):
 
 def JobConfig(filename):
     with open(_expand_path(filename), 'r') as f:
-        return yaml.safe_load(f)
+        return yaml.load(f, Loader=yaml.CSafeLoader)
 
 class TaskMaker:
     def __init__(self, name, jobconfig):
@@ -41,4 +41,4 @@ class TaskMaker:
                 task_dict[k] = v
             jobfile_dict['tasks'][task_name] = task_dict
 
-        print(yaml.dump(jobfile_dict))
+        print(yaml.dump(jobfile_dict, Dumper=yaml.CSafeDumper))
