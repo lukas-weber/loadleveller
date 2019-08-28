@@ -182,20 +182,20 @@ void runner_pt_master::construct_pt_chains() {
 		chain.task_ids.at(chain_pos) = i;
 
 		const char *pt_sweep_error =
-		    "chain {}: in parallel tempering mode, sweeps are measured in global updates and need to be the "
+		    "chain {}: task {}: in parallel tempering mode, sweeps are measured in global updates and need to be the "
 		    "same within each chain: {} = {} != {}";
 
 		int target_sweeps = task.get<int>("sweeps");
 		if(chain.target_sweeps >= 0 && target_sweeps != chain.target_sweeps) {
 			throw std::runtime_error{
-			    fmt::format(pt_sweep_error, chain.id, "target_sweeps", chain.target_sweeps, target_sweeps)};
+			    fmt::format(pt_sweep_error, chain.id, "target_sweeps", i, chain.target_sweeps, target_sweeps)};
 		}
 		chain.target_sweeps = target_sweeps;
 
 		int target_thermalization = task.get<int>("thermalization");
 		if(chain.target_thermalization >= 0 &&
 		   target_thermalization != chain.target_thermalization) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, "thermalization",
+			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, i, "thermalization",
 			                                     chain.target_thermalization,
 			                                     target_thermalization)};
 		}
@@ -204,7 +204,7 @@ void runner_pt_master::construct_pt_chains() {
 		int sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
 		int sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
 		if(chain.sweeps >= 0 && sweeps != chain.sweeps) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, "sweeps", chain.sweeps, sweeps)};
+			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, i, "sweeps", chain.sweeps, sweeps)};
 		}
 		chain.sweeps = sweeps;
 	}
