@@ -124,7 +124,7 @@ std::tuple<double, double> pt_chain::optimize_params() {
 }
 
 bool pt_chain::is_done() {
-	return sweeps >= target_sweeps + target_thermalization;
+	return sweeps >= target_sweeps;
 }
 
 int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **argv) {
@@ -182,20 +182,20 @@ void runner_pt_master::construct_pt_chains() {
 		chain.task_ids.at(chain_pos) = i;
 
 		const char *pt_sweep_error =
-		    "in parallel tempering mode, sweeps are measured in global updates and need to be the "
+		    "chain {}: in parallel tempering mode, sweeps are measured in global updates and need to be the "
 		    "same within each chain: {} = {} != {}";
 
 		int target_sweeps = task.get<int>("sweeps");
 		if(chain.target_sweeps >= 0 && target_sweeps != chain.target_sweeps) {
 			throw std::runtime_error{
-			    fmt::format(pt_sweep_error, "target_sweeps", chain.target_sweeps, target_sweeps)};
+			    fmt::format(pt_sweep_error, chain.id, "target_sweeps", chain.target_sweeps, target_sweeps)};
 		}
 		chain.target_sweeps = target_sweeps;
 
 		int target_thermalization = task.get<int>("thermalization");
 		if(chain.target_thermalization >= 0 &&
 		   target_thermalization != chain.target_thermalization) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, "thermalization",
+			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, "thermalization",
 			                                     chain.target_thermalization,
 			                                     target_thermalization)};
 		}
@@ -204,7 +204,7 @@ void runner_pt_master::construct_pt_chains() {
 		int sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
 		int sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
 		if(chain.sweeps >= 0 && sweeps != chain.sweeps) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, "sweeps", chain.sweeps, sweeps)};
+			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, "sweeps", chain.sweeps, sweeps)};
 		}
 		chain.sweeps = sweeps;
 	}
@@ -402,7 +402,7 @@ int runner_pt_master::assign_new_chain(int rank_section) {
 			auto &chain = pt_chains_[chain_run.id];
 			msg[0] = chain.task_ids[target];
 			msg[1] = chain_run.run_id;
-			msg[2] = chain.target_sweeps + chain.target_thermalization - chain.sweeps;
+			msg[2] = chain.target_sweeps + chain.sweeps;
 		} else {
 			// this will prompt the slave to quit
 			num_active_ranks_--;
@@ -593,7 +593,9 @@ void runner_pt_slave::start() {
 
 			if(sys_->sweep() % sweeps_per_global_update_ == 0) {
 				pt_global_update();
-				sweeps_since_last_query_++;
+				if(sys_->is_thermalized()) {
+					sweeps_since_last_query_++;
+				}
 
 				timeout = negotiate_timeout();
 				if(timeout != TR_CONTINUE) {

@@ -31,15 +31,15 @@ class JobProgress:
             
             for runfile in glob.iglob('{}.data/{}/run*.dump.h5'.format(self.jobfile.jobname,task)):
                 tp.num_runs += 1
-
+                sweeps_per_global_update = 1
+                if 'parallel_tempering_parameter' in jobfile.jobconfig.keys():
+                    sweeps_per_global_update = jobfile.tasks[task].get('pt_sweeps_per_global_update',1)
                 with h5py.File(runfile, 'r') as f:
-                    sweeps = f['/sweeps'][0]//jobfile.tasks[task].get('pt_sweeps_per_global_update',1)
-                    
-                    tp.therm_sweeps += min(sweeps,tp.target_therm)
-                    tp.sweeps += max(0,sweeps - tp.target_therm)
+                    tp.sweeps += f['/sweeps'][0]//sweeps_per_global_update
+                    tp.therm_sweeps += f['/thermalization_sweeps'][0]//sweeps_per_global_update
 
 
-            if tp.therm_sweeps < tp.target_therm or tp.sweeps < tp.target_sweeps:
+            if tp.sweeps < tp.target_sweeps:
                 self.restart = True
 
             self.progress.append(tp)

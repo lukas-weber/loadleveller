@@ -3,12 +3,12 @@
 
 namespace loadl {
 
-runner_task::runner_task(int target_sweeps, int target_thermalization, int sweeps,
+runner_task::runner_task(int target_sweeps, int sweeps,
                          int scheduled_runs)
-    : target_sweeps{target_sweeps}, target_thermalization{target_thermalization}, sweeps{sweeps},
+    : target_sweeps{target_sweeps}, sweeps{sweeps},
       scheduled_runs{scheduled_runs} {}
 
 bool runner_task::is_done() const {
-	return sweeps >= (target_sweeps + target_thermalization);
+	return sweeps > target_sweeps;
 }
 }

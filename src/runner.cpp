@@ -85,9 +85,7 @@ void runner_master::react() {
 			send_action(A_NEW_JOB, node);
 			tasks_[current_task_id_].scheduled_runs++;
 			int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
-			              tasks_[current_task_id_].target_sweeps +
-			                  tasks_[current_task_id_].target_thermalization -
-			                  tasks_[current_task_id_].sweeps};
+			              tasks_[current_task_id_].target_sweeps -  tasks_[current_task_id_].sweeps};
 			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB, MPI_COMM_WORLD);
 		}
 	} else if(node_status == S_BUSY) {
@@ -126,11 +124,10 @@ void runner_master::read() {
 		auto task = job_.jobfile["tasks"][job_.task_names[i]];
 
 		int target_sweeps = task.get<int>("sweeps");
-		int target_thermalization = task.get<int>("thermalization");
 		int sweeps = job_.read_dump_progress(i);
 		int scheduled_runs = 0;
 
-		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, scheduled_runs);
+		tasks_.emplace_back(target_sweeps, sweeps, scheduled_runs);
 	}
 }
 
@@ -163,10 +160,10 @@ void runner_slave::start() {
 
 		while(sweeps_since_last_query_ < sweeps_before_communication_) {
 			sys_->_do_update();
-			sweeps_since_last_query_++;
 
 			if(sys_->is_thermalized()) {
 				sys_->_do_measurement();
+				sweeps_since_last_query_++;
 			}
 
 			if(is_checkpoint_time() || time_is_up()) {

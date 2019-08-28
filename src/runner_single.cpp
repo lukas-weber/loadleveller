@@ -35,9 +35,9 @@ int runner_single::start() {
 
 		while(!tasks_[task_id_].is_done() && !time_is_up()) {
 			sys_->_do_update();
-			tasks_[task_id_].sweeps++;
 			if(sys_->is_thermalized()) {
 				sys_->_do_measurement();
+				tasks_[task_id_].sweeps++;
 			}
 
 			if(is_checkpoint_time()) {
@@ -79,11 +79,10 @@ void runner_single::read() {
 		auto task = job_.jobfile["tasks"][job_.task_names[i]];
 
 		int target_sweeps = task.get<int>("sweeps");
-		int target_thermalization = task.get<int>("thermalization");
 		int sweeps = 0;
 
 		sweeps = job_.read_dump_progress(i);
-		tasks_.emplace_back(target_sweeps, target_thermalization, sweeps, 0);
+		tasks_.emplace_back(target_sweeps, sweeps, 0);
 	}
 }
 

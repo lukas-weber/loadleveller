@@ -3,7 +3,7 @@ namespace loadl {
 
 mc::mc(const parser &p) : param{p} {
 	therm_ = p.get<int>("thermalization");
-	pt_sweeps_per_global_update_ = p.get<int>("pt_sweeps_per_global_update", -1);
+	pt_sweeps_per_global_update_ = p.get<int>("pt_sweeps_per_global_update", 1);
 }
 
 void mc::write_output(const std::string &) {}
@@ -82,7 +82,12 @@ void mc::_write(const std::string &dir) {
 		checkpoint_write(g.open_group("simulation"));
 		measure.checkpoint_write(g.open_group("measurements"));
 
-		g.write("sweeps", sweep_);
+		int therm = therm_;
+		if(pt_mode_) {
+			therm *= pt_sweeps_per_global_update_;
+		}
+		g.write("thermalization_sweeps", std::min(sweep_,therm_));
+		g.write("sweeps", std::max(0,sweep_-therm_));
 	}
 	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
 
@@ -108,7 +113,10 @@ bool mc::_read(const std::string &dir) {
 	measure.checkpoint_read(g.open_group("measurements"));
 	checkpoint_read(g.open_group("simulation"));
 
-	g.read("sweeps", sweep_);
+	int sweeps, therm_sweeps;
+	g.read("thermalization_sweeps", therm_sweeps);
+	g.read("sweeps", sweeps);
+	sweep_ = sweeps + therm_sweeps;
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
 	measure.add("_ll_checkpoint_read_time",
