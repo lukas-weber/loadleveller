@@ -3,6 +3,11 @@ import os
 import subprocess
 import errno
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 '''Helpers for handling loadleveller jobfiles/scripts. For lack of a better idea, the job description files of loadleveller are actually executables that output a more verbose yaml parameter file to stdout. Use the taskmaker module to write the input scripts.'''
 
 class JobFileGenError(Exception):
@@ -19,7 +24,7 @@ class JobFile:
             raise JobFileGenError('Generation script "{}" had a non-zero return code. Treating as error.'.format(filename))
  
         try:
-            parsed_job = yaml.load(self.raw_jobfile, Loader=yaml.CSafeLoader)
+            parsed_job = yaml.load(self.raw_jobfile, Loader=SafeLoader)
             self.__dict__.update(parsed_job)
         except Exception as e: 
             raise JobFileGenError('Could not parse job generation script output: {}'.format(e))

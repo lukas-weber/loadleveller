@@ -2,6 +2,11 @@ import yaml
 import numpy as np
 import itertools
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+    
 '''This module can be used to easily extract Monte Carlo results from the *.results.yml file produced by the loadleveller library.'''
 
 class Observable:
@@ -16,7 +21,7 @@ class Observable:
 class MCArchive:
     def __init__(self, filename):
         with open(filename, 'r') as f:
-            doc = yaml.load(f, Loader=yaml.CSafeLoader)
+            doc = yaml.load(f, Loader=SafeLoader)
 
         param_names = set(sum([list(task['parameters'].keys()) for task in doc], []))
         observable_names = set(sum([list(task['results'].keys()) for task in doc], []))

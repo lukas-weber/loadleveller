@@ -3,12 +3,17 @@ import os
 import yaml
 import numpy
 
+try:
+    from yaml import CSafeLoader as SafeLoader, CSafeDumper as SafeDumper
+except ImportError:
+    from yaml import SafeLoader, SafeDumper
+
 def _expand_path(path):
     return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
 
 def JobConfig(filename):
     with open(_expand_path(filename), 'r') as f:
-        return yaml.load(f, Loader=yaml.CSafeLoader)
+        return yaml.load(f, Loader=SafeLoader)
 
 class TaskMaker:
     def __init__(self, name, jobconfig):
@@ -41,4 +46,4 @@ class TaskMaker:
                 task_dict[k] = v
             jobfile_dict['tasks'][task_name] = task_dict
 
-        print(yaml.dump(jobfile_dict, Dumper=yaml.CSafeDumper))
+        print(yaml.dump(jobfile_dict, Dumper=SafeDumper))
