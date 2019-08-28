@@ -350,7 +350,8 @@ void runner_pt_master::start() {
 	MPI_Comm tmp;
 	MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, 0, &tmp);
 
-	for(int rank_section = 0; rank_section < (num_active_ranks_ - 1) / chain_len_; rank_section++) {
+	int chain_count = (num_active_ranks_ - 1) / chain_len_;
+	for(int rank_section = 0; rank_section < chain_count; rank_section++) {
 		assign_new_chain(rank_section);
 	}
 
@@ -394,7 +395,6 @@ int runner_pt_master::schedule_chain_run() {
 
 int runner_pt_master::assign_new_chain(int rank_section) {
 	int chain_run_id = schedule_chain_run();
-
 	for(int target = 0; target < chain_len_; target++) {
 		int msg[3] = {-1, 0, 0};
 		if(chain_run_id >= 0) {
@@ -402,7 +402,7 @@ int runner_pt_master::assign_new_chain(int rank_section) {
 			auto &chain = pt_chains_[chain_run.id];
 			msg[0] = chain.task_ids[target];
 			msg[1] = chain_run.run_id;
-			msg[2] = chain.target_sweeps + chain.sweeps;
+			msg[2] = std::max(1, chain.target_sweeps - chain.sweeps);
 		} else {
 			// this will prompt the slave to quit
 			num_active_ranks_--;
@@ -577,6 +577,7 @@ void runner_pt_slave::start() {
 	    job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
 
 	if(!accept_new_chain()) {
+		job_.log(fmt::format("rank {} exits: out of work", rank_));
 		return;
 	}
 

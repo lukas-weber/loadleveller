@@ -9,6 +9,6 @@ runner_task::runner_task(int target_sweeps, int sweeps,
       scheduled_runs{scheduled_runs} {}
 
 bool runner_task::is_done() const {
-	return sweeps > target_sweeps;
+	return sweeps >= target_sweeps;
 }
 }

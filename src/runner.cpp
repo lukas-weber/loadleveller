@@ -77,7 +77,6 @@ void runner_master::react() {
 	int node = stat.MPI_SOURCE;
 	if(node_status == S_IDLE) {
 		current_task_id_ = get_new_task_id(current_task_id_);
-
 		if(current_task_id_ < 0) {
 			send_action(A_EXIT, node);
 			num_active_ranks_--;
@@ -85,7 +84,7 @@ void runner_master::react() {
 			send_action(A_NEW_JOB, node);
 			tasks_[current_task_id_].scheduled_runs++;
 			int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
-			              tasks_[current_task_id_].target_sweeps -  tasks_[current_task_id_].sweeps};
+			              std::max(1,tasks_[current_task_id_].target_sweeps -  tasks_[current_task_id_].sweeps)};
 			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB, MPI_COMM_WORLD);
 		}
 	} else if(node_status == S_BUSY) {

@@ -50,7 +50,7 @@ def run():
         # check age of the different files
         binary_modtime = os.stat(job.jobconfig['mc_binary']).st_mtime
         try:
-            f = next(glob.iglob('{}.data/{}/*.h5'.format(job.jobname,job.tasks.keys()[-1]))) # only check one of the output files for speed
+            f = next(glob.iglob('{}.data/*/*.h5'.format(job.jobname))) # only check one of the output files for speed
             data_modtime = os.stat(f).st_mtime
 
             label = 'Warning' if args_run.force else 'Error'
