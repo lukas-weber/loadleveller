@@ -177,7 +177,7 @@ void runner_slave::start() {
 
 		if(time_is_up()) {
 			what_is_next(S_TIMEUP);
-			job_.log(fmt::format("rank {} exits: time up"));
+			job_.log(fmt::format("rank {} exits: time up", rank_));
 			break;
 		}
 

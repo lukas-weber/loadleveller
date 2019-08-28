@@ -204,7 +204,7 @@ void runner_pt_master::construct_pt_chains() {
 		int sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
 		int sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
 		if(chain.sweeps >= 0 && sweeps != chain.sweeps) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, "sweeps", chain.sweeps != sweeps)};
+			throw std::runtime_error{fmt::format(pt_sweep_error, "sweeps", chain.sweeps, sweeps)};
 		}
 		chain.sweeps = sweeps;
 	}
