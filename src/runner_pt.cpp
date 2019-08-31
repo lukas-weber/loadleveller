@@ -188,7 +188,7 @@ void runner_pt_master::construct_pt_chains() {
 		int target_sweeps = task.get<int>("sweeps");
 		if(chain.target_sweeps >= 0 && target_sweeps != chain.target_sweeps) {
 			throw std::runtime_error{
-			    fmt::format(pt_sweep_error, chain.id, "target_sweeps", i, chain.target_sweeps, target_sweeps)};
+			    fmt::format(pt_sweep_error, chain.id, i, "target_sweeps", chain.target_sweeps, target_sweeps)};
 		}
 		chain.target_sweeps = target_sweeps;
 

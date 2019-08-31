@@ -86,8 +86,8 @@ void mc::_write(const std::string &dir) {
 		if(pt_mode_) {
 			therm *= pt_sweeps_per_global_update_;
 		}
-		g.write("thermalization_sweeps", std::min(sweep_,therm_));
-		g.write("sweeps", std::max(0,sweep_-therm_));
+		g.write("thermalization_sweeps", std::min(sweep_,therm));
+		g.write("sweeps", std::max(0,sweep_-therm));
 	}
 	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
 
