@@ -154,7 +154,7 @@ void jobinfo::merge_task(int task_id, const std::vector<evalable> &evalables) {
 
 	std::string result_filename = fmt::format("{}/results.json", taskdir(task_id));
 	const std::string &task_name = task_names.at(task_id);
-	results.write_yaml(result_filename, taskdir(task_id), jobfile["tasks"][task_name].get_json());
+	results.write_json(result_filename, taskdir(task_id), jobfile["tasks"][task_name].get_json());
 }
 
 void jobinfo::log(const std::string &message) {
