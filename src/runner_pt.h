@@ -76,7 +76,7 @@ private:
 	void construct_pt_chains();
 	void checkpoint_write();
 	void checkpoint_read();
-	void write_params_yaml();
+	void write_params_json();
 	void write_param_optimization_stats();
 
 	int schedule_chain_run();

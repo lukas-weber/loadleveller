@@ -1,7 +1,7 @@
 #pragma once
 
 #include <fmt/format.h>
-#include <yaml-cpp/yaml.h>
+#include <nlohmann/json.hpp>
 
 namespace loadl {
 
@@ -9,22 +9,24 @@ namespace loadl {
 // For simplicity it does not support advanced yaml features such as complex-typed
 // keys in maps.
 
+using json = nlohmann::json;
+
 class parser {
 private:
-	YAML::Node content_;
+	json content_;
 	const std::string filename_;
 
 	// fake parser based on a subnode
-	parser(const YAML::Node &node, const std::string &filename);
+	parser(const json &node, const std::string &filename);
 
 public:
 	class iterator {
 	private:
 		std::string filename_;
-		YAML::Node::iterator it_;
+		json::iterator it_;
 
 	public:
-		iterator(std::string filename, YAML::Node::iterator it);
+		iterator(std::string filename, json::iterator it);
 		std::pair<std::string, parser> operator*();
 		iterator operator++();
 		bool operator!=(const iterator &b);
@@ -34,16 +36,17 @@ public:
 
 	template<typename T>
 	T get(const std::string &key) const {
-		if(!content_[key]) {
+		auto v = content_.find(key);
+		if(v == content_.end()) {
 			throw std::runtime_error(
-			    fmt::format("YAML: {}: required key '{}' not found.", filename_, key));
+			    fmt::format("json: {}: required key '{}' not found.", filename_, key));
 		}
-		return content_[key].as<T>();
+		return *v;
 	}
 
 	template<typename T>
 	auto get(const std::string &key, T default_val) const {
-		return content_[key].as<T>(default_val);
+		return content_.value<T>(key, default_val);
 	}
 
 	// is key defined?
@@ -55,6 +58,6 @@ public:
 
 	// This gives access to the underlying yaml-cpp api. Only use it if you absolutely need to.
 	// This function is needed to dump the task settings into the result file for example.
-	const YAML::Node &get_yaml();
+	const json &get_json() const;
 };
 }

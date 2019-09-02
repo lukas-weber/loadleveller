@@ -52,7 +52,7 @@ def job_need_merge(jobfile):
 
     result_mtime = 0
     try:
-        result_mtime = os.path.getmtime(jobfile.jobname+'.results.yml')
+        result_mtime = os.path.getmtime(jobfile.jobname+'.results.json')
     except FileNotFoundError:
         return True
 

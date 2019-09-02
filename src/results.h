@@ -1,10 +1,7 @@
 #pragma once
 #include <map>
 #include <vector>
-
-namespace YAML {
-class Node;
-}
+#include <nlohmann/json.hpp>
 
 namespace loadl {
 
@@ -35,8 +32,8 @@ struct observable_result {
 struct results {
 	std::map<std::string, observable_result> observables;
 
-	// writes out the results in a yaml file.
-	void write_yaml(const std::string &filename, const std::string &taskdir,
-	                const YAML::Node &params);
+	// writes out the results in a json file.
+	void write_json(const std::string &filename, const std::string &taskdir,
+	                const nlohmann::json &params);
 };
 }

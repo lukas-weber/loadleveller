@@ -1,6 +1,7 @@
 import sys
 import os
 import yaml
+import json
 import numpy
 
 try:
@@ -46,4 +47,4 @@ class TaskMaker:
                 task_dict[k] = v
             jobfile_dict['tasks'][task_name] = task_dict
 
-        print(yaml.dump(jobfile_dict, Dumper=SafeDumper))
+        json.dump(jobfile_dict, sys.stdout, indent=1)

@@ -264,18 +264,14 @@ void runner_pt_master::checkpoint_read() {
 	}
 }
 
-void runner_pt_master::write_params_yaml() {
-	using namespace YAML;
-	Emitter params;
-	params << BeginMap;
+void runner_pt_master::write_params_json() {
+	nlohmann::json params;
 	for(auto c : pt_chains_) {
-		params << Key << fmt::format("chain{:04d}", c.id);
-		params << Value << Flow << c.params;
+		params[fmt::format("chain{:04d}", c.id)] = c.params;
 	}
-	params << EndMap;
 
-	std::ofstream file{job_.jobdir() + "/pt_optimized_params.yml"};
-	file << params.c_str() << "\n";
+	std::ofstream file{job_.jobdir() + "/pt_optimized_params.json"};
+	file << params.dump(1) << "\n";
 }
 
 void runner_pt_master::write_param_optimization_stats() {
@@ -321,7 +317,7 @@ void runner_pt_master::checkpoint_write() {
 	}
 
 	if(po_config_.enabled) {
-		write_params_yaml();
+		write_params_json();
 	}
 }
 

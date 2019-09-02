@@ -129,26 +129,32 @@ int jobinfo::read_dump_progress(int task_id) const {
 }
 
 void jobinfo::concatenate_results() {
-	std::ofstream cat_results{fmt::format("{}.results.yml", jobname)};
+	std::ofstream cat_results{fmt::format("{}.results.json", jobname)};
+	cat_results << "[";
 	for(size_t i = 0; i < task_names.size(); i++) {
-		std::ifstream res_file{taskdir(i) + "/results.yml"};
+		std::ifstream res_file{taskdir(i) + "/results.json"};
 		res_file.seekg(0, res_file.end);
 		size_t size = res_file.tellg();
 		res_file.seekg(0, res_file.beg);
 
 		std::vector<char> buf(size + 1, 0);
 		res_file.read(buf.data(), size);
-		cat_results << buf.data() << "\n";
+		cat_results << buf.data();
+		if(i < task_names.size()-1) {
+			cat_results << ",";
+		}
+		cat_results << "\n";
 	}
+	cat_results << "]\n";
 }
 
 void jobinfo::merge_task(int task_id, const std::vector<evalable> &evalables) {
 	std::vector<std::string> meas_files = list_run_files(taskdir(task_id), "meas\\.h5");
 	results results = merge(meas_files, evalables);
 
-	std::string result_filename = fmt::format("{}/results.yml", taskdir(task_id));
+	std::string result_filename = fmt::format("{}/results.json", taskdir(task_id));
 	const std::string &task_name = task_names.at(task_id);
-	results.write_yaml(result_filename, taskdir(task_id), jobfile["tasks"][task_name].get_yaml());
+	results.write_yaml(result_filename, taskdir(task_id), jobfile["tasks"][task_name].get_json());
 }
 
 void jobinfo::log(const std::string &message) {

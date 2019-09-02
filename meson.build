@@ -9,7 +9,7 @@ project('load-leveller', 'c', 'cpp',
 )
 
 fmt_dep = dependency('fmt', fallback : ['fmt', 'fmt_dep'])
-yamlcpp_dep = dependency('yaml-cpp', version : '>=0.6.0', fallback : ['yaml-cpp', 'yamlcpp_dep'])
+json_dep = dependency('nlohmann_json', fallback : ['nlohmann_json', 'nlohmann_json_dep'])
 mpi_dep = dependency('mpi', language : 'cpp')
 
 # HDF5 is a pain
@@ -24,7 +24,7 @@ endif
 
 should_install = not meson.is_subproject()
 
-loadleveller_deps = [ fmt_dep, yamlcpp_dep, mpi_dep, hdf5_dep ]
+loadleveller_deps = [ fmt_dep, json_dep, mpi_dep, hdf5_dep ]
 
 subdir('src')
 

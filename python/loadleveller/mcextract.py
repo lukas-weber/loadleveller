@@ -1,13 +1,9 @@
-import yaml
+import json
 import numpy as np
 import itertools
 
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader
     
-'''This module can be used to easily extract Monte Carlo results from the *.results.yml file produced by the loadleveller library.'''
+'''This module can be used to easily extract Monte Carlo results from the *.results.json file produced by the loadleveller library.'''
 
 class Observable:
     def __init__(self, num_tasks):
@@ -21,7 +17,7 @@ class Observable:
 class MCArchive:
     def __init__(self, filename):
         with open(filename, 'r') as f:
-            doc = yaml.load(f, Loader=SafeLoader)
+            doc = json.load(f)
 
         param_names = set(sum([list(task['parameters'].keys()) for task in doc], []))
         observable_names = set(sum([list(task['results'].keys()) for task in doc], []))
@@ -36,9 +32,9 @@ class MCArchive:
 
             for obs, value in task['results'].items():
                 o = self.observables[obs]
-                o.rebinning_bin_length[i] = int(value.get('rebinning_bin_length',0))
-                o.rebinning_bin_count[i] = int(value.get('rebinning_bin_count',0))
-                o.autocorrelation_time[i] = float(value.get('autocorrelation_time',0))
+                o.rebinning_bin_length[i] = int(value.get('rebin_len',0))
+                o.rebinning_bin_count[i] = int(value.get('rebin_count',0))
+                o.autocorrelation_time[i] = float(value.get('autocorr_time',0))
 
                 o.mean[i] = np.array(value['mean'], dtype=float)
                 o.error[i] = np.array(value['error'], dtype=float)

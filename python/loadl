@@ -8,7 +8,7 @@ import os
 
 parser = argparse.ArgumentParser(description='Helper script for running and managing loadleveller Monte Carlo jobs.', usage='''loadl <command> <jobscript> [<args>]
 
-<jobscript> is an executable that prints the job parameter YAML-file to stdout. It is convenient to use the taskmaker python module for this purpose.
+<jobscript> is an executable that prints the job parameter JSON-file to stdout. It is convenient to use the taskmaker python module for this purpose.
 
 Possible commands and their shorthands are
     delete, d  delete all data related to a job
@@ -73,7 +73,7 @@ def run():
 def delete():
     import shutil
     datadir = '{}.data'.format(job.jobname)
-    results_file = '{}.results.yml'.format(job.jobname)
+    results_file = '{}.results.json'.format(job.jobname)
 
     if os.path.exists(datadir):
         print('$ rm -r {}'.format(datadir))

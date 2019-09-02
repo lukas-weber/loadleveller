@@ -1,14 +1,10 @@
-import yaml
+import json
 import os
 import subprocess
 import errno
 
-try:
-    from yaml import CSafeLoader as SafeLoader
-except ImportError:
-    from yaml import SafeLoader
 
-'''Helpers for handling loadleveller jobfiles/scripts. For lack of a better idea, the job description files of loadleveller are actually executables that output a more verbose yaml parameter file to stdout. Use the taskmaker module to write the input scripts.'''
+'''Helpers for handling loadleveller jobfiles/scripts. For lack of a better idea, the job description files of loadleveller are actually executables that output a more verbose json parameter file to stdout. Use the taskmaker module to write the input scripts.'''
 
 class JobFileGenError(Exception):
     pass
@@ -24,7 +20,7 @@ class JobFile:
             raise JobFileGenError('Generation script "{}" had a non-zero return code. Treating as error.'.format(filename))
  
         try:
-            parsed_job = yaml.load(self.raw_jobfile, Loader=SafeLoader)
+            parsed_job = json.loads(self.raw_jobfile)
             self.__dict__.update(parsed_job)
         except Exception as e: 
             raise JobFileGenError('Could not parse job generation script output: {}'.format(e))
@@ -37,10 +33,10 @@ class JobFile:
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
-            job_input_filename = os.path.join(datadir, 'parameters.yml')
+            job_input_filename = os.path.join(datadir, 'parameters.json')
             with open(job_input_filename, 'w') as f:
                 f.write(self.raw_jobfile)
         except Exception as e:
-            raise JobFileGenError('Could not write parameters.yml: {}'.format(e))
+            raise JobFileGenError('Could not write parameters.json: {}'.format(e))
 
         return job_input_filename
