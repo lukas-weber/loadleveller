@@ -34,7 +34,7 @@ class MCArchive:
                 o = self.observables[obs]
                 o.rebinning_bin_length[i] = int(value.get('rebin_len',0))
                 o.rebinning_bin_count[i] = int(value.get('rebin_count',0))
-                o.autocorrelation_time[i] = float(value.get('autocorr_time',0))
+                o.autocorrelation_time[i] = value.get('autocorr_time',0)
 
                 o.mean[i] = np.array(value['mean'], dtype=float)
                 o.error[i] = np.array(value['error'], dtype=float)
