@@ -13,7 +13,7 @@ private:
 	std::string message_;
 
 public:
-	iodump_exception(const std::string &msg);
+	iodump_exception(const std::string &filename, const std::string &msg);
 
 	const char *what() const noexcept override;
 };
@@ -55,16 +55,16 @@ public:
 	class group {
 	public:
 		struct iterator {
-			iterator(hid_t group, uint64_t idx);
 			std::string operator*();
 			iterator operator++();
 			bool operator!=(const iterator &b);
 
 			const hid_t group_;
+			const std::string &filename_;
 			uint64_t idx_;
 		};
 
-		group(hid_t parent, const std::string &path);
+		group(hid_t parent, const std::string &filename, const std::string &path);
 		group(const group &) =
 		    delete; // did you know this is a thing? Very handy in preventing errors.
 		~group();
@@ -95,6 +95,7 @@ public:
 		    const std::string &path) const; // checks whether an object in the dump file exists
 	private:
 		hid_t group_;
+		const std::string &filename_;
 
 		// chunk_size == 0 means contiguous storage
 		// if the dataset already exists, we try to overwrite it. However it must have the same
@@ -172,7 +173,7 @@ void iodump::group::write(const std::string &name, const std::vector<T> &data) c
 	herr_t status =
 	    H5Dwrite(*dataset, h5_datatype<T>(), H5S_ALL, H5S_ALL, H5P_DEFAULT, data.data());
 	if(status < 0)
-		throw iodump_exception{"H5Dwrite"};
+		throw iodump_exception{filename_, "H5Dwrite"};
 }
 
 template<class T>
@@ -205,14 +206,14 @@ void iodump::group::insert_back(const std::string &name, const std::vector<T> &d
 
 		size = H5Sget_simple_extent_npoints(*dataspace);
 		if(size < 0) {
-			throw iodump_exception{"H5Sget_simple_extent_npoints"};
+			throw iodump_exception{filename_, "H5Sget_simple_extent_npoints"};
 		}
 
 		if(data.size() > 0) {
 			hsize_t new_size = size + data.size();
 			status = H5Dset_extent(*dataset, &new_size);
 			if(status < 0) {
-				throw iodump_exception{"H5Pset_extent"};
+				throw iodump_exception{filename_, "H5Pset_extent"};
 			}
 		}
 	} // because it will be reopened after this
@@ -224,11 +225,11 @@ void iodump::group::insert_back(const std::string &name, const std::vector<T> &d
 	hsize_t extent = data.size();
 	status = H5Sselect_hyperslab(*dataspace, H5S_SELECT_SET, &pos, nullptr, &extent, nullptr);
 	if(status < 0)
-		throw iodump_exception{"H5Sselect_hyperslap"};
+		throw iodump_exception{filename_, "H5Sselect_hyperslap"};
 
 	status = H5Dwrite(*dataset, h5_datatype<T>(), *memspace, *dataspace, H5P_DEFAULT, data.data());
 	if(status < 0)
-		throw iodump_exception{"H5Dwrite"};
+		throw iodump_exception{filename_, "H5Dwrite"};
 }
 
 template<class T>
@@ -238,7 +239,7 @@ void iodump::group::read(const std::string &name, std::vector<T> &data) const {
 
 	int size = H5Sget_simple_extent_npoints(*dataspace); // rank > 1 will get flattened when loaded.
 	if(size < 0)
-		throw iodump_exception{"H5Sget_simple_extent_npoints"};
+		throw iodump_exception{filename_, "H5Sget_simple_extent_npoints"};
 	data.resize(size);
 
 	if(size == 0) { // handle empty dataset correctly
@@ -248,7 +249,7 @@ void iodump::group::read(const std::string &name, std::vector<T> &data) const {
 	herr_t status =
 	    H5Dread(*dataset, h5_datatype<T>(), H5S_ALL, H5P_DEFAULT, H5P_DEFAULT, data.data());
 	if(status < 0)
-		throw iodump_exception{"H5Dread"};
+		throw iodump_exception{filename_, "H5Dread"};
 }
 
 template<>
