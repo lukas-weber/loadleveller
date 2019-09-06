@@ -93,7 +93,7 @@ jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
 // The regex has to be matched with the output of the rundir function.
 std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
                                                  const std::string &file_ending) {
-	std::regex run_filename{"run\\d{4,}\\." + file_ending};
+	std::regex run_filename{"^run\\d{4,}\\." + file_ending + "$"};
 	std::vector<std::string> results;
 	DIR *dir = opendir(taskdir.c_str());
 	if(dir == nullptr) {
