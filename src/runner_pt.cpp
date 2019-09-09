@@ -274,8 +274,19 @@ void runner_pt_master::write_params_json() {
 	file << params.dump(1) << "\n";
 }
 
-void runner_pt_master::write_param_optimization_stats() {
-	std::string stat_name = job_.jobdir() + "/pt_param_stats.h5";
+void runner_pt_master::write_statistics(const pt_chain_run &chain_run) {
+	std::string stat_name = job_.jobdir() + "/pt_statistics.h5";
+	iodump stat = iodump::open_readwrite(stat_name);
+	auto g = stat.get_root();
+
+	g.write("chain_length", chain_len_);
+	
+	auto cg = g.open_group(fmt::format("chain{:04d}_run{:04d}", chain_run.id, chain_run.run_id));
+	cg.insert_back("rank_to_pos", chain_run.rank_to_pos);
+}
+
+void runner_pt_master::write_param_optimization_statistics() {
+	std::string stat_name = job_.jobdir() + "/pt_statistics.h5";
 	iodump stat = iodump::open_readwrite(stat_name);
 	auto g = stat.get_root();
 
@@ -420,7 +431,7 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain) {
 		                "convergence={:.2g}",
 		                chain.id, chain.rejection_rate_entries[0], efficiency, convergence));
 		checkpoint_write();
-		write_param_optimization_stats();
+		write_param_optimization_statistics();
 		chain.clear_histograms();
 	}
 }
@@ -511,6 +522,10 @@ void runner_pt_master::react() {
 			double new_param = chain.params[chain_run.rank_to_pos[target]];
 			MPI_Send(&new_param, 1, MPI_DOUBLE, rank_section * chain_len_ + target + 1, 0,
 			         MPI_COMM_WORLD);
+		}
+
+		if(job_.jobfile["jobconfig"].get<bool>("pt_statistics", false)) {
+			write_statistics(chain_run);
 		}
 	} else { // S_TIMEUP
 		num_active_ranks_--;
