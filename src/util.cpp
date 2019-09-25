@@ -15,7 +15,7 @@ monotonic_interpolator::monotonic_interpolator(const std::vector<double>& x, con
 	}
 	m_[0] = d[0];
 	m_[x.size()-1] = d[x.size()-2];
-	for(st::size_t i = 1; i < x.size()-1; i++) {
+	for(std::size_t i = 1; i < x.size()-1; i++) {
 		m_[i] = (d[i-1]+d[i])/2;
 
 		if(d[i-1]*d[i] <= 0) {
