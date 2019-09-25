@@ -15,14 +15,14 @@ monotonic_interpolator::monotonic_interpolator(const std::vector<double>& x, con
 	}
 	m_[0] = d[0];
 	m_[x.size()-1] = d[x.size()-2];
-	for(size_t i = 1; i < x.size()-1; i++) {
+	for(st::size_t i = 1; i < x.size()-1; i++) {
 		m_[i] = (d[i-1]+d[i])/2;
 
 		if(d[i-1]*d[i] <= 0) {
 			m_[i] = 0;
 		}
 	}
-	for(size_t i = 0; i < x.size()-1; i++) {
+	for(std::size_t i = 0; i < x.size()-1; i++) {
 		double a = m_[i]/d[i];
 		double b = m_[i+1]/d[i];
 
@@ -52,7 +52,7 @@ static double h11(double t) {
 
 double monotonic_interpolator::operator()(double x0) {
 	// replace by binary search if necessary!
-	size_t idx = 0;
+	std::size_t idx = 0;
 	assert(x0 < x_[x_.size()-1]);
 	for(; idx < x_.size()-1; idx++) {
 		if((x0-x_[idx])*(x0-x_[idx+1]) <= 0) {
