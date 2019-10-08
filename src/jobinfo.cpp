@@ -150,7 +150,9 @@ void jobinfo::concatenate_results() {
 
 void jobinfo::merge_task(int task_id, const std::vector<evalable> &evalables) {
 	std::vector<std::string> meas_files = list_run_files(taskdir(task_id), "meas\\.h5");
-	results results = merge(meas_files, evalables);
+	size_t rebinning_bin_length = jobfile["jobconfig"].get<size_t>("merge_rebin_length", 0);
+	size_t sample_skip = jobfile["jobconfig"].get<size_t>("merge_sample_skip", 0);
+	results results = merge(meas_files, evalables, rebinning_bin_length, sample_skip);
 
 	std::string result_filename = fmt::format("{}/results.json", taskdir(task_id));
 	const std::string &task_name = task_names.at(task_id);
