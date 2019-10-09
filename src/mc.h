@@ -22,7 +22,6 @@ protected:
 	virtual void init() = 0;
 	virtual void checkpoint_write(const iodump::group &out) = 0;
 	virtual void checkpoint_read(const iodump::group &in) = 0;
-	virtual void write_output(const std::string &filename);
 	virtual void do_update() = 0;
 	virtual void do_measurement() = 0;
 	virtual void pt_update_param(const std::string & /*param_name*/, double /*new_param*/) {
@@ -43,15 +42,15 @@ public:
 	int sweep() const;
 
 	virtual void register_evalables(std::vector<evalable> &evalables) = 0;
+	virtual void write_output(const std::string &filename);
 
 	// these functions do a little more, like taking care of the
 	// random number generator state, then call the child class versions.
 	void _init();
 
 	void _write(const std::string &dir);
+	void _write_finalize(const std::string &dir);
 	bool _read(const std::string &dir);
-
-	void _write_output(const std::string &filename);
 
 	void _do_update();
 	void _do_measurement();

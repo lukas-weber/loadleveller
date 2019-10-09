@@ -89,12 +89,17 @@ void mc::_write(const std::string &dir) {
 		g.write("thermalization_sweeps", std::min(sweep_,therm));
 		g.write("sweeps", std::max(0,sweep_-therm));
 	}
-	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
 	double checkpoint_write_time =
 	    (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
 	measure.add("_ll_checkpoint_write_time", checkpoint_write_time);
+}
+
+// This function is called if it is certain that the *.tmp files have been completely written.
+// Important for parallel tempering mode where all slaves in a chain have to write consistent dumps.
+void mc::_write_finalize(const std::string &dir) {
+	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
 }
 
 bool mc::_read(const std::string &dir) {
@@ -122,10 +127,6 @@ bool mc::_read(const std::string &dir) {
 	measure.add("_ll_checkpoint_read_time",
 	            (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec));
 	return true;
-}
-
-void mc::_write_output(const std::string &filename) {
-	write_output(filename);
 }
 
 bool mc::is_thermalized() {

@@ -89,12 +89,13 @@ void runner_single::read() {
 void runner_single::checkpointing() {
 	time_last_checkpoint_ = time(nullptr);
 	sys_->_write(job_.rundir(task_id_, 1));
+	sys_->_write_finalize(job_.rundir(task_id_, 1));
 	job_.log(fmt::format("* checkpointing {}", job_.rundir(task_id_, 1)));
 }
 
 void runner_single::merge_measurements() {
 	std::string unique_filename = job_.taskdir(task_id_);
-	sys_->_write_output(unique_filename);
+	sys_->write_output(unique_filename);
 
 	std::vector<evalable> evalables;
 	sys_->register_evalables(evalables);

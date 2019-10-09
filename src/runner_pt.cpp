@@ -750,6 +750,8 @@ int runner_pt_slave::what_is_next(int status) {
 void runner_pt_slave::checkpoint_write() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
+	MPI_Barrier(chain_comm_);
+	sys_->_write_finalize(job_.rundir(task_id_, run_id_));
 	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
 }
 
@@ -765,7 +767,7 @@ int runner_pt_slave::recv_action() {
 
 void runner_pt_slave::merge_measurements() {
 	std::string unique_filename = job_.taskdir(task_id_);
-	sys_->_write_output(unique_filename);
+	sys_->write_output(unique_filename);
 
 	std::vector<evalable> evalables;
 	if(job_.jobfile["jobconfig"].defined("pt_parameter_optimization")) {
