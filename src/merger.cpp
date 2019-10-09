@@ -67,8 +67,10 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 				    "merge: sample count is not an integer multiple of the vector length. Corrupt "
 				    "file?"};
 			}
+			
+			sample_size /= vector_length;
 	
-			obs.total_sample_count += sample_size / vector_length;
+			obs.total_sample_count += sample_size-std::min(sample_size, sample_skip);
 			obs.mean.resize(vector_length);
 			obs.error.resize(vector_length);
 			obs.autocorrelation_time.resize(vector_length);
@@ -85,7 +87,6 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 
 	for(auto &entry : res.observables) {
 		auto &obs = entry.second;
-		obs.total_sample_count -= std::min(obs.total_sample_count, sample_skip);
 
 		if(rebinning_bin_length == 0) {
 			// no rebinning before this
@@ -123,15 +124,14 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 			// total_sample_count. In that case, we throw away the leftover samples.
 			//
 			size_t vector_length = obs.mean.size();
-			for(size_t i = 0; metadata[obs_name].sample_counter <
+			for(size_t i = sample_skip*vector_length; metadata[obs_name].sample_counter <
 			                      obs.rebinning_bin_count * obs.rebinning_bin_length + sample_skip &&
 			                  i < samples.size();
 			    i++) {
 				size_t vector_idx = i % vector_length;
 				
-				if(metadata[obs_name].sample_counter >= sample_skip) {
-					obs.mean[vector_idx] += samples[i];
-				}
+				obs.mean[vector_idx] += samples[i];
+
 
 				if(vector_idx == vector_length - 1) {
 					metadata[obs_name].sample_counter++;
@@ -166,33 +166,31 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 
 			g.read(fmt::format("{}/samples", obs_name), samples);
 
-			for(size_t i = 0;
+			for(size_t i = sample_skip*vector_length;
 			    obs_meta.current_rebin < obs.rebinning_bin_count && i < samples.size(); i++) {
 				size_t vector_idx = i % vector_length;
 
-				if(metadata[obs_name].sample_counter >= sample_skip) {
-					size_t rebin_idx = obs_meta.current_rebin * vector_length + vector_idx;
+				size_t rebin_idx = obs_meta.current_rebin * vector_length + vector_idx;
 
-					obs.rebinning_means[rebin_idx] += samples[i];
+				obs.rebinning_means[rebin_idx] += samples[i];
 
-					if(vector_idx == 0)
-						obs_meta.current_rebin_filling++;
+				if(vector_idx == 0)
+					obs_meta.current_rebin_filling++;
 
-					// I used autocorrelation_time as a buffer here to hold the naive no-rebinning error
-					// (sorry)
-					obs.autocorrelation_time[vector_idx] +=
-					    (samples[i] - obs.mean[vector_idx]) * (samples[i] - obs.mean[vector_idx]);
+				// I used autocorrelation_time as a buffer here to hold the naive no-rebinning error
+				// (sorry)
+				obs.autocorrelation_time[vector_idx] +=
+				    (samples[i] - obs.mean[vector_idx]) * (samples[i] - obs.mean[vector_idx]);
 
-					if(obs_meta.current_rebin_filling >= obs.rebinning_bin_length) {
-						obs.rebinning_means[rebin_idx] /= obs.rebinning_bin_length;
+				if(obs_meta.current_rebin_filling >= obs.rebinning_bin_length) {
+					obs.rebinning_means[rebin_idx] /= obs.rebinning_bin_length;
 
-						double diff = obs.rebinning_means[rebin_idx] - obs.mean[vector_idx];
-						obs.error[vector_idx] += diff * diff;
+					double diff = obs.rebinning_means[rebin_idx] - obs.mean[vector_idx];
+					obs.error[vector_idx] += diff * diff;
 
-						if(vector_idx == vector_length - 1) {
-							obs_meta.current_rebin++;
-							obs_meta.current_rebin_filling = 0;
-						}
+					if(vector_idx == vector_length - 1) {
+						obs_meta.current_rebin++;
+						obs_meta.current_rebin_filling = 0;
 					}
 				}
 				
