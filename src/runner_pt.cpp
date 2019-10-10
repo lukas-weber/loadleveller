@@ -185,7 +185,7 @@ void runner_pt_master::construct_pt_chains() {
 		    "chain {}: task {}: in parallel tempering mode, sweeps are measured in global updates and need to be the "
 		    "same within each chain: {} = {} != {}";
 
-		int target_sweeps = task.get<int>("sweeps");
+		int64_t target_sweeps = task.get<int>("sweeps");
 		if(chain.target_sweeps >= 0 && target_sweeps != chain.target_sweeps) {
 			throw std::runtime_error{
 			    fmt::format(pt_sweep_error, chain.id, i, "target_sweeps", chain.target_sweeps, target_sweeps)};
@@ -201,8 +201,8 @@ void runner_pt_master::construct_pt_chains() {
 		}
 		chain.target_thermalization = target_thermalization;
 
-		int sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
-		int sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
+		int64_t sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
+		int64_t sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
 		if(chain.sweeps >= 0 && sweeps != chain.sweeps) {
 			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, i, "sweeps", chain.sweeps, sweeps)};
 		}
@@ -403,18 +403,18 @@ int runner_pt_master::schedule_chain_run() {
 int runner_pt_master::assign_new_chain(int rank_section) {
 	int chain_run_id = schedule_chain_run();
 	for(int target = 0; target < chain_len_; target++) {
-		int msg[3] = {-1, 0, 0};
+		int64_t msg[3] = {-1, 0, 0};
 		if(chain_run_id >= 0) {
 			auto &chain_run = pt_chain_runs_[chain_run_id];
 			auto &chain = pt_chains_[chain_run.id];
 			msg[0] = chain.task_ids[target];
 			msg[1] = chain_run.run_id;
-			msg[2] = std::max(1, chain.target_sweeps - chain.sweeps);
+			msg[2] = std::max(1L, chain.target_sweeps - chain.sweeps);
 		} else {
 			// this will prompt the slave to quit
 			num_active_ranks_--;
 		}
-		MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT,
+		MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T,
 		         rank_section * chain_len_ + target + 1, 0, MPI_COMM_WORLD);
 	}
 	rank_to_chain_run_[rank_section] = chain_run_id;
@@ -442,9 +442,9 @@ void runner_pt_master::react() {
 	MPI_Recv(&rank_status, 1, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &stat);
 	int rank = stat.MPI_SOURCE - 1;
 	if(rank_status == S_BUSY) {
-		int msg[1];
-		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, rank + 1, 0, MPI_COMM_WORLD, &stat);
-		int completed_sweeps = msg[0];
+		int64_t msg[1];
+		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, rank + 1, 0, MPI_COMM_WORLD, &stat);
+		int64_t completed_sweeps = msg[0];
 
 		int chain_run_id = rank_to_chain_run_[rank / chain_len_];
 		auto &chain_run = pt_chain_runs_[chain_run_id];
@@ -695,8 +695,8 @@ void runner_pt_slave::pt_global_update() {
 }
 
 bool runner_pt_slave::accept_new_chain() {
-	int msg[3];
-	MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	int64_t msg[3];
+	MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 	task_id_ = msg[0];
 	run_id_ = msg[1];
 	sweeps_before_communication_ = msg[2];
@@ -706,7 +706,7 @@ bool runner_pt_slave::accept_new_chain() {
 	}
 
 	sweeps_per_global_update_ =
-	    job_.jobfile["tasks"][job_.task_names[task_id_]].get<int>("pt_sweeps_per_global_update");
+	    job_.jobfile["tasks"][job_.task_names[task_id_]].get<int64_t>("pt_sweeps_per_global_update");
 
 	sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
 	sys_->pt_mode_ = true;
@@ -725,8 +725,8 @@ int runner_pt_slave::what_is_next(int status) {
 	if(chain_rank_ == 0) {
 		send_status(status);
 
-		int msg[1] = {sweeps_since_last_query_};
-		MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, 0, MPI_COMM_WORLD);
+		int64_t msg[1] = {sweeps_since_last_query_};
+		MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, 0, 0, MPI_COMM_WORLD);
 	}
 	sweeps_since_last_query_ = 0;
 	int new_action = recv_action();

@@ -46,8 +46,8 @@ private:
 	double time_start_{0};
 
 	int rank_{0};
-	int sweeps_since_last_query_{0};
-	int sweeps_before_communication_{0};
+	size_t sweeps_since_last_query_{0};
+	size_t sweeps_before_communication_{0};
 	int task_id_{-1};
 	int run_id_{-1};
 

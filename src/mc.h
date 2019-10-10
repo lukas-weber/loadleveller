@@ -12,8 +12,8 @@ namespace loadl {
 
 class mc {
 private:
-	int sweep_{0};
-	int therm_{0};
+	size_t sweep_{0};
+	size_t therm_{0};
 	int pt_sweeps_per_global_update_{-1};
 protected:
 	parser param;
@@ -39,7 +39,7 @@ protected:
 public:
 	bool pt_mode_{};
 
-	int sweep() const;
+	size_t sweep() const;
 
 	virtual void register_evalables(std::vector<evalable> &evalables) = 0;
 	virtual void write_output(const std::string &filename);

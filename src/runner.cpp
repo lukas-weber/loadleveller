@@ -83,15 +83,18 @@ void runner_master::react() {
 		} else {
 			send_action(A_NEW_JOB, node);
 			tasks_[current_task_id_].scheduled_runs++;
-			int msg[3] = {current_task_id_, tasks_[current_task_id_].scheduled_runs,
-			              std::max(1,tasks_[current_task_id_].target_sweeps -  tasks_[current_task_id_].sweeps)};
-			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_NEW_JOB, MPI_COMM_WORLD);
+
+			size_t sweeps_until_comm = 1 + tasks_[current_task_id_].target_sweeps - std::min(tasks_[current_task_id_].target_sweeps, tasks_[current_task_id_].sweeps);
+			assert(current_task_id_ >= 0);
+			uint64_t msg[3] = {static_cast<uint64_t>(current_task_id_), static_cast<uint64_t>(tasks_[current_task_id_].scheduled_runs),
+			              sweeps_until_comm};
+			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, node, T_NEW_JOB, MPI_COMM_WORLD);
 		}
 	} else if(node_status == S_BUSY) {
-		int msg[2];
-		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, node, T_STATUS, MPI_COMM_WORLD, &stat);
+		uint64_t msg[2];
+		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, node, T_STATUS, MPI_COMM_WORLD, &stat);
 		int task_id = msg[0];
-		int completed_sweeps = msg[1];
+		size_t completed_sweeps = msg[1];
 
 		tasks_[task_id].sweeps += completed_sweeps;
 		if(tasks_[task_id].is_done()) {
@@ -122,8 +125,8 @@ void runner_master::read() {
 	for(size_t i = 0; i < job_.task_names.size(); i++) {
 		auto task = job_.jobfile["tasks"][job_.task_names[i]];
 
-		int target_sweeps = task.get<int>("sweeps");
-		int sweeps = job_.read_dump_progress(i);
+		size_t target_sweeps = task.get<size_t>("sweeps");
+		size_t sweeps = job_.read_dump_progress(i);
 		int scheduled_runs = 0;
 
 		tasks_.emplace_back(target_sweeps, sweeps, scheduled_runs);
@@ -203,8 +206,8 @@ int runner_slave::what_is_next(int status) {
 			return A_EXIT;
 		}
 		MPI_Status stat;
-		int msg[3];
-		MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, T_NEW_JOB, MPI_COMM_WORLD, &stat);
+		uint64_t msg[3];
+		MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, 0, T_NEW_JOB, MPI_COMM_WORLD, &stat);
 		task_id_ = msg[0];
 		run_id_ = msg[1];
 		sweeps_before_communication_ = msg[2];
@@ -212,8 +215,9 @@ int runner_slave::what_is_next(int status) {
 		return A_NEW_JOB;
 	}
 
-	int msg[2] = {task_id_, sweeps_since_last_query_};
-	MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT, 0, T_STATUS, MPI_COMM_WORLD);
+	assert(task_id_ >= 0);
+	uint64_t msg[2] = {static_cast<uint64_t>(task_id_), sweeps_since_last_query_};
+	MPI_Send(msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, 0, T_STATUS, MPI_COMM_WORLD);
 	sweeps_since_last_query_ = 0;
 	int new_action = recv_action();
 	if(new_action == A_PROCESS_DATA_NEW_JOB) {

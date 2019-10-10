@@ -78,8 +78,8 @@ void runner_single::read() {
 	for(size_t i = 0; i < job_.task_names.size(); i++) {
 		auto task = job_.jobfile["tasks"][job_.task_names[i]];
 
-		int target_sweeps = task.get<int>("sweeps");
-		int sweeps = 0;
+		size_t target_sweeps = task.get<int>("sweeps");
+		size_t sweeps = 0;
 
 		sweeps = job_.read_dump_progress(i);
 		tasks_.emplace_back(target_sweeps, sweeps, 0);

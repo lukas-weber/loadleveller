@@ -113,10 +113,10 @@ std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
 }
 
 int jobinfo::read_dump_progress(int task_id) const {
-	int sweeps = 0;
+	size_t sweeps = 0;
 	try {
 		for(auto &dump_name : list_run_files(taskdir(task_id), "dump\\.h5")) {
-			int dump_sweeps = 0;
+			size_t dump_sweeps = 0;
 			iodump d = iodump::open_readonly(dump_name);
 			d.get_root().read("sweeps", dump_sweeps);
 			sweeps += dump_sweeps;
