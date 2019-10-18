@@ -234,7 +234,11 @@ void iodump::group::insert_back(const std::string &name, const std::vector<T> &d
 
 template<class T>
 void iodump::group::read(const std::string &name, std::vector<T> &data) const {
-	h5_handle dataset{H5Dopen2(group_, name.c_str(), H5P_DEFAULT), H5Dclose};
+	hid_t dset = H5Dopen2(group_, name.c_str(), H5P_DEFAULT);
+	if(dset < 0)
+		throw iodump_exception{filename_, fmt::format("H5Dopen2({})", name)};
+
+	h5_handle dataset{dset, H5Dclose};
 	h5_handle dataspace{H5Dget_space(*dataset), H5Sclose};
 
 	int size = H5Sget_simple_extent_npoints(*dataspace); // rank > 1 will get flattened when loaded.
@@ -248,8 +252,9 @@ void iodump::group::read(const std::string &name, std::vector<T> &data) const {
 
 	herr_t status =
 	    H5Dread(*dataset, h5_datatype<T>(), H5S_ALL, H5P_DEFAULT, H5P_DEFAULT, data.data());
-	if(status < 0)
-		throw iodump_exception{filename_, "H5Dread"};
+	if(status < 0) {
+		throw iodump_exception{filename_, fmt::format("H5Dread({})", name)};
+	}
 }
 
 template<>
