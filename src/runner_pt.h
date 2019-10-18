@@ -10,9 +10,9 @@ struct pt_chain {
 	std::vector<int> task_ids;
 	std::vector<double> params;
 
-	int sweeps{-1};
-	int target_sweeps{-1};
-	int target_thermalization{-1};
+	int64_t sweeps{-1};
+	int64_t target_sweeps{-1};
+	int64_t target_thermalization{-1};
 	int scheduled_runs{};
 
 	// parameter optimization
@@ -107,9 +107,9 @@ private:
 	double time_start_{0};
 
 	int rank_{};
-	int sweeps_since_last_query_{};
-	int sweeps_before_communication_{};
-	int sweeps_per_global_update_{};
+	int64_t sweeps_since_last_query_{};
+	int64_t sweeps_before_communication_{};
+	int64_t sweeps_per_global_update_{};
 	int task_id_{-1};
 	int run_id_{-1};
 

@@ -8,7 +8,7 @@ mc::mc(const parser &p) : param{p} {
 
 void mc::write_output(const std::string &) {}
 
-int mc::sweep() const {
+size_t mc::sweep() const {
 	return sweep_;
 }
 
@@ -82,12 +82,12 @@ void mc::_write(const std::string &dir) {
 		checkpoint_write(g.open_group("simulation"));
 		measure.checkpoint_write(g.open_group("measurements"));
 
-		int therm = therm_;
+		size_t therm = therm_;
 		if(pt_mode_) {
 			therm *= pt_sweeps_per_global_update_;
 		}
 		g.write("thermalization_sweeps", std::min(sweep_,therm));
-		g.write("sweeps", std::max(0,sweep_-therm));
+		g.write("sweeps", sweep_-std::min(sweep_,therm));
 	}
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
@@ -118,7 +118,7 @@ bool mc::_read(const std::string &dir) {
 	measure.checkpoint_read(g.open_group("measurements"));
 	checkpoint_read(g.open_group("simulation"));
 
-	int sweeps, therm_sweeps;
+	size_t sweeps, therm_sweeps;
 	g.read("thermalization_sweeps", therm_sweeps);
 	g.read("sweeps", sweeps);
 	sweep_ = sweeps + therm_sweeps;
@@ -130,7 +130,7 @@ bool mc::_read(const std::string &dir) {
 }
 
 bool mc::is_thermalized() {
-	int sweep = sweep_;
+	size_t sweep = sweep_;
 	if(pt_mode_ && pt_sweeps_per_global_update_ > 0) {
 		sweep /= pt_sweeps_per_global_update_;
 	}

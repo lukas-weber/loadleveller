@@ -1,14 +1,16 @@
 #pragma once
 
+#include <cstddef>
+
 namespace loadl {
 
 // used by the runner
 struct runner_task {
-	int target_sweeps;
-	int sweeps;
+	size_t target_sweeps;
+	size_t sweeps;
 	int scheduled_runs;
 
 	bool is_done() const;
-	runner_task(int target_sweeps, int sweeps, int scheduled_runs);
+	runner_task(size_t target_sweeps, size_t sweeps, int scheduled_runs);
 };
 }
