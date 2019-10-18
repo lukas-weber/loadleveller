@@ -42,7 +42,6 @@ pt_chain_run pt_chain_run::checkpoint_read(const iodump::group &g) {
 	pt_chain_run run;
 	g.read("id", run.id);
 	g.read("run_id", run.run_id);
-	g.read("rank_to_pos", run.rank_to_pos);
 	uint8_t swap_odd;
 	g.read("swap_odd", swap_odd);
 	run.swap_odd = swap_odd;
@@ -56,7 +55,6 @@ pt_chain_run pt_chain_run::checkpoint_read(const iodump::group &g) {
 void pt_chain_run::checkpoint_write(const iodump::group &g) {
 	g.write("id", id);
 	g.write("run_id", run_id);
-	g.write("rank_to_pos", rank_to_pos);
 	g.write("swap_odd", static_cast<uint8_t>(swap_odd));
 }
 
