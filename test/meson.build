@@ -6,4 +6,5 @@ t1 = executable('tests',
 )
 
 test('tests', t1)
-        
+
+subdir('silly_mc')        
