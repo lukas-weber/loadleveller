@@ -11,7 +11,7 @@ except ImportError:
 
 def _expand_path(path):
     scriptdir = os.path.dirname(sys.argv[0])
-    return os.path.abspath(os.path.expandvars(os.path.expanduser(os.path.join(scriptdir,path))))
+    return os.path.abspath(os.path.join(scriptdir,os.path.expandvars(os.path.expanduser(path))))
 
 def JobConfig(filename):
     with open(_expand_path(filename), 'r') as f:
