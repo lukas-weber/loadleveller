@@ -43,7 +43,7 @@ public:
 	std::vector<double> weight_ratios;
 
 	pt_chain_run(const pt_chain &chain, int run_id);
-	static pt_chain_run checkpoint_read(const iodump::group &g);
+	static pt_chain_run checkpoint_read(const pt_chain &chain, const iodump::group &g);
 	void checkpoint_write(const iodump::group &g);
 };
 

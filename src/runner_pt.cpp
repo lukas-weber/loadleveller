@@ -38,16 +38,23 @@ pt_chain_run::pt_chain_run(const pt_chain &chain, int run_id) : id{chain.id}, ru
 	}
 }
 
-pt_chain_run pt_chain_run::checkpoint_read(const iodump::group &g) {
+pt_chain_run pt_chain_run::checkpoint_read(const pt_chain &chain, const iodump::group &g) {
 	pt_chain_run run;
 	g.read("id", run.id);
+	assert(chain.id == run.id); 
 	g.read("run_id", run.run_id);
 	uint8_t swap_odd;
 	g.read("swap_odd", swap_odd);
 	run.swap_odd = swap_odd;
+	
+	size_t size = chain.params.size();
+	run.weight_ratios.resize(size, -1);
+	run.switch_partners.resize(size);
+	run.rank_to_pos.resize(size);
 
-	run.weight_ratios.resize(run.rank_to_pos.size(), -1);
-	run.switch_partners.resize(run.rank_to_pos.size());
+	for(size_t i = 0; i < run.rank_to_pos.size(); i++) {
+		run.rank_to_pos[i] = i;
+	}
 
 	return run;
 }
@@ -248,16 +255,19 @@ void runner_pt_master::checkpoint_read() {
 		auto g = dump.get_root();
 
 		rng_->checkpoint_read(g.open_group("random_number_generator"));
-		auto pt_chain_runs = g.open_group("pt_chain_runs");
-		for(std::string name : pt_chain_runs) {
-			pt_chain_runs_.emplace_back(
-			    pt_chain_run::checkpoint_read(pt_chain_runs.open_group(name)));
-		}
 
 		auto pt_chains = g.open_group("pt_chains");
 		for(std::string name : pt_chains) {
 			int id = std::stoi(name);
 			pt_chains_.at(id).checkpoint_read(pt_chains.open_group(name));
+		}
+		
+		auto pt_chain_runs = g.open_group("pt_chain_runs");
+		for(std::string name : pt_chain_runs) {
+			int id;
+			pt_chain_runs.read(fmt::format("{}/id", name), id);
+			pt_chain_runs_.emplace_back(
+			    pt_chain_run::checkpoint_read(pt_chains_.at(id), pt_chain_runs.open_group(name)));
 		}
 	}
 }
