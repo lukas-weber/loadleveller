@@ -10,7 +10,8 @@ except ImportError:
     from yaml import SafeLoader, SafeDumper
 
 def _expand_path(path):
-    return os.path.abspath(os.path.expandvars(os.path.expanduser(path)))
+    scriptdir = os.path.dirname(sys.argv[0])
+    return os.path.abspath(os.path.expandvars(os.path.expanduser(os.path.join(scriptdir,path))))
 
 def JobConfig(filename):
     with open(_expand_path(filename), 'r') as f:
