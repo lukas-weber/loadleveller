@@ -67,10 +67,10 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 				    "merge: sample count is not an integer multiple of the vector length. Corrupt "
 				    "file?"};
 			}
-			
+
 			sample_size /= vector_length;
-	
-			obs.total_sample_count += sample_size-std::min(sample_size, sample_skip);
+
+			obs.total_sample_count += sample_size - std::min(sample_size, sample_skip);
 			obs.mean.resize(vector_length);
 			obs.error.resize(vector_length);
 			obs.autocorrelation_time.resize(vector_length);
@@ -98,9 +98,9 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 				    min_bin_count + cbrt(obs.total_sample_count - min_bin_count);
 			}
 		} else {
-			obs.rebinning_bin_count = obs.total_sample_count/rebinning_bin_length;
+			obs.rebinning_bin_count = obs.total_sample_count / rebinning_bin_length;
 		}
-		
+
 		if(obs.rebinning_bin_count == 0) {
 			continue;
 		}
@@ -124,14 +124,14 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 			// total_sample_count. In that case, we throw away the leftover samples.
 			//
 			size_t vector_length = obs.mean.size();
-			for(size_t i = sample_skip*vector_length; metadata[obs_name].sample_counter <
-			                      obs.rebinning_bin_count * obs.rebinning_bin_length &&
-			                  i < samples.size();
+			for(size_t i = sample_skip * vector_length;
+			    metadata[obs_name].sample_counter <
+			        obs.rebinning_bin_count * obs.rebinning_bin_length &&
+			    i < samples.size();
 			    i++) {
 				size_t vector_idx = i % vector_length;
-				
-				obs.mean[vector_idx] += samples[i];
 
+				obs.mean[vector_idx] += samples[i];
 
 				if(vector_idx == vector_length - 1) {
 					metadata[obs_name].sample_counter++;
@@ -140,15 +140,15 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 		}
 	}
 
-
 	for(auto &[obs_name, obs] : res.observables) {
-		assert(metadata[obs_name].sample_counter == obs.rebinning_bin_count * obs.rebinning_bin_length);
+		assert(metadata[obs_name].sample_counter ==
+		       obs.rebinning_bin_count * obs.rebinning_bin_length);
 		if(obs.rebinning_bin_count == 0) {
 			continue;
 		}
 
 		for(auto &mean : obs.mean) {
-			mean /= obs.rebinning_bin_count*obs.rebinning_bin_length;
+			mean /= obs.rebinning_bin_count * obs.rebinning_bin_length;
 		}
 		metadata[obs_name].sample_counter = 0;
 	}
@@ -165,7 +165,7 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 
 			g.read(fmt::format("{}/samples", obs_name), samples);
 
-			for(size_t i = sample_skip*vector_length;
+			for(size_t i = sample_skip * vector_length;
 			    obs_meta.current_rebin < obs.rebinning_bin_count && i < samples.size(); i++) {
 				size_t vector_idx = i % vector_length;
 
@@ -192,7 +192,7 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 						obs_meta.current_rebin_filling = 0;
 					}
 				}
-				
+
 				if(vector_idx == vector_length - 1) {
 					metadata[obs_name].sample_counter++;
 				}

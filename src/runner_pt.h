@@ -19,7 +19,7 @@ struct pt_chain {
 	int entries_before_optimization{0};
 
 	std::vector<double> rejection_rates;
-	std::vector<int> rejection_rate_entries{0,0};
+	std::vector<int> rejection_rate_entries{0, 0};
 
 	bool is_done();
 	void checkpoint_read(const iodump::group &g);
@@ -90,7 +90,7 @@ private:
 
 public:
 	runner_pt_master(jobinfo job);
-	void start();
+	int start();
 };
 
 class runner_pt_slave {

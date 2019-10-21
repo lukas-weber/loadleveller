@@ -32,7 +32,7 @@ private:
 
 public:
 	runner_master(jobinfo job);
-	void start();
+	int start();
 };
 
 class runner_slave {

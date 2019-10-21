@@ -11,8 +11,7 @@ namespace loadl {
 
 int runner_single_start(jobinfo job, const mc_factory &mccreator, int, char **) {
 	runner_single r{std::move(job), mccreator};
-	r.start();
-	return 0;
+	return r.start();
 }
 
 runner_single::runner_single(jobinfo job, mc_factory mccreator)
@@ -50,7 +49,8 @@ int runner_single::start() {
 		task_id_ = get_new_task_id(task_id_);
 	}
 
-	return 0;
+	bool all_done = task_id_ < 0;
+	return !all_done;
 }
 
 bool runner_single::is_checkpoint_time() const {

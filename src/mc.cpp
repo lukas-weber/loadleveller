@@ -86,8 +86,8 @@ void mc::_write(const std::string &dir) {
 		if(pt_mode_) {
 			therm *= pt_sweeps_per_global_update_;
 		}
-		g.write("thermalization_sweeps", std::min(sweep_,therm));
-		g.write("sweeps", sweep_-std::min(sweep_,therm));
+		g.write("thermalization_sweeps", std::min(sweep_, therm));
+		g.write("sweeps", sweep_ - std::min(sweep_, therm));
 	}
 
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);

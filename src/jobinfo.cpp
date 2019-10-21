@@ -140,7 +140,7 @@ void jobinfo::concatenate_results() {
 		std::vector<char> buf(size + 1, 0);
 		res_file.read(buf.data(), size);
 		cat_results << buf.data();
-		if(i < task_names.size()-1) {
+		if(i < task_names.size() - 1) {
 			cat_results << ",";
 		}
 		cat_results << "\n";

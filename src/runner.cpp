@@ -31,10 +31,11 @@ int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **
 
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	int rc = 0;
 
 	if(rank == 0) {
 		runner_master r{std::move(job)};
-		r.start();
+		rc = r.start();
 	} else {
 		runner_slave r{std::move(job), mccreator};
 		r.start();
@@ -42,12 +43,12 @@ int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **
 
 	MPI_Finalize();
 
-	return 0;
+	return rc;
 }
 
 runner_master::runner_master(jobinfo job) : job_{std::move(job)} {}
 
-void runner_master::start() {
+int runner_master::start() {
 	MPI_Comm_size(MPI_COMM_WORLD, &num_active_ranks_);
 
 	job_.log(fmt::format("Starting job '{}'", job_.jobname));
@@ -56,6 +57,9 @@ void runner_master::start() {
 	while(num_active_ranks_ > 1) {
 		react();
 	}
+
+	bool all_done = current_task_id_ < 0;
+	return !all_done;
 }
 
 int runner_master::get_new_task_id(int old_id) {
@@ -84,15 +88,20 @@ void runner_master::react() {
 			send_action(A_NEW_JOB, node);
 			tasks_[current_task_id_].scheduled_runs++;
 
-			size_t sweeps_until_comm = 1 + tasks_[current_task_id_].target_sweeps - std::min(tasks_[current_task_id_].target_sweeps, tasks_[current_task_id_].sweeps);
+			size_t sweeps_until_comm =
+			    1 + tasks_[current_task_id_].target_sweeps -
+			    std::min(tasks_[current_task_id_].target_sweeps, tasks_[current_task_id_].sweeps);
 			assert(current_task_id_ >= 0);
-			uint64_t msg[3] = {static_cast<uint64_t>(current_task_id_), static_cast<uint64_t>(tasks_[current_task_id_].scheduled_runs),
-			              sweeps_until_comm};
-			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, node, T_NEW_JOB, MPI_COMM_WORLD);
+			uint64_t msg[3] = {static_cast<uint64_t>(current_task_id_),
+			                   static_cast<uint64_t>(tasks_[current_task_id_].scheduled_runs),
+			                   sweeps_until_comm};
+			MPI_Send(&msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, node, T_NEW_JOB,
+			         MPI_COMM_WORLD);
 		}
 	} else if(node_status == S_BUSY) {
 		uint64_t msg[2];
-		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, node, T_STATUS, MPI_COMM_WORLD, &stat);
+		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, node, T_STATUS, MPI_COMM_WORLD,
+		         &stat);
 		int task_id = msg[0];
 		size_t completed_sweeps = msg[1];
 
@@ -207,7 +216,8 @@ int runner_slave::what_is_next(int status) {
 		}
 		MPI_Status stat;
 		uint64_t msg[3];
-		MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, 0, T_NEW_JOB, MPI_COMM_WORLD, &stat);
+		MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_UINT64_T, 0, T_NEW_JOB, MPI_COMM_WORLD,
+		         &stat);
 		task_id_ = msg[0];
 		run_id_ = msg[1];
 		sweeps_before_communication_ = msg[2];

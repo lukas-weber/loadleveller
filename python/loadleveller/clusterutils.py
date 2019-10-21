@@ -16,6 +16,7 @@ batchscript_claix18 = '''#!/usr/bin/env zsh
 
 {custom_cmds}
 {mpirun} $FLAGS_MPI_BATCH {mc_cmd}
+{custom_post_cmds}
 '''
 
 batch_commands = {
@@ -31,6 +32,7 @@ def generate_batchscript_claix18(cmd, jobname, jobconfig):
     if 'project' in jobconfig:
         custom_cmds += '#SBATCH --account={}\n'.format(jobconfig['project'])
     custom_cmds += jobconfig.get('custom_cmds', '')
+    custom_cmds = jobconfig.get('custom_post_cmds', '')
 
     try:
         return template.format(
@@ -40,6 +42,7 @@ def generate_batchscript_claix18(cmd, jobname, jobconfig):
             walltime=jobconfig['mc_walltime'],
             num_cores=jobconfig['num_cores'],
             custom_cmds=custom_cmds,
+            custom_post_cmds=custom_post_cmds,
             mc_cmd=' '.join(cmd)
         )
     except KeyError as e:

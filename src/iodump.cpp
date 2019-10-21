@@ -48,7 +48,7 @@ const char *iodump_exception::what() const noexcept {
 }
 
 iodump::group::group(hid_t parent, const std::string &filename, const std::string &path)
-	: filename_{filename} {
+    : filename_{filename} {
 	group_ = H5Gopen(parent, path.c_str(), H5P_DEFAULT);
 	if(group_ < 0) {
 		group_ = H5Gcreate2(parent, path.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);

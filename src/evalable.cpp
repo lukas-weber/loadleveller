@@ -83,7 +83,8 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 		if(jacked_eval_mean.size() != jacked_eval.size()) {
 			throw std::runtime_error(
 			    fmt::format("evalable '{}': evalables must not change their dimensions depending "
-			                "on the input", name_));
+			                "on the input",
+			                name_));
 		}
 
 		for(size_t i = 0; i < jacked_eval.size(); i++) {

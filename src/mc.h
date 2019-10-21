@@ -15,6 +15,7 @@ private:
 	size_t sweep_{0};
 	size_t therm_{0};
 	int pt_sweeps_per_global_update_{-1};
+
 protected:
 	parser param;
 	std::unique_ptr<random_number_generator> rng;

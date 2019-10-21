@@ -1,6 +1,6 @@
 #include "runner_pt.h"
-#include <fstream>
 #include "util.h"
+#include <fstream>
 
 namespace loadl {
 
@@ -85,12 +85,11 @@ void pt_chain::clear_histograms() {
 	std::fill(rejection_rates.begin(), rejection_rates.end(), 0);
 }
 
-
 // https://arxiv.org/pdf/1905.02939.pdf
 std::tuple<double, double> pt_chain::optimize_params() {
 	std::vector<double> rejection_est(rejection_rates);
 	bool odd = false;
-	for(auto& r : rejection_est) {
+	for(auto &r : rejection_est) {
 		r /= rejection_rate_entries[odd];
 		odd = !odd;
 		if(r == 0) { // ensure the comm_barrier is invertible
@@ -100,30 +99,29 @@ std::tuple<double, double> pt_chain::optimize_params() {
 
 	std::vector<double> comm_barrier(params.size());
 
-
 	double sum{};
 	double efficiency{};
-	for(size_t i = 0; i < comm_barrier.size()-1; i++) {
+	for(size_t i = 0; i < comm_barrier.size() - 1; i++) {
 		comm_barrier[i] = sum;
-		sum += rejection_est[i]; 
-		efficiency += rejection_est[i]/(1-rejection_est[i]);
+		sum += rejection_est[i];
+		efficiency += rejection_est[i] / (1 - rejection_est[i]);
 	}
-	comm_barrier[comm_barrier.size()-1] = sum;
+	comm_barrier[comm_barrier.size() - 1] = sum;
 
 	monotonic_interpolator lambda{comm_barrier, params};
 	double convergence{};
 
-	for(size_t i = 1; i < params.size()-1; i++) {
-		double new_param = lambda(sum*i/(params.size()-1));
+	for(size_t i = 1; i < params.size() - 1; i++) {
+		double new_param = lambda(sum * i / (params.size() - 1));
 		double d = (new_param - params[i]);
-		
-		convergence += d*d;
+
+		convergence += d * d;
 		params[i] = new_param;
 	}
 
-	convergence = sqrt(convergence)/params.size();
+	convergence = sqrt(convergence) / params.size();
 
-	double round_trip_rate = (1+sum)/(1+efficiency);
+	double round_trip_rate = (1 + sum) / (1 + efficiency);
 
 	return std::tie(round_trip_rate, convergence);
 }
@@ -137,10 +135,11 @@ int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **a
 
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	int rc = 0;
 
 	if(rank == 0) {
 		runner_pt_master r{std::move(job)};
-		r.start();
+		rc = r.start();
 	} else {
 		runner_pt_slave r{std::move(job), mccreator};
 		r.start();
@@ -148,7 +147,7 @@ int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **a
 
 	MPI_Finalize();
 
-	return 0;
+	return rc;
 }
 
 runner_pt_master::runner_pt_master(jobinfo job) : job_{std::move(job)} {
@@ -187,13 +186,14 @@ void runner_pt_master::construct_pt_chains() {
 		chain.task_ids.at(chain_pos) = i;
 
 		const char *pt_sweep_error =
-		    "chain {}: task {}: in parallel tempering mode, sweeps are measured in global updates and need to be the "
+		    "chain {}: task {}: in parallel tempering mode, sweeps are measured in global updates "
+		    "and need to be the "
 		    "same within each chain: {} = {} != {}";
 
 		int64_t target_sweeps = task.get<int>("sweeps");
 		if(chain.target_sweeps >= 0 && target_sweeps != chain.target_sweeps) {
-			throw std::runtime_error{
-			    fmt::format(pt_sweep_error, chain.id, i, "target_sweeps", chain.target_sweeps, target_sweeps)};
+			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, i, "target_sweeps",
+			                                     chain.target_sweeps, target_sweeps)};
 		}
 		chain.target_sweeps = target_sweeps;
 
@@ -209,7 +209,8 @@ void runner_pt_master::construct_pt_chains() {
 		int64_t sweeps_per_global_update = task.get<int>("pt_sweeps_per_global_update");
 		int64_t sweeps = job_.read_dump_progress(i) / sweeps_per_global_update;
 		if(chain.sweeps >= 0 && sweeps != chain.sweeps) {
-			throw std::runtime_error{fmt::format(pt_sweep_error, chain.id, i, "sweeps", chain.sweeps, sweeps)};
+			throw std::runtime_error{
+			    fmt::format(pt_sweep_error, chain.id, i, "sweeps", chain.sweeps, sweeps)};
 		}
 		chain.sweeps = sweeps;
 	}
@@ -226,7 +227,7 @@ void runner_pt_master::construct_pt_chains() {
 
 		chain_len_ = c.task_ids.size();
 
-		c.rejection_rates.resize(chain_len_-1);
+		c.rejection_rates.resize(chain_len_ - 1);
 
 		if(po_config_.enabled) {
 			c.entries_before_optimization = po_config_.nsamples_initial;
@@ -288,7 +289,7 @@ void runner_pt_master::write_statistics(const pt_chain_run &chain_run) {
 	auto g = stat.get_root();
 
 	g.write("chain_length", chain_len_);
-	
+
 	auto cg = g.open_group(fmt::format("chain{:04d}_run{:04d}", chain_run.id, chain_run.run_id));
 	cg.insert_back("rank_to_pos", chain_run.rank_to_pos);
 }
@@ -299,7 +300,7 @@ void runner_pt_master::write_param_optimization_statistics() {
 	auto g = stat.get_root();
 
 	g.write("chain_length", chain_len_);
-	
+
 	for(auto &chain : pt_chains_) {
 		auto cg = g.open_group(fmt::format("chain{:04d}", chain.id));
 		cg.insert_back("params", chain.params);
@@ -340,12 +341,10 @@ void runner_pt_master::checkpoint_write() {
 	}
 }
 
-void runner_pt_master::start() {
+int runner_pt_master::start() {
 	MPI_Comm_size(MPI_COMM_WORLD, &num_active_ranks_);
 
-
-	po_config_.enabled =
-	    job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
+	po_config_.enabled = job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
 	if(po_config_.enabled) {
 		job_.log("using feedback parameter optimization");
 		const auto &po = job_.jobfile["jobconfig"]["pt_parameter_optimization"];
@@ -380,6 +379,15 @@ void runner_pt_master::start() {
 		}
 	}
 	checkpoint_write();
+
+	bool all_done = true;
+	for(auto &c : pt_chains_) {
+		if(!c.is_done()) {
+			all_done = false;
+			break;
+		}
+	}
+	return !all_done;
 }
 
 int runner_pt_master::schedule_chain_run() {
@@ -430,7 +438,8 @@ int runner_pt_master::assign_new_chain(int rank_section) {
 }
 
 void runner_pt_master::pt_param_optimization(pt_chain &chain) {
-	if(std::min(chain.rejection_rate_entries[0], chain.rejection_rate_entries[1]) >= chain.entries_before_optimization) {
+	if(std::min(chain.rejection_rate_entries[0], chain.rejection_rate_entries[1]) >=
+	   chain.entries_before_optimization) {
 		chain.entries_before_optimization *= po_config_.nsamples_growth;
 
 		auto [efficiency, convergence] = chain.optimize_params();
@@ -451,7 +460,8 @@ void runner_pt_master::react() {
 	int rank = stat.MPI_SOURCE - 1;
 	if(rank_status == S_BUSY) {
 		int64_t msg[1];
-		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, rank + 1, 0, MPI_COMM_WORLD, &stat);
+		MPI_Recv(msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, rank + 1, 0, MPI_COMM_WORLD,
+		         &stat);
 		int64_t completed_sweeps = msg[0];
 
 		int chain_run_id = rank_to_chain_run_[rank / chain_len_];
@@ -549,7 +559,7 @@ void runner_pt_master::pt_global_update(pt_chain &chain, pt_chain_run &chain_run
 		double w1 = chain_run.weight_ratios[i];
 		double w2 = chain_run.weight_ratios[i + 1];
 
-		double p = std::min(exp(w1+w2),1.);
+		double p = std::min(exp(w1 + w2), 1.);
 		double r = rng_->random_double();
 
 		chain.rejection_rates[i] += 1 - p;
@@ -592,8 +602,7 @@ void runner_pt_slave::start() {
 
 	MPI_Comm_rank(chain_comm_, &chain_rank_);
 
-	bool use_param_optimization =
-	    job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
+	bool use_param_optimization = job_.jobfile["jobconfig"].defined("pt_parameter_optimization");
 
 	if(!accept_new_chain()) {
 		job_.log(fmt::format("rank {} exits: out of work", rank_));
@@ -704,7 +713,8 @@ void runner_pt_slave::pt_global_update() {
 
 bool runner_pt_slave::accept_new_chain() {
 	int64_t msg[3];
-	MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Recv(&msg, sizeof(msg) / sizeof(msg[0]), MPI_INT64_T, 0, 0, MPI_COMM_WORLD,
+	         MPI_STATUS_IGNORE);
 	task_id_ = msg[0];
 	run_id_ = msg[1];
 	sweeps_before_communication_ = msg[2];
@@ -713,8 +723,8 @@ bool runner_pt_slave::accept_new_chain() {
 		return false;
 	}
 
-	sweeps_per_global_update_ =
-	    job_.jobfile["tasks"][job_.task_names[task_id_]].get<int64_t>("pt_sweeps_per_global_update");
+	sweeps_per_global_update_ = job_.jobfile["tasks"][job_.task_names[task_id_]].get<int64_t>(
+	    "pt_sweeps_per_global_update");
 
 	sys_ = std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
 	sys_->pt_mode_ = true;
