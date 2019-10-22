@@ -52,19 +52,19 @@ def generate_batchscript(sysinfo, *args):
     if sysinfo == 'claix18':
         return generate_batchscript_claix18(*args)
     else:
-        raise Exception('unknown system type {}'.format(sysinfo))
+        raise Exception('unknown system type "{}"'.format(sysinfo))
 
 def determine_system():
     sysinfo = os.environ.get('MCLL_SYSTEM_INFO')
 
-    if sysinfo == "":
+    if sysinfo == None:
         import socket
         hostname = socket.gethostname()
         if hostname.endswith('.hpc.itc.rwth-aachen.de'):
             sysinfo = 'claix18'
 
     if not sysinfo in valid_systems:
-        sysinfo = 'local'
+        raise Exception('unknown system type "{}"'.format(sysinfo))
 
     return sysinfo
     
