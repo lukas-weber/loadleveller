@@ -34,6 +34,11 @@ inline int run_mc(int (*starter)(jobinfo job, const mc_factory &, int argc, char
 	std::string jobfile{argv[1]};
 	jobinfo job{jobfile};
 
+	// bad hack because hdf5 locking features will happily kill your
+	// production run in the middle of writing measurements if you block
+	// a writing lock by reading some measurement files.
+	setenv("HDF5_USE_FILE_LOCKING", "FALSE", 1);
+
 	int rc = starter(job, mccreator, argc, argv);
 
 	job.concatenate_results();
