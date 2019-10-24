@@ -32,7 +32,7 @@ def generate_batchscript_claix18(cmd, jobname, jobconfig):
     if 'project' in jobconfig:
         custom_cmds += '#SBATCH --account={}\n'.format(jobconfig['project'])
     custom_cmds += jobconfig.get('custom_cmds', '')
-    custom_cmds = jobconfig.get('custom_post_cmds', '')
+    custom_post_cmds = jobconfig.get('custom_post_cmds', '')
 
     try:
         return template.format(
