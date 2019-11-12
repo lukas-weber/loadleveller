@@ -9,6 +9,6 @@ setuptools.setup(
     url="https://git.rwth-aachen.de/lukas.weber2/load_leveller",
     packages=setuptools.find_packages(),
     license="MIT",
-    scripts=["loadl"],
+    scripts=["loadl", "lljobcat"],
     install_requires=["pyyaml","h5py","numpy"],
 )
