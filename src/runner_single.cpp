@@ -97,10 +97,7 @@ void runner_single::merge_measurements() {
 	std::string unique_filename = job_.taskdir(task_id_);
 	sys_->write_output(unique_filename);
 
-	std::vector<evalable> evalables;
-	sys_->register_evalables(evalables);
-
 	job_.log(fmt::format("merging {}", job_.taskdir(task_id_)));
-	job_.merge_task(task_id_, evalables);
+	job_.merge_task(task_id_, mccreator_);
 }
 }

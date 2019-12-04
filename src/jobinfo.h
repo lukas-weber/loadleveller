@@ -2,6 +2,7 @@
 
 #include "evalable.h"
 #include "iodump.h"
+#include "mc.h"
 #include "parser.h"
 #include <string>
 #include <vector>
@@ -26,7 +27,7 @@ struct jobinfo {
 	static std::vector<std::string> list_run_files(const std::string &taskdir,
 	                                               const std::string &file_ending);
 	int read_dump_progress(int task_id) const;
-	void merge_task(int task_id, const std::vector<evalable> &evalables);
+	void merge_task(int task_id, const mc_factory &mccreator);
 	void concatenate_results();
 	void log(const std::string &message);
 };

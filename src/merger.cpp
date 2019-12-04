@@ -1,5 +1,4 @@
 #include "merger.h"
-#include "evalable.h"
 #include "iodump.h"
 #include "mc.h"
 #include "measurements.h"
@@ -10,25 +9,8 @@
 
 namespace loadl {
 
-static void evaluate_evalables(results &res, const std::vector<evalable> &evalables) {
-	std::vector<observable_result> evalable_results;
-	for(auto &eval : evalables) {
-		observable_result o;
-		eval.jackknife(res, o);
-
-		// don’t include empty results
-		if(o.rebinning_bin_count > 0) {
-			evalable_results.emplace_back(o);
-		}
-	}
-
-	for(auto &eval : evalable_results) {
-		res.observables.emplace(eval.name, eval);
-	}
-}
-
-results merge(const std::vector<std::string> &filenames, const std::vector<evalable> &evalables,
-              size_t rebinning_bin_length, size_t sample_skip) {
+results merge(const std::vector<std::string> &filenames, size_t rebinning_bin_length,
+              size_t sample_skip) {
 	results res;
 
 	// This thing reads the complete time series of an observable which will
@@ -213,8 +195,6 @@ results merge(const std::vector<std::string> &filenames, const std::vector<evala
 			obs.autocorrelation_time[i] = 0.5 * pow(obs.error[i] / no_rebinning_error, 2);
 		}
 	}
-
-	evaluate_evalables(res, evalables);
 
 	return res;
 }

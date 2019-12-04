@@ -1,4 +1,5 @@
 #include "jobinfo.h"
+#include "mc.h"
 #include "merger.h"
 #include <ctime>
 #include <dirent.h>
@@ -148,11 +149,17 @@ void jobinfo::concatenate_results() {
 	cat_results << "]\n";
 }
 
-void jobinfo::merge_task(int task_id, const std::vector<evalable> &evalables) {
+void jobinfo::merge_task(int task_id, const mc_factory &mccreator) {
+	std::unique_ptr<mc> sys{mccreator(jobfile["tasks"][task_names[task_id]])};
+
 	std::vector<std::string> meas_files = list_run_files(taskdir(task_id), "meas\\.h5");
 	size_t rebinning_bin_length = jobfile["jobconfig"].get<size_t>("merge_rebin_length", 0);
 	size_t sample_skip = jobfile["jobconfig"].get<size_t>("merge_sample_skip", 0);
-	results results = merge(meas_files, evalables, rebinning_bin_length, sample_skip);
+	results results = merge(meas_files, rebinning_bin_length, sample_skip);
+
+	evaluator eval{results};
+	sys->register_evalables(eval);
+	eval.append_results();
 
 	std::string result_filename = fmt::format("{}/results.json", taskdir(task_id));
 	const std::string &task_name = task_names.at(task_id);

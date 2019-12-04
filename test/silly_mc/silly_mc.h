@@ -7,6 +7,7 @@
 class silly_mc : public loadl::mc {
 private:
 	uint64_t idx_;
+
 public:
 	void init();
 	void do_update();
@@ -14,7 +15,7 @@ public:
 	void checkpoint_write(const loadl::iodump::group &out);
 	void checkpoint_read(const loadl::iodump::group &in);
 
-	void register_evalables(std::vector<loadl::evalable> &evalables);
+	void register_evalables(loadl::evaluator &eval);
 
 	silly_mc(const loadl::parser &p);
 };

@@ -42,8 +42,8 @@ private:
 	const size_t default_bin_size_{1};
 
 	template<class T>
-	size_t value_length(const T& val) {
-		if constexpr (std::is_arithmetic_v<T>) {
+	size_t value_length(const T &val) {
+		if constexpr(std::is_arithmetic_v<T>) {
 			return 1;
 		} else {
 			return val.size();

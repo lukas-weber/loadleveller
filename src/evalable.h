@@ -7,7 +7,7 @@
 
 namespace loadl {
 
-class evalable {
+class evaluator {
 public:
 	// Internally all observables are vectors, so you need a function
 	//
@@ -19,13 +19,19 @@ public:
 	typedef std::function<std::vector<double>(const std::vector<std::vector<double>> &observables)>
 	    func;
 
-	evalable(std::string name, std::vector<std::string> used_observables, func fun);
-	const std::string &name() const;
-	void jackknife(const results &res, observable_result &out) const;
+	evaluator(results &res);
+	void evaluate(const std::string &name, const std::vector<std::string> &used_observables,
+	              func fun);
+
+	// appends the evalable results to the other observables in res
+	void append_results();
 
 private:
-	const std::string name_;
-	const std::vector<std::string> used_observables_;
-	const func fun_;
+	std::vector<observable_result> evalable_results_;
+	results &res_;
+
+	observable_result jackknife(const std::string &name,
+	                            const std::vector<std::string> &used_observables, func fun) const;
 };
+
 }

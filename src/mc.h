@@ -42,7 +42,7 @@ public:
 
 	size_t sweep() const;
 
-	virtual void register_evalables(std::vector<evalable> &evalables) = 0;
+	virtual void register_evalables(evaluator &evalables) = 0;
 	virtual void write_output(const std::string &filename);
 
 	// these functions do a little more, like taking care of the

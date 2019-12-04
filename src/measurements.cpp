@@ -3,9 +3,7 @@
 #include <mpi.h>
 namespace loadl {
 
-measurements::measurements(size_t default_bin_size)
-	: default_bin_size_{default_bin_size} {
-}
+measurements::measurements(size_t default_bin_size) : default_bin_size_{default_bin_size} {}
 
 bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	if(obs_name.find('/') != obs_name.npos) {
@@ -24,8 +22,7 @@ void measurements::register_observable(const std::string &name, size_t bin_size)
 	}
 
 	if(observables_.count(name) > 0) {
-		throw std::runtime_error(
-			fmt::format("Observable '{}' already exists.", name));
+		throw std::runtime_error(fmt::format("Observable '{}' already exists.", name));
 	}
 
 	observables_.emplace(name, observable{name, bin_size, 0});
@@ -39,7 +36,8 @@ void measurements::checkpoint_write(const iodump::group &dump_file) {
 
 void measurements::checkpoint_read(const iodump::group &dump_file) {
 	for(const auto &obs_name : dump_file) {
-		observables_.emplace(obs_name, observable::checkpoint_read(obs_name, dump_file.open_group(obs_name)));
+		observables_.emplace(obs_name,
+		                     observable::checkpoint_read(obs_name, dump_file.open_group(obs_name)));
 	}
 }
 

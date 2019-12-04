@@ -41,12 +41,12 @@ pt_chain_run::pt_chain_run(const pt_chain &chain, int run_id) : id{chain.id}, ru
 pt_chain_run pt_chain_run::checkpoint_read(const pt_chain &chain, const iodump::group &g) {
 	pt_chain_run run;
 	g.read("id", run.id);
-	assert(chain.id == run.id); 
+	assert(chain.id == run.id);
 	g.read("run_id", run.run_id);
 	uint8_t swap_odd;
 	g.read("swap_odd", swap_odd);
 	run.swap_odd = swap_odd;
-	
+
 	size_t size = chain.params.size();
 	run.weight_ratios.resize(size, -1);
 	run.switch_partners.resize(size);
@@ -262,7 +262,7 @@ void runner_pt_master::checkpoint_read() {
 			int id = std::stoi(name);
 			pt_chains_.at(id).checkpoint_read(pt_chains.open_group(name));
 		}
-		
+
 		auto pt_chain_runs = g.open_group("pt_chain_runs");
 		for(std::string name : pt_chain_runs) {
 			int id;
@@ -787,15 +787,7 @@ void runner_pt_slave::merge_measurements() {
 	std::string unique_filename = job_.taskdir(task_id_);
 	sys_->write_output(unique_filename);
 
-	std::vector<evalable> evalables;
-	if(job_.jobfile["jobconfig"].defined("pt_parameter_optimization")) {
-		if(rank_ == 1) {
-			job_.log("Running in parameter optimization mode. No evalables are calculated.");
-		}
-	} else {
-		sys_->register_evalables(evalables);
-	}
-	job_.merge_task(task_id_, evalables);
+	job_.merge_task(task_id_, mccreator_);
 }
 
 }

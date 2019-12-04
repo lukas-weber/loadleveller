@@ -6,35 +6,50 @@
 
 namespace loadl {
 
-evalable::evalable(std::string name, std::vector<std::string> used_observables, func fun)
-    : name_{std::move(name)}, used_observables_{std::move(used_observables)}, fun_{std::move(fun)} {
+evaluator::evaluator(results &res) : res_{res} {}
+
+void evaluator::evaluate(const std::string &name, const std::vector<std::string> &used_observables,
+                         func fun) {
 	// evalable names also should be valid HDF5 paths
 	if(not measurements::observable_name_is_legal(name)) {
 		throw std::runtime_error{
 		    fmt::format("illegal evalable name '{}': must not contain . or /", name)};
 	}
+
+	observable_result o = jackknife(name, used_observables, fun);
+
+	// don’t include empty results
+	if(o.rebinning_bin_count > 0) {
+		evalable_results_.emplace_back(o);
+	}
 }
 
-const std::string &evalable::name() const {
-	return name_;
+void evaluator::append_results() {
+	for(auto &eval : evalable_results_) {
+		res_.observables.emplace(eval.name, eval);
+	}
 }
 
-void evalable::jackknife(const results &res, observable_result &obs_res) const {
+observable_result evaluator::jackknife(const std::string &name,
+                                       const std::vector<std::string> &used_observables,
+                                       func fun) const {
+	observable_result obs_res;
+
 	std::vector<observable_result> observables;
-	observables.reserve(used_observables_.size());
+	observables.reserve(used_observables.size());
 
-	obs_res.name = name_;
+	obs_res.name = name;
 
 	size_t bin_count = -1; // maximal value
-	for(const auto &obs_name : used_observables_) {
-		if(res.observables.count(obs_name) <= 0) {
+	for(const auto &obs_name : used_observables) {
+		if(res_.observables.count(obs_name) <= 0) {
 			std::cerr << fmt::format(
 			    "Warning: evalable '{}': used observable '{}' not found in Monte Carlo results. "
 			    "Skipping...\n",
-			    name_, obs_name);
-			return;
+			    name, obs_name);
+			return obs_res;
 		}
-		const auto &obs = res.observables.at(obs_name);
+		const auto &obs = res_.observables.at(obs_name);
 
 		if(obs.rebinning_bin_count < bin_count) {
 			bin_count = obs.rebinning_bin_count;
@@ -42,11 +57,11 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 
 		observables.emplace_back(obs);
 	}
-	obs_res.rebinning_bin_count = bin_count;
 
 	if(bin_count == 0) {
-		return;
+		return obs_res;
 	}
+	obs_res.rebinning_bin_count = bin_count;
 
 	std::vector<std::vector<double>> jacked_means(observables.size());
 	std::vector<std::vector<double>> sums(observables.size());
@@ -77,14 +92,14 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 			}
 		}
 
-		std::vector<double> jacked_eval = fun_(jacked_means);
+		std::vector<double> jacked_eval = fun(jacked_means);
 		if(jacked_eval_mean.empty())
 			jacked_eval_mean.resize(jacked_eval.size(), 0);
 		if(jacked_eval_mean.size() != jacked_eval.size()) {
 			throw std::runtime_error(
 			    fmt::format("evalable '{}': evalables must not change their dimensions depending "
 			                "on the input",
-			                name_));
+			                name));
 		}
 
 		for(size_t i = 0; i < jacked_eval.size(); i++) {
@@ -104,7 +119,7 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 		}
 	}
 
-	std::vector<double> complete_eval = fun_(jacked_means);
+	std::vector<double> complete_eval = fun(jacked_means);
 	assert(complete_eval.size() == jacked_eval_mean.size());
 
 	// calculate bias-corrected jackknife estimator
@@ -127,7 +142,7 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 			}
 		}
 
-		std::vector<double> jacked_eval = fun_(jacked_means);
+		std::vector<double> jacked_eval = fun(jacked_means);
 		if(obs_res.error.empty()) {
 			obs_res.error.resize(jacked_eval.size(), 0);
 		}
@@ -139,5 +154,7 @@ void evalable::jackknife(const results &res, observable_result &obs_res) const {
 	for(size_t i = 0; i < obs_res.error.size(); i++) {
 		obs_res.error[i] = sqrt((bin_count - 1) * obs_res.error[i] / bin_count);
 	}
+
+	return obs_res;
 }
 }

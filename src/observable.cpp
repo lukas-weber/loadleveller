@@ -50,7 +50,7 @@ observable observable::checkpoint_read(const std::string &name, const iodump::gr
 	size_t vector_length, bin_length;
 	d.read("vector_length", vector_length);
 	d.read("bin_length", bin_length);
-	
+
 	observable obs{name, bin_length, vector_length};
 	d.read("current_bin_filling", obs.current_bin_filling_);
 	d.read("samples", obs.samples_);

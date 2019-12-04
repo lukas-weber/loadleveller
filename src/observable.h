@@ -14,11 +14,12 @@ public:
 
 	const std::string &name() const;
 
-	template<class T, std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> * = nullptr>
+	template<class T,
+	         std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> * = nullptr>
 	void add(T val);
 
 	template<class T>
-	auto add(const T& val) -> decltype(val[0], void());
+	auto add(const T &val) -> decltype(val[0], void());
 
 	void checkpoint_write(const iodump::group &dump_file) const;
 
@@ -30,6 +31,7 @@ public:
 	// switch copy with target rank.
 	// useful for parallel tempering mode
 	void mpi_sendrecv(int target_rank);
+
 private:
 	static const size_t initial_bin_length = 1000;
 
@@ -44,24 +46,24 @@ private:
 
 template<class T, std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> * = nullptr>
 void observable::add(T val) {
-	add(std::array<T,1>{val});
+	add(std::array<T, 1>{val});
 }
-
 
 template<class T>
 auto observable::add(const T &val) -> decltype(val[0], void()) {
 	if(val.size() == 0) {
 		throw std::runtime_error("observable::add: tried to add zero-length value.");
 	}
-		
+
 	if(vector_length_ != val.size()) {
 		if(vector_length_ != 0) {
-			throw std::runtime_error{
-			    fmt::format("observable::add: added vector has inconsistent size ({}). Observable was "
-			                "initialized with vector length ({})",
-			                val.size(), vector_length_)};
+			throw std::runtime_error{fmt::format(
+			    "observable::add: added vector has inconsistent size ({}). Observable was "
+			    "initialized with vector length ({})",
+			    val.size(), vector_length_)};
 		} else {
-			// when the variable is manually registered, it can happen that the vector length was not yet set.
+			// when the variable is manually registered, it can happen that the vector length was
+			// not yet set.
 			vector_length_ = val.size();
 			assert(samples_.size() == 0);
 			samples_.resize(vector_length_);
