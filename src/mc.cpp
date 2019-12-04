@@ -1,7 +1,7 @@
 #include "mc.h"
 namespace loadl {
 
-mc::mc(const parser &p) : param{p} {
+mc::mc(const parser &p) : param{p}, measure{p.get<size_t>("binsize")} {
 	therm_ = p.get<int>("thermalization");
 	pt_sweeps_per_global_update_ = p.get<int>("pt_sweeps_per_global_update", 1);
 }

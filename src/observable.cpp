@@ -46,13 +46,15 @@ void observable::measurement_write(const iodump::group &meas_file) {
 	current_bin_ = 0;
 }
 
-void observable::checkpoint_read(const std::string &name, const iodump::group &d) {
-	name_ = name;
-	d.read("vector_length", vector_length_);
-	d.read("bin_length", bin_length_);
-	d.read("current_bin_filling", current_bin_filling_);
-	d.read("samples", samples_);
-	current_bin_ = 0;
+observable observable::checkpoint_read(const std::string &name, const iodump::group &d) {
+	size_t vector_length, bin_length;
+	d.read("vector_length", vector_length);
+	d.read("bin_length", bin_length);
+	
+	observable obs{name, bin_length, vector_length};
+	d.read("current_bin_filling", obs.current_bin_filling_);
+	d.read("samples", obs.samples_);
+	return obs;
 }
 
 void observable::mpi_sendrecv(int target_rank) {

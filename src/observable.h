@@ -25,7 +25,7 @@ public:
 	// This will empty the cache of already completed bins
 	void measurement_write(const iodump::group &meas_file);
 
-	void checkpoint_read(const std::string &name, const iodump::group &dump_file);
+	static observable checkpoint_read(const std::string &name, const iodump::group &dump_file);
 
 	// switch copy with target rank.
 	// useful for parallel tempering mode
@@ -50,11 +50,22 @@ void observable::add(T val) {
 
 template<class T>
 auto observable::add(const T &val) -> decltype(val[0], void()) {
+	if(val.size() == 0) {
+		throw std::runtime_error("observable::add: tried to add zero-length value.");
+	}
+		
 	if(vector_length_ != val.size()) {
-		throw std::runtime_error{
-		    fmt::format("observable::add: added vector has unexpected size ({}). Observable was "
-		                "initialized with vector length ({})",
-		                val.size(), vector_length_)};
+		if(vector_length_ != 0) {
+			throw std::runtime_error{
+			    fmt::format("observable::add: added vector has inconsistent size ({}). Observable was "
+			                "initialized with vector length ({})",
+			                val.size(), vector_length_)};
+		} else {
+			// when the variable is manually registered, it can happen that the vector length was not yet set.
+			vector_length_ = val.size();
+			assert(samples_.size() == 0);
+			samples_.resize(vector_length_);
+		}
 	}
 
 	for(size_t j = 0; j < vector_length_; ++j)

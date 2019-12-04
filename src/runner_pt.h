@@ -71,8 +71,6 @@ private:
 	std::map<int, int> rank_to_chain_run_;
 	int current_chain_id_{-1};
 
-	measurements pt_meas_;
-
 	void construct_pt_chains();
 	void checkpoint_write();
 	void checkpoint_read();

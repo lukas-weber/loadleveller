@@ -12,10 +12,13 @@ namespace loadl {
 
 class measurements {
 public:
+	measurements(size_t default_bin_size);
+
 	static bool observable_name_is_legal(const std::string &name);
 
-	void register_observable(const std::string &name, size_t bin_size = 1,
-	                         size_t vector_length = 1);
+	// only needed if you want to set the bin_size explicitly
+	// otherwise observables are automatically created on first add
+	void register_observable(const std::string &name, size_t bin_size);
 
 	// use this to add a measurement sample to an observable.
 	template<class T>
@@ -35,13 +38,23 @@ public:
 private:
 	std::set<int> mpi_checked_targets_;
 	std::map<std::string, observable> observables_;
+
+	const size_t default_bin_size_{1};
+
+	template<class T>
+	size_t value_length(const T& val) {
+		if constexpr (std::is_arithmetic_v<T>) {
+			return 1;
+		} else {
+			return val.size();
+		}
+	}
 };
 
 template<class T>
 void measurements::add(const std::string name, T value) {
 	if(observables_.count(name) == 0) {
-		throw std::runtime_error{
-		    fmt::format("tried to add to observable '{}' which was not registered!", name)};
+		observables_.emplace(name, observable{name, default_bin_size_, value_length(value)});
 	}
 	observables_.at(name).add(value);
 }

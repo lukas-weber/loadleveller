@@ -3,6 +3,10 @@
 #include <mpi.h>
 namespace loadl {
 
+measurements::measurements(size_t default_bin_size)
+	: default_bin_size_{default_bin_size} {
+}
+
 bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	if(obs_name.find('/') != obs_name.npos) {
 		return false;
@@ -13,14 +17,18 @@ bool measurements::observable_name_is_legal(const std::string &obs_name) {
 	return true;
 }
 
-void measurements::register_observable(const std::string &name, size_t bin_size,
-                                       size_t vector_length) {
+void measurements::register_observable(const std::string &name, size_t bin_size) {
 	if(!observable_name_is_legal(name)) {
 		throw std::runtime_error(
 		    fmt::format("Illegal observable name '{}': names must not contain / or .", name));
 	}
 
-	observables_.emplace(name, observable{name, bin_size, vector_length});
+	if(observables_.count(name) > 0) {
+		throw std::runtime_error(
+			fmt::format("Observable '{}' already exists.", name));
+	}
+
+	observables_.emplace(name, observable{name, bin_size, 0});
 }
 
 void measurements::checkpoint_write(const iodump::group &dump_file) {
@@ -31,8 +39,7 @@ void measurements::checkpoint_write(const iodump::group &dump_file) {
 
 void measurements::checkpoint_read(const iodump::group &dump_file) {
 	for(const auto &obs_name : dump_file) {
-		register_observable(obs_name);
-		observables_.at(obs_name).checkpoint_read(obs_name, dump_file.open_group(obs_name));
+		observables_.emplace(obs_name, observable::checkpoint_read(obs_name, dump_file.open_group(obs_name)));
 	}
 }
 

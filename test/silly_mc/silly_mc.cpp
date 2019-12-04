@@ -19,10 +19,8 @@ void silly_mc::do_measurement() {
 void silly_mc::init() {
 	idx_=0;
 
-	int binsize = param.get("binsize", 1);
-	measure.register_observable("MagicNumber", binsize,2);
-	measure.register_observable("MagicNumber2", binsize);
-	measure.register_observable("MagicNumberValarray", binsize,2);
+	measure.register_observable("MagicNumberValarray", 10);
+
 }
 
 void silly_mc::checkpoint_write(const loadl::iodump::group &d) {
