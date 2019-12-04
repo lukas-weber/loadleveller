@@ -5,7 +5,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <valarray>
 
 namespace loadl {
 
@@ -15,14 +14,11 @@ public:
 
 	const std::string &name() const;
 
-	template<class T>
-	auto add(T val) -> decltype(val + val, void());
+	template<class T, std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> * = nullptr>
+	void add(T val);
 
 	template<class T>
 	auto add(const T& val) -> decltype(val[0], void());
-
-	template<class T>
-	void add(const std::valarray<T> &);
 
 	void checkpoint_write(const iodump::group &dump_file) const;
 
@@ -46,8 +42,8 @@ private:
 	std::vector<double> samples_;
 };
 
-template<class T>
-auto observable::add(T val) -> decltype(val + val, void()) {
+template<class T, std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> * = nullptr>
+void observable::add(T val) {
 	add(std::array<T,1>{val});
 }
 

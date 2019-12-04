@@ -1,4 +1,5 @@
 #include "silly_mc.h"
+#include <valarray>
 
 silly_mc::silly_mc(const loadl::parser &p) : loadl::mc(p) {
 }
@@ -11,6 +12,8 @@ void silly_mc::do_measurement() {
 	std::vector<double> silly = {1.*idx_, 1.*(3-idx_%5)*idx_};
 	measure.add("MagicNumber", silly);
 	measure.add("MagicNumber2", idx_*idx_);
+	std::valarray<double> silly2 = {1.*idx_, 1.*(3-idx_%5)*idx_};
+	measure.add("MagicNumberValarray", silly2);
 }
 
 void silly_mc::init() {
@@ -19,6 +22,7 @@ void silly_mc::init() {
 	int binsize = param.get("binsize", 1);
 	measure.register_observable("MagicNumber", binsize,2);
 	measure.register_observable("MagicNumber2", binsize);
+	measure.register_observable("MagicNumberValarray", binsize,2);
 }
 
 void silly_mc::checkpoint_write(const loadl::iodump::group &d) {
