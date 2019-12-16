@@ -100,6 +100,10 @@ results merge(const std::vector<std::string> &filenames, size_t rebinning_bin_le
 			std::vector<double> samples;
 			obs.name = obs_name;
 
+			if(!g.exists(obs_name)) {
+				continue;
+			}
+
 			g.read(fmt::format("{}/samples", obs_name), samples);
 
 			// rebinning_bin_count*rebinning_bin_length may be smaller than
@@ -144,6 +148,10 @@ results merge(const std::vector<std::string> &filenames, size_t rebinning_bin_le
 			auto &obs_meta = metadata.at(obs_name);
 
 			size_t vector_length = obs.mean.size();
+
+			if(!g.exists(obs_name)) {
+				continue;
+			}
 
 			g.read(fmt::format("{}/samples", obs_name), samples);
 

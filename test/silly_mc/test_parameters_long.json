@@ -1,0 +1,16 @@
+{
+ "jobname": "silly_job_long",
+ "jobconfig": {
+  "num_cores" : 3,
+  "mc_runtime": "00:03",
+  "mc_checkpoint_time": "00:02",
+  "merge_rebin_length": 7
+ },
+ "tasks": {
+  "task0001": {
+   "sweeps": 1000000000,
+   "thermalization": 20,
+   "binsize": 1000
+  }
+ }
+}

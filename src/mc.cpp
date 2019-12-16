@@ -16,8 +16,6 @@ void mc::_init() {
 	// simple profiling support: measure the time spent for sweeps/measurements etc
 	measure.register_observable("_ll_checkpoint_read_time", 1);
 	measure.register_observable("_ll_checkpoint_write_time", 1);
-	measure.register_observable("_ll_measurement_time", 1000);
-	measure.register_observable("_ll_sweep_time", 1000);
 
 	if(param.defined("seed")) {
 		rng.reset(new random_number_generator(param.get<uint64_t>("seed")));
