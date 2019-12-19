@@ -54,8 +54,9 @@ private:
 template<class T>
 void measurements::add(const std::string name, T value) {
 	if(observables_.count(name) == 0) {
-		observables_.emplace(name, observable{name, default_bin_size_, value_length(value)});
+		register_observable(name, default_bin_size_);
 	}
+
 	observables_.at(name).add(value);
 }
 }
