@@ -62,10 +62,8 @@ def determine_system():
         hostname = socket.gethostname()
         if hostname.endswith('.hpc.itc.rwth-aachen.de'):
             sysinfo = 'claix18'
-
-    if not sysinfo in valid_systems:
-        raise Exception('unknown system type "{}"'.format(sysinfo))
-
+        else:
+            sysinfo = 'local'
     return sysinfo
     
 def run(jobname, jobconfig, cmd):
