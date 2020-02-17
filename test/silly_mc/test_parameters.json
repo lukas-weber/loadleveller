@@ -9,7 +9,8 @@
   "task0001": {
    "sweeps": 1000,
    "thermalization": 20,
-   "binsize": 3
+   "binsize": 3,
+   "seed": 1461346775
   }
  }
 }

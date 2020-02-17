@@ -30,3 +30,11 @@ $mc merge $testparams
 if [ $? -ne 0 ]; then
 	exit 1
 fi
+
+seed1=$(h5dump -d '/random_number_generator/seed' -O /dev/null silly_job_long.data/task0001/run0001.dump.h5)
+seed2=$(h5dump -d '/random_number_generator/seed' -O /dev/null silly_job_long.data/task0001/run0002.dump.h5)
+
+if [ "$seed1" == "$seed2" ]; then
+	echo "Error: saved seeds are the same between different runs!"
+	exit 1
+fi

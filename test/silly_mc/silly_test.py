@@ -55,4 +55,13 @@ for obsname, obs in reference.items():
             print('{}/{}: {} != {}'.format(obsname, entry, val, mcval))
             failcount += 1
 
+# check if seed was saved
+dump = h5py.File('silly_job.data/task0001/run0001.dump.h5','r')
+seed = dump['/random_number_generator/seed'][0]
+seed_param = results[0]['parameters']['seed']
+if seed != seed_param:
+    failcount += 1
+    print('seed was not saved!')
+
 sys.exit(failcount)
+
