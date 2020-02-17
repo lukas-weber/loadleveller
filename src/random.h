@@ -28,7 +28,12 @@ private:
 		return 0;
 	}
 
-	uint64_t seed_;
+	void set_seed(uint64_t seed) {
+		seed_ = seed;
+		static_cast<base *>(this)->set_seed(seed);
+		
+	}
+	uint64_t seed_{};
 
 public:
 	rng_base() {
@@ -36,11 +41,11 @@ public:
 		                     static_cast<uint64_t>(get_rank())};
 		std::vector<uint64_t> seed(1);
 		seq.generate(seed.begin(), seed.end());
-		static_cast<base *>(this)->set_seed(seed[0]);
+		set_seed(seed[0]);
 	};
 
 	rng_base(uint64_t seed) {
-		static_cast<base *>(this)->set_seed(seed);
+		set_seed(seed);
 	}
 
 	std::string type() const {
