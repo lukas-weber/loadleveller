@@ -44,7 +44,7 @@ private:
 	std::vector<double> samples_;
 };
 
-template<class T, std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> * = nullptr>
+template<class T, std::enable_if_t<std::is_arithmetic_v<std::remove_reference_t<T>>> *>
 void observable::add(T val) {
 	add(std::array<T, 1>{val});
 }
