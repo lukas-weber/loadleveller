@@ -13,20 +13,19 @@ Dependencies
 ^^^^^^^^^^^^
 
 - MPI
-- HDF5 >=1.10.1
-- yaml-cpp >= 0.6 (fallback provided)
+- HDF5 >=1.10.1 (fallback provided)
+- nlohmann_json (fallback provided)
 - fmt (fallback provided)
 
 The python package requires
 
-- pyyaml
 - h5py
 - numpy
 
 Building loadleveller
 ^^^^^^^^^^^^^^^^^^^^^
 
-If you don’t have meson installed install it from your distributions package manager or
+If you don’t have meson installed install it from your distribution’s package manager or
 ::
 
     pip3 install --user meson ninja
@@ -54,9 +53,9 @@ How it works
 
 For details on how to implement and use your MC simulation with loadleveller see the `example project <https://git.rwth-aachen.de/lukas.weber2/ising>`_. After you build it and get an executable. You need to create a job file containing the set of parameters you want to calculate. This is conveniently done with the ``loadleveller.taskmaker`` module.
 
-You can start it (either on a cluster batch system or locally) using the ``yrun JOBFILE`` command from the python package. It will calculate all the tasks defined in the jobfile in parallel. Measurements and checkpoints will be saved in the ``JOBFILE.data`` directory. After everything is done, measurements will be averaged and merged into the human-readable ``JOBFILE.results.yml`` file. You may use the ``loadleveller.mcextract`` module to conveniently extract results from it for further processing.
+You can start it (either on a cluster batch system or locally) using the ``loadl run JOBFILE`` command from the python package. It will calculate all the tasks defined in the jobfile in parallel. Measurements and checkpoints will be saved in the ``JOBFILE.data`` directory. After everything is done, measurements will be averaged and merged into the human-readable ``JOBFILE.results.json`` file. You may use the ``loadleveller.mcextract`` module to conveniently extract results from it for further processing.
 
-Use the ``ydelete`` tool to delete all job data for a fresh start after you changed something. ``ystatus`` gives you information about the job progress. You do not have to wait until completion to get the result file. ``yrun -m JOBFILE`` merges whatever results are already done.
+Use the ``loadl delete`` tool to delete all job data for a fresh start after you changed something. ``loadl status`` gives you information about the job progress. You do not have to wait until completion to get the result file. ``loadl merge JOBFILE`` merges whatever results are already done.
 
 Hidden features
 ---------------
