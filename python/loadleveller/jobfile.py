@@ -2,12 +2,17 @@ import json
 import os
 import subprocess
 import errno
+from collections import defaultdict
 
 
 '''Helpers for handling loadleveller jobfiles/scripts. For lack of a better idea, the job description files of loadleveller are actually executables that output a more verbose json parameter file to stdout. Use the taskmaker module to write the input scripts.'''
 
 class JobFileGenError(Exception):
     pass
+
+class JobFileOverwriteError(Exception):
+    def __init__(self, difference):
+        self.difference = difference
 
 class JobFile:
     def __init__(self, filename):
@@ -25,18 +30,38 @@ class JobFile:
         except Exception as e: 
             raise JobFileGenError('Could not parse job generation script output: {}'.format(e))
 
-    def write_job_input_file(self):
+    def _compare_to_old(self, old_data):
+        diff = defaultdict(dict)
+        for taskname, task in self.tasks.items():
+            if taskname in old_data['tasks']:
+                old_task = old_data['tasks'][taskname]
+                for param, value in task.items():
+                    if param not in old_task:
+                        diff[taskname][param] = (value, None)
+                    elif value != old_task[param]:
+                        diff[taskname][param] = (value, old_task[param])
+        return diff
+
+    def write_job_input_file(self, force_overwrite):
+        datadir = self.jobname + '.data'
         try:
-            datadir = self.jobname + '.data'
-            try:
-                os.makedirs(datadir)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
-            job_input_filename = os.path.join(datadir, 'parameters.json')
+            os.makedirs(datadir)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        job_input_filename = os.path.join(datadir, 'parameters.json')
+
+        if os.path.isfile(job_input_filename):
+            with open(job_input_filename, 'r') as f:
+                old_data = json.load(f)
+            diff = self._compare_to_old(old_data)
+            if not force_overwrite and len(diff) > 0:
+                raise JobFileOverwriteError(difference=diff)
+                 
+        try:
             with open(job_input_filename, 'w') as f:
                 f.write(self.raw_jobfile)
-        except Exception as e:
+        except JobFileGenError as e:
             raise JobFileGenError('Could not write parameters.json: {}'.format(e))
 
         return job_input_filename

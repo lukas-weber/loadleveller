@@ -62,7 +62,20 @@ def run():
         except StopIteration:
             pass
 
-    job_input_filename = job.write_job_input_file()
+    try:
+        job_input_filename = job.write_job_input_file(force_overwrite=args_run.force)
+    except jobfile.JobFileGenError as e:
+        print('Error: {}'.format(e))
+        sys.exit(1)
+    except jobfile.JobFileOverwriteError as e:
+        diff_summary = ''
+        for taskname, taskdiff in e.difference.items():
+            diff_summary += '{}:\n'.format(taskname)
+            for param, diff in taskdiff.items():
+                diff_summary += '    {}: {} -> {}\n'.format(param, diff[1], diff[0])
+                
+        print('Error: You changed the job parameters of an existing simulation.\nSummary of changes:\n{}\nThis can be no problem or data-breaking depending on the situation. Use \'--force\' to force overwriting the parameters or \'--restart\' to start a blank run.'.format(diff_summary))
+        sys.exit(1)
     if args_run.single:
         cmd = '{} single "{}"'.format(job.jobconfig['mc_binary'], job_input_filename)
         print('$ '+cmd)
