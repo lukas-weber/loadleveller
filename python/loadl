@@ -96,7 +96,7 @@ def delete():
         os.unlink(results_file)
 
 def merge():
-    job_input_filename = job.write_job_input_file()
+    job_input_filename = job.write_job_input_file(force_overwrite=args_run.force)
     cmd = '{} merge "{}"'.format(job.jobconfig['mc_binary'], job_input_filename)
     print('$ '+cmd)
     subprocess.run(cmd, shell=True)
