@@ -13,6 +13,15 @@ class JobFileGenError(Exception):
 class JobFileOverwriteError(Exception):
     def __init__(self, difference):
         self.difference = difference
+    def diff_summary(self):
+        summary = []
+        for taskname, taskdiff in self.difference.items():
+            summary.append('{}:'.format(taskname))
+            for param, diff in taskdiff.items():
+                summary.append('    {}: {} -> {}'.format(param, diff[1], diff[0]))
+        return '\n'.join(summary)
+    def __str__(self):
+        return 'Tried to overwrite existing job data with different parameters.\n{}'.format(self.diff_summary())
 
 class JobFile:
     def __init__(self, filename):
