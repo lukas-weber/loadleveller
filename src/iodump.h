@@ -3,7 +3,7 @@
 #include <fmt/format.h>
 #include <hdf5.h>
 #include <string>
-#include <sys/stat.h>
+#include <cassert>
 #include <vector>
 
 namespace loadl {
@@ -272,6 +272,4 @@ void iodump::group::read(const std::string &name, T &value) const {
 	value = buf.at(0);
 }
 
-// utility
-bool file_exists(const std::string &path);
 }

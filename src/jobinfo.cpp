@@ -2,11 +2,11 @@
 #include "mc.h"
 #include "merger.h"
 #include <ctime>
-#include <dirent.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <regex>
+#include <filesystem>
 
 namespace loadl {
 
@@ -67,20 +67,13 @@ jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
 	jobname = jobfile.get<std::string>("jobname");
 
 	std::string datadir = jobdir();
-	int rc = mkdir(datadir.c_str(), 0755);
-	if(rc != 0 && errno != EEXIST) {
-		throw std::runtime_error{
-		    fmt::format("creation of output directory '{}' failed: {}", datadir, strerror(errno))};
-	}
+	std::error_code ec;
+	std::filesystem::create_directories(datadir, ec);
 
 	// perhaps a bit controversally, jobinfo tries to create the task directories. TODO: single file
 	// output.
 	for(size_t i = 0; i < task_names.size(); i++) {
-		int rc = mkdir(taskdir(i).c_str(), 0755);
-		if(rc != 0 && errno != EEXIST) {
-			throw std::runtime_error{fmt::format("creation of output directory '{}' failed: {}",
-			                                     taskdir(i), strerror(errno))};
-		}
+		std::filesystem::create_directories(taskdir(i));
 	}
 
 	parser jobconfig{jobfile["jobconfig"]};
@@ -96,19 +89,12 @@ std::vector<std::string> jobinfo::list_run_files(const std::string &taskdir,
                                                  const std::string &file_ending) {
 	std::regex run_filename{"^run\\d{4,}\\." + file_ending + "$"};
 	std::vector<std::string> results;
-	DIR *dir = opendir(taskdir.c_str());
-	if(dir == nullptr) {
-		throw std::ios_base::failure(
-		    fmt::format("could not open directory '{}': {}", taskdir, strerror(errno)));
-	}
-	struct dirent *result;
-	while((result = readdir(dir)) != nullptr) {
-		std::string fname{result->d_name};
-		if(std::regex_search(fname, run_filename)) {
-			results.emplace_back(fmt::format("{}/{}", taskdir, fname));
+
+	for(const auto &p : std::filesystem::directory_iterator(taskdir)) {
+		if(std::regex_search(p.path().filename().string(), run_filename)) {
+			results.emplace_back(p.path());
 		}
 	}
-	closedir(dir);
 
 	return results;
 }

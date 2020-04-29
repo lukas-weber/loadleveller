@@ -1,9 +1,8 @@
 #include "iodump.h"
 #include <iostream>
 #include <sstream>
-#include <sys/file.h>
 #include <typeinfo>
-#include <unistd.h>
+#include <filesystem>
 
 namespace loadl {
 
@@ -132,7 +131,7 @@ iodump iodump::open_readonly(const std::string &filename) {
 
 iodump iodump::open_readwrite(const std::string &filename) {
 	H5Eset_auto(H5E_DEFAULT, nullptr, nullptr);
-	if(access(filename.c_str(), R_OK) != F_OK) {
+	if(!std::filesystem::exists(filename)) {
 		create(filename);
 	}
 
@@ -264,10 +263,5 @@ iodump::h5_handle::~h5_handle() {
 
 hid_t iodump::h5_handle::operator*() {
 	return handle_;
-}
-
-bool file_exists(const std::string &path) {
-	struct stat buf;
-	return stat(path.c_str(), &buf) == 0;
 }
 }

@@ -1,6 +1,7 @@
 #include "runner_pt.h"
 #include "util.h"
 #include <fstream>
+#include <filesystem>
 
 namespace loadl {
 
@@ -250,7 +251,7 @@ void runner_pt_master::checkpoint_read() {
 	construct_pt_chains();
 
 	std::string master_dump_name = job_.jobdir() + "/pt_master.dump.h5";
-	if(file_exists(master_dump_name)) {
+	if(std::filesystem::exists(master_dump_name)) {
 		job_.log(fmt::format("master reading dump from '{}'", master_dump_name));
 		iodump dump = iodump::open_readonly(master_dump_name);
 		auto g = dump.get_root();

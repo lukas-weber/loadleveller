@@ -1,4 +1,6 @@
 #include "mc.h"
+#include <filesystem>
+
 namespace loadl {
 
 mc::mc(const parser &p) : param{p}, measure{p.get<size_t>("binsize")} {
@@ -67,7 +69,12 @@ void mc::_write(const std::string &dir) {
 
 	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
 	{
-		iodump meas_file = iodump::open_readwrite(dir + ".meas.h5");
+		std::error_code ec;
+		std::filesystem::copy(dir + ".meas.h5", dir + ".meas.h5.tmp", std::filesystem::copy_options::none, ec);
+		if(ec && ec != std::errc::no_such_file_or_directory) {
+			throw std::system_error(ec);
+		}
+		iodump meas_file = iodump::open_readwrite(dir + ".meas.h5.tmp");
 		auto g = meas_file.get_root();
 		measure.samples_write(g);
 	}
@@ -97,11 +104,12 @@ void mc::_write(const std::string &dir) {
 // This function is called if it is certain that the *.tmp files have been completely written.
 // Important for parallel tempering mode where all slaves in a chain have to write consistent dumps.
 void mc::_write_finalize(const std::string &dir) {
-	rename((dir + ".dump.h5.tmp").c_str(), (dir + ".dump.h5").c_str());
+	std::filesystem::rename(dir + ".dump.h5.tmp", dir + ".dump.h5");
+	std::filesystem::rename(dir + ".meas.h5.tmp", dir + ".meas.h5");
 }
 
 bool mc::_read(const std::string &dir) {
-	if(!file_exists(dir + ".dump.h5")) {
+	if(!std::filesystem::exists(dir + ".dump.h5")) {
 		return false;
 	}
 
