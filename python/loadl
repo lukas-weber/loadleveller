@@ -6,6 +6,8 @@ import subprocess
 from loadleveller import jobfile
 import os
 
+sys.excepthook = lambda exception_type, exception, traceback: print(f'{exception_type.__name__}: {exception}')
+
 parser = argparse.ArgumentParser(description='Helper script for running and managing loadleveller Monte Carlo jobs.', usage='''loadl <command> <jobscript> [<args>]
 
 <jobscript> is an executable that prints the job parameter JSON-file to stdout. It is convenient to use the taskmaker python module for this purpose.
@@ -73,7 +75,7 @@ def run():
     if args_run.single:
         cmd = '{} single "{}"'.format(job.jobconfig['mc_binary'], job_input_filename)
         print('$ '+cmd)
-        subprocess.run(cmd, shell=True)
+        result = subprocess.run(cmd, shell=True, check=True)
     else:
         clusterutils.run(job.jobname, job.jobconfig, [job.jobconfig['mc_binary'], job_input_filename])
 

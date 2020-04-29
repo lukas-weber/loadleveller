@@ -1,6 +1,7 @@
 import tempfile
 import os
 import sys
+import subprocess
 
 batchscript_claix18 = '''#!/usr/bin/env zsh
 
@@ -74,7 +75,7 @@ def run(jobname, jobconfig, cmd):
     if sysinfo == 'local':
         mpicmd = '{} -n {} {}'.format(jobconfig.get('mpirun', 'mpirun'), jobconfig['num_cores'], ' '.join(cmd))
         print('$ '+mpicmd)
-        os.system(mpicmd)
+        subprocess.run(mpicmd, shell=True, check=True)
     else:
         with tempfile.NamedTemporaryFile(mode='w',delete=False) as f:
             batchscript = generate_batchscript(sysinfo, cmd, jobname, jobconfig)
@@ -83,5 +84,6 @@ def run(jobname, jobconfig, cmd):
             bscriptname = f.name
         mpicmd = batch_commands[sysinfo].format(batchscript=bscriptname)
         print('$ '+mpicmd)
-        os.system(mpicmd)
+        result = subprocess.run(mpicmd, shell=True)
         os.unlink(f.name)
+        result.check_returncode()
