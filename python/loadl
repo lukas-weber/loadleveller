@@ -99,7 +99,7 @@ def merge():
         sys.exit(1)
     cmd = '{} merge "{}"'.format(job.jobconfig['mc_binary'], job_input_filename)
     print('$ '+cmd)
-    subprocess.run(cmd, shell=True)
+    subprocess.run(cmd, shell=True, check=True)
 
 def status():
     from loadleveller import jobstatus

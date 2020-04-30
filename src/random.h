@@ -1,16 +1,24 @@
 #pragma once
 
 #include "config.h"
-
-#include "MersenneTwister.h"
-#include "iodump.h"
+#include <mpi.h>
 #include <random>
-#include <sstream>
+#include "iodump.h"
 #include <typeinfo>
 
 // A whole bunch of template magic to make the random backend modular.
 // We don’t want a vtable on such a performance critical object, otherwise I
 // would make it settable at runtime.
+
+
+#include "random/stl_random.h"
+
+#include "random/internal_mt.h"
+
+#ifdef HAVE_INTEL_MKL
+#include "random/intel_mkl.h"
+#endif
+
 
 namespace loadl {
 
@@ -78,60 +86,6 @@ public:
 	double rand_double();                  // in [0,1]
 };
 
-// based on a dinosaur code in the MersenneTwister.h header
-class rng_internal_mersenne {
-private:
-	MTRand mtrand_;
-
-public:
-	void backend_checkpoint_write(const iodump::group &dump_file);
-	void backend_checkpoint_read(const iodump::group &dump_file);
-	void set_seed(uint64_t seed);
-
-	double random_double() {
-		return mtrand_.randDblExc(1);
-	}
-
-	int random_integer(int bound) {
-		return mtrand_.randInt(bound - 1);
-	}
-};
-
-// based on the c++ stl implementation
-template<typename stl_engine>
-class rng_stl {
-public:
-	void backend_checkpoint_write(const iodump::group &dump_file) {
-		std::stringstream buf;
-		buf << generator_;
-		buf << real_dist_;
-		dump_file.write("state", buf.str());
-	}
-	void backend_checkpoint_read(const iodump::group &dump_file) {
-		std::string state;
-		dump_file.read("state", state);
-		std::stringstream buf(state);
-		buf >> generator_;
-		buf >> real_dist_;
-	}
-
-	void set_seed(uint64_t seed) {
-		generator_.seed(seed);
-	}
-
-	double random_double() {
-		return real_dist_(generator_);
-	}
-
-	uint32_t random_integer(uint32_t bound) {
-		std::uniform_int_distribution<uint32_t> int_dist(0, bound);
-		return int_dist(generator_);
-	}
-
-private:
-	stl_engine generator_;
-	std::uniform_real_distribution<double> real_dist_{0, 1};
-};
 
 // RNG_BACKEND is a macro set by the build system. If you add backends and you can help it,
 // avoid using huge blocks of #ifdefs as it will lead to dead code nobody uses for 10 years.
