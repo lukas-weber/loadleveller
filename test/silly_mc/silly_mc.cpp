@@ -29,7 +29,7 @@ void silly_mc::checkpoint_read(const loadl::iodump::group &d) {
 	d.read("idx", idx_);
 }
 
-void silly_mc::register_evalables(loadl::evaluator &eval) {
+void silly_mc::register_evalables(loadl::evaluator &eval, const loadl::parser &) {
 	eval.evaluate("AntimagicNumber", {"MagicNumber", "MagicNumber2"},
 	              [](const std::vector<std::vector<double>> &obs) {
 		              double mag = obs[0][0];

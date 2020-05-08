@@ -262,6 +262,6 @@ void runner_slave::merge_measurements() {
 	std::string unique_filename = job_.taskdir(task_id_);
 	sys_->write_output(unique_filename);
 
-	job_.merge_task(task_id_, mccreator_);
+	job_.merge_task(task_id_);
 }
 }

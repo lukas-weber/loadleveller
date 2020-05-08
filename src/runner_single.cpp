@@ -98,6 +98,6 @@ void runner_single::merge_measurements() {
 	sys_->write_output(unique_filename);
 
 	job_.log(fmt::format("merging {}", job_.taskdir(task_id_)));
-	job_.merge_task(task_id_, mccreator_);
+	job_.merge_task(task_id_);
 }
 }

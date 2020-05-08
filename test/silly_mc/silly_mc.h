@@ -15,7 +15,7 @@ public:
 	void checkpoint_write(const loadl::iodump::group &out);
 	void checkpoint_read(const loadl::iodump::group &in);
 
-	void register_evalables(loadl::evaluator &eval);
+	static void register_evalables(loadl::evaluator &eval, const loadl::parser &p);
 
 	silly_mc(const loadl::parser &p);
 };

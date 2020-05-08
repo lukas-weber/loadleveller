@@ -57,7 +57,7 @@ std::string jobinfo::rundir(int task_id, int run_id) const {
 	return fmt::format("{}/run{:04d}", taskdir(task_id), run_id);
 }
 
-jobinfo::jobinfo(const std::string &jobfile_name) : jobfile{jobfile_name} {
+jobinfo::jobinfo(const std::string &jobfile_name, register_evalables_func evalable_func) : evalable_func_{evalable_func}, jobfile{jobfile_name} {
 	for(auto node : jobfile["tasks"]) {
 		std::string task_name = node.first;
 		task_names.push_back(task_name);
@@ -135,16 +135,14 @@ void jobinfo::concatenate_results() {
 	cat_results << "]\n";
 }
 
-void jobinfo::merge_task(int task_id, const mc_factory &mccreator) {
-	std::unique_ptr<mc> sys{mccreator(jobfile["tasks"][task_names[task_id]])};
-
+void jobinfo::merge_task(int task_id) {
 	std::vector<std::string> meas_files = list_run_files(taskdir(task_id), "meas\\.h5");
 	size_t rebinning_bin_length = jobfile["jobconfig"].get<size_t>("merge_rebin_length", 0);
 	size_t sample_skip = jobfile["jobconfig"].get<size_t>("merge_sample_skip", 0);
 	results results = merge(meas_files, rebinning_bin_length, sample_skip);
 
 	evaluator eval{results};
-	sys->register_evalables(eval);
+	evalable_func_(eval, jobfile["tasks"][task_names[task_id]]);
 	eval.append_results();
 
 	std::string result_filename = fmt::format("{}/results.json", taskdir(task_id));

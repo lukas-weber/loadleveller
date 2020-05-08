@@ -42,7 +42,9 @@ public:
 
 	size_t sweep() const;
 
-	virtual void register_evalables(evaluator &evalables) = 0;
+	// implement this static function in your class!
+	//static void register_evalables(evaluator &evalables);
+
 	virtual void write_output(const std::string &filename);
 
 	// these functions do a little more, like taking care of the
