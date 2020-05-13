@@ -4,12 +4,20 @@ from loadleveller import jobstatus, jobfile
 import argparse
 import subprocess
 import json
+import os
+import shutil
 
 parser = argparse.ArgumentParser(description='Concatenate job results and merge them if needed')
 parser.add_argument('jobfiles', nargs='+', help='jobs to concatenate')
 parser.add_argument('-o', '--output', required=True, help='output file for the concatenated result.')
 parser.add_argument('-n', '--no-merge', action='store_true', help='skip the merging step')
+parser.add_argument('-c', '--copy-jobfile', action='store_true', help='copy <jobfiles> to the output in a .scripts directory.')
 args = parser.parse_args()
+
+os.makedirs(os.path.dirname(args.output), exist_ok=True)
+if args.copy_jobfile:
+    job_archive_dir = os.path.splitext(args.output)[0]+'.scripts'
+    os.makedirs(job_archive_dir, exist_ok=True)
 
 tasks = []
 for jobname in args.jobfiles:
@@ -23,6 +31,8 @@ for jobname in args.jobfiles:
             res = json.load(infile)
             tasks += res
 
+        if args.copy_jobfile:
+            shutil.copyfile(jobname, os.path.join(job_archive_dir,jobname))
     except FileNotFoundError:
         print('File not found for "{}". Skipping...'.format(jobname))
 with open(args.output, 'w') as outfile:
