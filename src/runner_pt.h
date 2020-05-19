@@ -76,7 +76,7 @@ private:
 	void checkpoint_read();
 	void write_params_json();
 	void write_statistics(const pt_chain_run &chain_run);
-	void write_param_optimization_statistics();
+	void write_param_optimization_statistics(const pt_chain &chain);
 
 	int schedule_chain_run();
 	void pt_global_update(pt_chain &chain, pt_chain_run &chain_run);

@@ -295,26 +295,24 @@ void runner_pt_master::write_statistics(const pt_chain_run &chain_run) {
 	cg.insert_back("rank_to_pos", chain_run.rank_to_pos);
 }
 
-void runner_pt_master::write_param_optimization_statistics() {
+void runner_pt_master::write_param_optimization_statistics(const pt_chain &chain) {
 	std::string stat_name = job_.jobdir() + "/pt_statistics.h5";
 	iodump stat = iodump::open_readwrite(stat_name);
 	auto g = stat.get_root();
 
 	g.write("chain_length", chain_len_);
 
-	for(auto &chain : pt_chains_) {
-		auto cg = g.open_group(fmt::format("chain{:04d}", chain.id));
-		cg.insert_back("params", chain.params);
+	auto cg = g.open_group(fmt::format("chain{:04d}", chain.id));
+	cg.insert_back("params", chain.params);
 
-		std::vector<double> rejection_est(chain.rejection_rates);
-		bool odd = false;
-		for(auto &r : rejection_est) {
-			r /= chain.rejection_rate_entries[odd];
-			odd = !odd;
-		}
-
-		cg.insert_back("rejection_rates", rejection_est);
+	std::vector<double> rejection_est(chain.rejection_rates);
+	bool odd = false;
+	for(auto &r : rejection_est) {
+		r /= chain.rejection_rate_entries[odd];
+		odd = !odd;
 	}
+
+	cg.insert_back("rejection_rates", rejection_est);
 }
 
 void runner_pt_master::checkpoint_write() {
@@ -449,7 +447,7 @@ void runner_pt_master::pt_param_optimization(pt_chain &chain) {
 		                "convergence={:.2g}",
 		                chain.id, chain.rejection_rate_entries[0], efficiency, convergence));
 		checkpoint_write();
-		write_param_optimization_statistics();
+		write_param_optimization_statistics(chain);
 		chain.clear_histograms();
 	}
 }
