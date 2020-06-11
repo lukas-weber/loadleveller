@@ -5,8 +5,8 @@ rng_names = {
 }
 
 conf_data = configuration_data()
-conf_data.set('rng_backend', rng_names[get_option('rng_backend')])
-conf_data.set('have_intel_mkl', mkl_dep.found())
+conf_data.set('RNG_BACKEND', rng_names[get_option('rng_backend')])
+conf_data.set('HAVE_INTEL_MKL', mkl_dep.found())
 configure_file(input : 'config.h.in',
   output : 'config.h',
   install : should_install,

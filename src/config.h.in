@@ -1,4 +1,4 @@
 #pragma once
 
-#define RNG_BACKEND @rng_backend@
-#define HAVE_INTEL_MKL @have_intel_mkl@
+#mesondefine RNG_BACKEND
+#mesondefine HAVE_INTEL_MKL
