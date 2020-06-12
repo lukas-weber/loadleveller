@@ -50,7 +50,9 @@ void mc::_do_update() {
 	clock_gettime(CLOCK_MONOTONIC_RAW, &tend);
 
 	double sweep_time = (tend.tv_sec - tstart.tv_sec) + 1e-9 * (tend.tv_nsec - tstart.tv_nsec);
-	measure.add("_ll_sweep_time", sweep_time);
+	if(is_thermalized()) {
+		measure.add("_ll_sweep_time", sweep_time);
+	}
 }
 
 void mc::_pt_update_param(int target_rank, const std::string &param_name, double new_param) {
@@ -70,7 +72,7 @@ void mc::_write(const std::string &dir) {
 	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
 	{
 		std::error_code ec;
-		std::filesystem::copy(dir + ".meas.h5", dir + ".meas.h5.tmp", std::filesystem::copy_options::none, ec);
+		std::filesystem::copy_file(dir + ".meas.h5", dir + ".meas.h5.tmp", std::filesystem::copy_options::overwrite_existing, ec);
 		if(ec && ec != std::errc::no_such_file_or_directory) {
 			throw std::system_error(ec);
 		}
