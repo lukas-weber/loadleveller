@@ -14,10 +14,12 @@ parser.add_argument('-n', '--no-merge', action='store_true', help='skip the merg
 parser.add_argument('-c', '--copy-jobfile', action='store_true', help='copy <jobfiles> to the output in a .scripts directory.')
 args = parser.parse_args()
 
-os.makedirs(os.path.dirname(args.output), exist_ok=True)
+os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
 if args.copy_jobfile:
     job_archive_dir = os.path.splitext(args.output)[0]+'.scripts'
     os.makedirs(job_archive_dir, exist_ok=True)
+
+used_short_jobnames = set()
 
 tasks = []
 for jobname in args.jobfiles:
@@ -32,9 +34,17 @@ for jobname in args.jobfiles:
             tasks += res
 
         if args.copy_jobfile:
-            shutil.copyfile(jobname, os.path.join(job_archive_dir,jobname))
-    except FileNotFoundError:
-        print('File not found for "{}". Skipping...'.format(jobname))
+            short_jobname = os.path.basename(jobname)
+            if short_jobname in used_short_jobnames:
+                idx = 2
+                while "{}_{}".format(short_jobname, idx) in used_short_jobnames:
+                    idx += 1
+                short_jobname = "{}_{}".format(short_jobname, idx)
+            used_short_jobnames.add(short_jobname)
+
+            shutil.copyfile(jobname, os.path.join(job_archive_dir,short_jobname))
+    except FileNotFoundError as e:
+        print('File "{}" not found for "{}". Skipping...'.format(e.filename, jobname))
 with open(args.output, 'w') as outfile:
     json.dump(tasks, outfile, indent=0)
 
