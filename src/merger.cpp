@@ -9,7 +9,7 @@
 
 namespace loadl {
 
-results merge(const std::vector<std::string> &filenames, size_t rebinning_bin_length,
+results merge(const std::vector<std::filesystem::path> &filenames, size_t rebinning_bin_length,
               size_t sample_skip) {
 	results res;
 

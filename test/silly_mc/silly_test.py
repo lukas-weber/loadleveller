@@ -14,14 +14,21 @@ parser.add_argument('silly_mc')
 parser.add_argument('test_param_file')
 args = parser.parse_args()
 
-shutil.rmtree('silly_job.data', ignore_errors=True)
-proc = subprocess.run(['valgrind', args.silly_mc, 'single', args.test_param_file])
+jobdir = 'silly_job.data'
+shutil.rmtree(jobdir, ignore_errors=True)
+os.makedirs(jobdir)
+
+param_file = jobdir + '/parameters.json'
+
+shutil.copy(args.test_param_file, param_file)
+
+proc = subprocess.run(['valgrind', args.silly_mc, 'single', param_file])
 if proc.returncode != 0:
     sys.exit(1)
 
 with open('silly_job.results.json', 'r') as f:
     results = json.load(f)
-with open(args.test_param_file, 'r') as f:
+with open(param_file, 'r') as f:
     rebin_size = json.load(f)['jobconfig']['merge_rebin_length']
 
 sweeps = results[0]['parameters']['sweeps']

@@ -11,7 +11,7 @@ inline int merge_only(jobinfo job, const mc_factory &, int, char **) {
 	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
 		job.merge_task(task_id);
 
-		std::cout << fmt::format("-- {} merged\n", job.taskdir(task_id));
+		std::cout << fmt::format("-- {} merged\n", job.taskdir(task_id).string());
 	}
 
 	return 0;

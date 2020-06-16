@@ -250,7 +250,7 @@ void runner_pt_master::construct_pt_chains() {
 void runner_pt_master::checkpoint_read() {
 	construct_pt_chains();
 
-	std::string master_dump_name = job_.jobdir() + "/pt_master.dump.h5";
+	std::string master_dump_name = job_.jobdir / "pt_master.dump.h5";
 	if(std::filesystem::exists(master_dump_name)) {
 		job_.log(fmt::format("master reading dump from '{}'", master_dump_name));
 		iodump dump = iodump::open_readonly(master_dump_name);
@@ -280,12 +280,12 @@ void runner_pt_master::write_params_json() {
 		params[fmt::format("chain{:04d}", c.id)] = c.params;
 	}
 
-	std::ofstream file{job_.jobdir() + "/pt_optimized_params.json"};
+	std::ofstream file{job_.jobdir / "pt_optimized_params.json"};
 	file << params.dump(1) << "\n";
 }
 
 void runner_pt_master::write_statistics(const pt_chain_run &chain_run) {
-	std::string stat_name = job_.jobdir() + "/pt_statistics.h5";
+	std::string stat_name = job_.jobdir / "pt_statistics.h5";
 	iodump stat = iodump::open_readwrite(stat_name);
 	auto g = stat.get_root();
 
@@ -296,7 +296,7 @@ void runner_pt_master::write_statistics(const pt_chain_run &chain_run) {
 }
 
 void runner_pt_master::write_param_optimization_statistics(const pt_chain &chain) {
-	std::string stat_name = job_.jobdir() + "/pt_statistics.h5";
+	std::string stat_name = job_.jobdir / "pt_statistics.h5";
 	iodump stat = iodump::open_readwrite(stat_name);
 	auto g = stat.get_root();
 
@@ -316,7 +316,7 @@ void runner_pt_master::write_param_optimization_statistics(const pt_chain &chain
 }
 
 void runner_pt_master::checkpoint_write() {
-	std::string master_dump_name = job_.jobdir() + "/pt_master.dump.h5";
+	std::string master_dump_name = job_.jobdir / "pt_master.dump.h5";
 
 	job_.log(fmt::format("master: checkpoint {}", master_dump_name));
 
@@ -729,10 +729,10 @@ bool runner_pt_slave::accept_new_chain() {
 	sys_->pt_mode_ = true;
 	if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 		sys_->_init();
-		job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_)));
+		job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_).string()));
 		checkpoint_write();
 	} else {
-		job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_)));
+		job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_).string()));
 	}
 
 	return true;
@@ -769,7 +769,7 @@ void runner_pt_slave::checkpoint_write() {
 	sys_->_write(job_.rundir(task_id_, run_id_));
 	MPI_Barrier(chain_comm_);
 	sys_->_write_finalize(job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
+	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_).string()));
 }
 
 void runner_pt_master::send_action(int action, int destination) {
@@ -783,7 +783,7 @@ int runner_pt_slave::recv_action() {
 }
 
 void runner_pt_slave::merge_measurements() {
-	std::string unique_filename = job_.taskdir(task_id_);
+	std::filesystem::path unique_filename = job_.taskdir(task_id_);
 	sys_->write_output(unique_filename);
 
 	job_.merge_task(task_id_);

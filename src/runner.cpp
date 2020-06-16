@@ -157,10 +157,10 @@ void runner_slave::start() {
 			    std::unique_ptr<mc>{mccreator_(job_.jobfile["tasks"][job_.task_names[task_id_]])};
 			if(!sys_->_read(job_.rundir(task_id_, run_id_))) {
 				sys_->_init();
-				job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_)));
+				job_.log(fmt::format("* initialized {}", job_.rundir(task_id_, run_id_).string()));
 				checkpoint_write();
 			} else {
-				job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_)));
+				job_.log(fmt::format("* read {}", job_.rundir(task_id_, run_id_).string()));
 			}
 		} else {
 			if(!sys_) {
@@ -255,11 +255,11 @@ void runner_slave::checkpoint_write() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
 	sys_->_write_finalize(job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_)));
+	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_).string()));
 }
 
 void runner_slave::merge_measurements() {
-	std::string unique_filename = job_.taskdir(task_id_);
+	std::filesystem::path unique_filename = job_.taskdir(task_id_);
 	sys_->write_output(unique_filename);
 
 	job_.merge_task(task_id_);

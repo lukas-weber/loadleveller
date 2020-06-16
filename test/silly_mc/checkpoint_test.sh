@@ -3,14 +3,19 @@
 mc=$1
 testparams=$2
 
-rm -rf silly_job_long.data
+jobdir=silly_job_long.data
+rm -rf $jobdir
+mkdir -p $jobdir
 
-mpirun -np 3 $mc $testparams
+params=$jobdir/parameters.json
+cp $testparams $params
+
+mpirun -np 3 $mc $params
 if [ $? -ne 0 ]; then
 	exit 1
 fi
 
-mpirun -np 3 $mc $testparams
+mpirun -np 3 $mc $params
 if [ $? -ne 0 ]; then
 	exit 1
 fi
@@ -26,7 +31,7 @@ file.close()
 END
 
 echo "trying to merge..."
-$mc merge $testparams
+$mc merge $params
 if [ $? -ne 0 ]; then
 	exit 1
 fi
