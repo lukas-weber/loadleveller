@@ -4,15 +4,23 @@
 #include "merger.h"
 #include "runner.h"
 #include "runner_single.h"
-
 namespace loadl {
 
 inline int merge_only(jobinfo job, const mc_factory &, int, char **) {
-	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
-		job.merge_task(task_id);
+	int ntasks = job.task_names.size();
+	int len = log(ntasks)/log(10)+1;
+	size_t max_tasklen = 0;
 
-		std::cout << fmt::format("-- {} merged\n", job.taskdir(task_id).string());
+	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
+		std::string taskdir = job.taskdir(task_id);
+		max_tasklen = std::max(max_tasklen, taskdir.size());
+
+		std::cout << fmt::format("\rMerging task {0: >{3}}/{1: >{3}}... {2: <{4}}", task_id+1, job.task_names.size(), taskdir, len, max_tasklen);
+		std::cout.flush();
+
+		job.merge_task(task_id);
 	}
+	std::cout << fmt::format("\rMerged {0} tasks.{1: >{2}}\n", job.task_names.size(), "", 2*len+5+max_tasklen);
 
 	return 0;
 }

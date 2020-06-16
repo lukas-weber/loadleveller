@@ -1,7 +1,6 @@
 #include "evalable.h"
 #include "measurements.h"
 #include <fmt/format.h>
-#include <iostream>
 #include <map>
 
 namespace loadl {
@@ -43,10 +42,7 @@ observable_result evaluator::jackknife(const std::string &name,
 	size_t bin_count = -1; // maximal value
 	for(const auto &obs_name : used_observables) {
 		if(res_.observables.count(obs_name) <= 0) {
-			std::cerr << fmt::format(
-			    "Warning: evalable '{}': used observable '{}' not found in Monte Carlo results. "
-			    "Skipping...\n",
-			    name, obs_name);
+			// skip evalable if ingredients are missing from the measurements
 			return obs_res;
 		}
 		const auto &obs = res_.observables.at(obs_name);
