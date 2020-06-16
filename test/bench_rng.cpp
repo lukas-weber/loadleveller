@@ -1,5 +1,5 @@
-#include <loadleveller/random.h>
 #include <iostream>
+#include <loadleveller/random.h>
 
 int main(int, char **) {
 	const uint64_t nsamples = 200000000;
@@ -25,6 +25,6 @@ int main(int, char **) {
 		sum += rng.random_double();
 		sum += rng.random_double();
 	}
-	
-	std::cout << sum/(16*nsamples);
+
+	std::cout << sum / (16 * nsamples);
 }

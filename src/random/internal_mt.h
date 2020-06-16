@@ -1,8 +1,7 @@
 #pragma once
 
-
-#include "iodump.h"
 #include "MersenneTwister.h"
+#include "iodump.h"
 
 namespace loadl {
 
@@ -17,7 +16,7 @@ public:
 		mtrand_.save(rand_state);
 		dump_file.write("state", rand_state);
 	}
-	
+
 	void backend_checkpoint_read(const iodump::group &dump_file) {
 		std::vector<uint64_t> rand_state;
 		dump_file.read("state", rand_state);
@@ -26,7 +25,6 @@ public:
 	void set_seed(uint64_t seed) {
 		mtrand_.seed(seed);
 	}
-
 
 	double random_double() {
 		return mtrand_.randDblExc(1);

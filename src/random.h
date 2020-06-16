@@ -1,15 +1,14 @@
 #pragma once
 
 #include "config.h"
+#include "iodump.h"
 #include <mpi.h>
 #include <random>
-#include "iodump.h"
 #include <typeinfo>
 
 // A whole bunch of template magic to make the random backend modular.
 // We don’t want a vtable on such a performance critical object, otherwise I
 // would make it settable at runtime.
-
 
 #include "random/stl_random.h"
 
@@ -18,7 +17,6 @@
 #ifdef HAVE_INTEL_MKL
 #include "random/intel_mkl.h"
 #endif
-
 
 namespace loadl {
 
@@ -39,7 +37,6 @@ private:
 	void set_seed(uint64_t seed) {
 		seed_ = seed;
 		static_cast<base *>(this)->set_seed(seed);
-		
 	}
 	uint64_t seed_{};
 
@@ -85,7 +82,6 @@ public:
 	uint32_t rand_integer(uint32_t bound); // in [0,bound)
 	double rand_double();                  // in [0,1]
 };
-
 
 // RNG_BACKEND is a macro set by the build system. If you add backends and you can help it,
 // avoid using huge blocks of #ifdefs as it will lead to dead code nobody uses for 10 years.

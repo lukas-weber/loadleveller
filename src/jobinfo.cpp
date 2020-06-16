@@ -2,11 +2,11 @@
 #include "mc.h"
 #include "merger.h"
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <regex>
-#include <filesystem>
 
 namespace loadl {
 
@@ -50,11 +50,11 @@ std::filesystem::path jobinfo::taskdir(int task_id) const {
 }
 
 std::filesystem::path jobinfo::rundir(int task_id, int run_id) const {
-	return taskdir(task_id) / fmt::format("run{:04d}",run_id);
+	return taskdir(task_id) / fmt::format("run{:04d}", run_id);
 }
 
 jobinfo::jobinfo(const std::filesystem::path &jobfile_name, register_evalables_func evalable_func)
-  : evalable_func_{evalable_func}, jobfile{jobfile_name}, jobdir{jobfile_name.parent_path()} {
+    : evalable_func_{evalable_func}, jobfile{jobfile_name}, jobdir{jobfile_name.parent_path()} {
 	for(auto node : jobfile["tasks"]) {
 		std::string task_name = node.first;
 		task_names.push_back(task_name);
@@ -82,7 +82,7 @@ jobinfo::jobinfo(const std::filesystem::path &jobfile_name, register_evalables_f
 // and having the right file_ending.
 // The regex has to be matched with the output of the rundir function.
 std::vector<std::filesystem::path> jobinfo::list_run_files(const std::string &taskdir,
-                                                 const std::string &file_ending) {
+                                                           const std::string &file_ending) {
 	std::regex run_filename{"^run\\d{4,}\\." + file_ending + "$"};
 	std::vector<std::filesystem::path> results;
 
@@ -112,7 +112,7 @@ int jobinfo::read_dump_progress(int task_id) const {
 }
 
 void jobinfo::concatenate_results() {
-	std::ofstream cat_results{jobdir.parent_path()/fmt::format("{}.results.json", jobname)};
+	std::ofstream cat_results{jobdir.parent_path() / fmt::format("{}.results.json", jobname)};
 	cat_results << "[";
 	for(size_t i = 0; i < task_names.size(); i++) {
 		std::ifstream res_file{taskdir(i) / "results.json"};

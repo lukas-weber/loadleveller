@@ -72,7 +72,8 @@ void mc::_write(const std::string &dir) {
 	// blocks limit scopes of the dump file handles to ensure they are closed at the right time.
 	{
 		std::error_code ec;
-		std::filesystem::copy_file(dir + ".meas.h5", dir + ".meas.h5.tmp", std::filesystem::copy_options::overwrite_existing, ec);
+		std::filesystem::copy_file(dir + ".meas.h5", dir + ".meas.h5.tmp",
+		                           std::filesystem::copy_options::overwrite_existing, ec);
 		if(ec && ec != std::errc::no_such_file_or_directory) {
 			throw std::system_error(ec);
 		}

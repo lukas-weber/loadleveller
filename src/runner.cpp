@@ -255,7 +255,8 @@ void runner_slave::checkpoint_write() {
 	time_last_checkpoint_ = MPI_Wtime();
 	sys_->_write(job_.rundir(task_id_, run_id_));
 	sys_->_write_finalize(job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_).string()));
+	job_.log(
+	    fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_).string()));
 }
 
 void runner_slave::merge_measurements() {

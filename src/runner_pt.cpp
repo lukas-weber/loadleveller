@@ -1,7 +1,7 @@
 #include "runner_pt.h"
 #include "util.h"
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 
 namespace loadl {
 
@@ -769,7 +769,8 @@ void runner_pt_slave::checkpoint_write() {
 	sys_->_write(job_.rundir(task_id_, run_id_));
 	MPI_Barrier(chain_comm_);
 	sys_->_write_finalize(job_.rundir(task_id_, run_id_));
-	job_.log(fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_).string()));
+	job_.log(
+	    fmt::format("* rank {}: checkpoint {}", rank_, job_.rundir(task_id_, run_id_).string()));
 }
 
 void runner_pt_master::send_action(int action, int destination) {

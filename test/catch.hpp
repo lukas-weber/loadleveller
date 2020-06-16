@@ -8921,7 +8921,7 @@ public:
 		return m_tokenBuffer.front();
 	}
 
-	auto operator-> () const -> Token const * {
+	auto operator->() const -> Token const * {
 		assert(!m_tokenBuffer.empty());
 		return &m_tokenBuffer.front();
 	}

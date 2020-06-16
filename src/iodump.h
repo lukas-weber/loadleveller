@@ -1,9 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <fmt/format.h>
 #include <hdf5.h>
 #include <string>
-#include <cassert>
 #include <vector>
 
 namespace loadl {

@@ -8,26 +8,28 @@ namespace loadl {
 
 inline int merge_only(jobinfo job, const mc_factory &, int, char **) {
 	int ntasks = job.task_names.size();
-	int len = log(ntasks)/log(10)+1;
+	int len = log(ntasks) / log(10) + 1;
 	size_t max_tasklen = 0;
 
 	for(size_t task_id = 0; task_id < job.task_names.size(); task_id++) {
 		std::string taskdir = job.taskdir(task_id);
 		max_tasklen = std::max(max_tasklen, taskdir.size());
 
-		std::cout << fmt::format("\rMerging task {0: >{3}}/{1: >{3}}... {2: <{4}}", task_id+1, job.task_names.size(), taskdir, len, max_tasklen);
+		std::cout << fmt::format("\rMerging task {0: >{3}}/{1: >{3}}... {2: <{4}}", task_id + 1,
+		                         job.task_names.size(), taskdir, len, max_tasklen);
 		std::cout.flush();
 
 		job.merge_task(task_id);
 	}
-	std::cout << fmt::format("\rMerged {0} tasks.{1: >{2}}\n", job.task_names.size(), "", 2*len+5+max_tasklen);
+	std::cout << fmt::format("\rMerged {0} tasks.{1: >{2}}\n", job.task_names.size(), "",
+	                         2 * len + 5 + max_tasklen);
 
 	return 0;
 }
 
-template <typename mc_implementation>
-int run_mc(int (*starter)(jobinfo job, const mc_factory &, int argc, char **argv),
-                  int argc, char **argv) {
+template<typename mc_implementation>
+int run_mc(int (*starter)(jobinfo job, const mc_factory &, int argc, char **argv), int argc,
+           char **argv) {
 	if(argc < 2) {
 		std::cerr << fmt::format(
 		    "{0} JOBFILE\n{0} single JOBFILE\n{0} merge JOBFILE\n\n Without further flags, the MPI "
@@ -56,7 +58,6 @@ int run_mc(int (*starter)(jobinfo job, const mc_factory &, int argc, char **argv
 // run this function from main() in your code.
 template<class mc_implementation>
 int run(int argc, char **argv) {
-
 	if(argc > 1 && std::string(argv[1]) == "merge") {
 		return run_mc<mc_implementation>(merge_only, argc - 1, argv + 1);
 	} else if(argc > 1 && std::string(argv[1]) == "single") {
