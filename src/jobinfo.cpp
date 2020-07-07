@@ -95,7 +95,7 @@ std::vector<std::filesystem::path> jobinfo::list_run_files(const std::string &ta
 	return results;
 }
 
-int jobinfo::read_dump_progress(int task_id) const {
+size_t jobinfo::read_dump_progress(int task_id) const {
 	size_t sweeps = 0;
 	try {
 		for(auto &dump_name : list_run_files(taskdir(task_id), "dump\\.h5")) {

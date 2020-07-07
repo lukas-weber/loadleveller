@@ -32,7 +32,7 @@ public:
 
 	static std::vector<std::filesystem::path> list_run_files(const std::string &taskdir,
 	                                                         const std::string &file_ending);
-	int read_dump_progress(int task_id) const;
+	size_t read_dump_progress(int task_id) const;
 	void merge_task(int task_id);
 	void concatenate_results();
 	void log(const std::string &message);
