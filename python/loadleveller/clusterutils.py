@@ -35,17 +35,19 @@ def generate_batchscript_claix18(cmd, jobname, jobconfig):
     custom_cmds += jobconfig.get('custom_cmds', '')
     custom_post_cmds = jobconfig.get('custom_post_cmds', '')
 
+    job_parameters = {
+        'jobname': jobname,
+        'mpirun': jobconfig.get('mpirun','mpirun'),
+        'mem_per_cpu': jobconfig.get('mem_per_cpu','2G'),
+        'walltime': jobconfig['mc_walltime'],
+        'num_cores': jobconfig['num_cores'],
+        'mc_cmd': ' '.join(cmd),
+    }
+    
+    job_parameters['custom_cmds'] = custom_cmds.format(**job_parameters)
+    job_parameters['custom_post_cmds'] = custom_post_cmds.format(**job_parameters)
     try:
-        return template.format(
-            jobname=jobname,
-            mpirun=jobconfig.get('mpirun','mpirun'),
-            mem_per_cpu=jobconfig.get('mem_per_cpu','2G'),
-            walltime=jobconfig['mc_walltime'],
-            num_cores=jobconfig['num_cores'],
-            custom_cmds=custom_cmds,
-            custom_post_cmds=custom_post_cmds,
-            mc_cmd=' '.join(cmd)
-        )
+        return template.format(**job_parameters)
     except KeyError as e:
         raise Exception('Error: required key "{}" missing in jobconfig'.format(e.args[0]))
         
