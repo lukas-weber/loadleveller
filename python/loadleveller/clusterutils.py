@@ -37,7 +37,7 @@ def generate_batchscript_claix18(cmd, jobname, jobconfig):
 
     job_parameters = {
         'jobname': jobname,
-        'mpirun': jobconfig.get('mpirun','mpirun'),
+        'mpirun': jobconfig.get('mpirun','$MPIEXEC'),
         'mem_per_cpu': jobconfig.get('mem_per_cpu','2G'),
         'walltime': jobconfig['mc_walltime'],
         'num_cores': jobconfig['num_cores'],
