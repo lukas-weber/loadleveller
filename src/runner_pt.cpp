@@ -146,6 +146,7 @@ int runner_pt_start(jobinfo job, const mc_factory &mccreator, int argc, char **a
 		r.start();
 	}
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 
 	return rc;
@@ -386,6 +387,9 @@ int runner_pt_master::start() {
 			break;
 		}
 	}
+
+	
+	job_.log(fmt::format("master: stopping due to {}", all_done ? "completion" : "time limit"));
 	return !all_done;
 }
 

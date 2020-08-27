@@ -41,6 +41,7 @@ int runner_mpi_start(jobinfo job, const mc_factory &mccreator, int argc, char **
 		r.start();
 	}
 
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 
 	return rc;
@@ -59,6 +60,8 @@ int runner_master::start() {
 	}
 
 	bool all_done = current_task_id_ < 0;
+	job_.log(fmt::format("master: stopping due to {}", all_done ? "completion" : "time limit"));
+	
 	return !all_done;
 }
 
