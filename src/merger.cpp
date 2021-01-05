@@ -12,6 +12,12 @@ namespace loadl {
 results merge(const std::vector<std::filesystem::path> &filenames, size_t rebinning_bin_length,
               size_t sample_skip) {
 	results res;
+	
+	class merge_error : public std::runtime_error {
+	public:
+		merge_error(const std::string &msg) : std::runtime_error{msg} {
+		}
+	};
 
 	// This thing reads the complete time series of an observable which will
 	// probably make it the biggest memory user of load leveller. But since
@@ -25,37 +31,47 @@ results merge(const std::vector<std::filesystem::path> &filenames, size_t rebinn
 		iodump meas_file = iodump::open_readonly(filename);
 		auto g = meas_file.get_root();
 		for(const auto &obs_name : g) {
-			size_t vector_length;
+			size_t vector_length{};
+			size_t internal_bin_length{};
 			std::vector<double> samples;
 
 			auto obs_group = g.open_group(obs_name);
-			size_t sample_size = obs_group.get_extent("samples");
+			try {
+				size_t sample_size = obs_group.get_extent("samples");
 
-			if(sample_size == 0) { // ignore empty observables
-				continue;
+				if(sample_size == 0) { // ignore empty observables
+					continue;
+				}
+
+				obs_group.read("bin_length", internal_bin_length);
+				obs_group.read("vector_length", vector_length);
+				obs_group.read("samples", samples);
+
+				if(vector_length == 0) {
+					throw merge_error{"zero vector_length"};
+				}
+
+				if(sample_size % vector_length != 0) {
+					throw merge_error{"sample size is not a multiple of vector_length"};
+				}
+
+				if(res.observables.count(obs_name) == 0)
+					res.observables.emplace(obs_name, observable_result());
+				auto &obs = res.observables.at(obs_name);
+				obs.name = obs_name;
+				obs.internal_bin_length = internal_bin_length;
+
+				sample_size /= vector_length;
+
+				obs.total_sample_count += sample_size - std::min(sample_size, sample_skip);
+				obs.mean.resize(vector_length);
+				obs.error.resize(vector_length);
+				obs.autocorrelation_time.resize(vector_length);
+			} catch(const merge_error &e) {
+				std::cerr << fmt::format("merge: Observable {}:{} corrupted: {}. Skipping...\n", filename.string(), obs_name, e.what());
+			} catch(const iodump_exception &e) {
+				std::cerr << fmt::format("merge: {}. Skipping...\n", e.what());
 			}
-
-			if(res.observables.count(obs_name) == 0)
-				res.observables.emplace(obs_name, observable_result());
-			auto &obs = res.observables.at(obs_name);
-			obs.name = obs_name;
-
-			obs_group.read("bin_length", obs.internal_bin_length);
-			obs_group.read("vector_length", vector_length);
-			obs_group.read("samples", samples);
-
-			if(sample_size % vector_length != 0) {
-				throw std::runtime_error{
-				    "merge: sample count is not an integer multiple of the vector length. Corrupt "
-				    "file?"};
-			}
-
-			sample_size /= vector_length;
-
-			obs.total_sample_count += sample_size - std::min(sample_size, sample_skip);
-			obs.mean.resize(vector_length);
-			obs.error.resize(vector_length);
-			obs.autocorrelation_time.resize(vector_length);
 		}
 	}
 

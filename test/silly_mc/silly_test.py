@@ -26,6 +26,24 @@ proc = subprocess.run(['valgrind', args.silly_mc, 'single', param_file])
 if proc.returncode != 0:
     sys.exit(1)
 
+# inject some corrupt observables
+
+measfile = h5py.File(jobdir + '/task0001/run0001.meas.h5', 'a')
+corrupt = measfile.create_group('/Corrupt')
+corrupt['samples'] = [1,3,3,7.1337]
+corrupt['vector_length'] = [0]
+corrupt = measfile.create_group('/Corrupt2')
+corrupt['samples'] = [1,3,3,7.1337]
+corrupt['vector_length'] = [5]
+corrupt['bin_length'] = [5]
+measfile.close()
+
+proc = subprocess.run(['valgrind', args.silly_mc, 'merge', param_file])
+if proc.returncode != 0:
+    sys.exit(1)
+
+# read results and compare
+
 with open('silly_job.results.json', 'r') as f:
     results = json.load(f)
 with open(param_file, 'r') as f:
