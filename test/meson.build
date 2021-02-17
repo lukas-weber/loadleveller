@@ -10,4 +10,7 @@ test('tests', t1)
 bench_rng = executable('bench_rng', ['bench_rng.cpp'], dependencies : loadleveller_dep)
 benchmark('rng', bench_rng)
 
+test_rng = executable('test_rng', ['test_rng.cpp'], dependencies : loadleveller_dep)
+test('mt19937', test_rng)
+
 subdir('silly_mc') 

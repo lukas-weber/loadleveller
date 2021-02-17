@@ -14,10 +14,6 @@
 
 #include "random/internal_mt.h"
 
-#ifdef HAVE_INTEL_MKL
-#include "random/intel_mkl.h"
-#endif
-
 namespace loadl {
 
 template<class base>

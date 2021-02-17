@@ -1,12 +1,10 @@
 rng_names = {
   'stl_mt19937' : 'rng_stl<std::mt19937>',
   'internal_mersenne' : 'rng_internal_mersenne',
-  'intel_mkl' : 'rng_intel_mkl',
 }
 
 conf_data = configuration_data()
 conf_data.set('RNG_BACKEND', rng_names[get_option('rng_backend')])
-conf_data.set('HAVE_INTEL_MKL', mkl_dep.found())
 configure_file(input : 'config.h.in',
   output : 'config.h',
   install : should_install,
@@ -42,9 +40,8 @@ loadleveller_headers = files([
   'observable.h',
   'parser.h',
   'random.h',
-  'random/MersenneTwister.h',
+  'random/mt19937.h',
   'random/stl_random.h',
-  'random/intel_mkl.h',
   'random/internal_mt.h',
   'results.h',
   'runner.h',

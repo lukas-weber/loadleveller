@@ -1,14 +1,13 @@
 #pragma once
 
-#include "MersenneTwister.h"
+#include "mt19937.h"
 #include "iodump.h"
 
 namespace loadl {
-
-// based on a dinosaur code in the MersenneTwister.h header
+	
 class rng_internal_mersenne {
 private:
-	MTRand mtrand_;
+	mt19937 mtrand_;
 
 public:
 	void backend_checkpoint_write(const iodump::group &dump_file) {
@@ -27,11 +26,11 @@ public:
 	}
 
 	double random_double() {
-		return mtrand_.randDblExc(1);
+		return mtrand_.rng_double();
 	}
 
 	int random_integer(int bound) {
-		return mtrand_.randInt(bound - 1);
+		return mtrand_.rng_integer(bound);
 	}
 };
 
