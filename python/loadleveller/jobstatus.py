@@ -47,6 +47,7 @@ class JobProgress:
     def need_restart(self):
         return self.restart
         
+
 def job_need_merge(jobfile):
     import os
 
@@ -57,9 +58,15 @@ def job_need_merge(jobfile):
         return True
 
     for task in jobfile.tasks:
-        for measfile in glob.iglob('{}.data/{}/run*.meas.h5'.format(jobfile.jobname, task)):
-            if os.path.getmtime(measfile) > result_mtime:
-                return True
+        runid = 1
+        try:
+            while True:
+                measfile = '{}.data/{}/run{:04d}.meas.h5'.format(jobfile.jobname, task, runid)
+                if os.path.getmtime(measfile) > result_mtime:
+                    return True
+                runid += 1
+        except OSError:
+            pass
 
     return False
         
