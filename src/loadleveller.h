@@ -4,6 +4,8 @@
 #include "merger.h"
 #include "runner.h"
 #include "runner_single.h"
+#include <iostream>
+
 namespace loadl {
 
 inline int merge_only(jobinfo job, const mc_factory &, int, char **) {
