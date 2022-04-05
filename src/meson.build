@@ -12,7 +12,7 @@ configure_file(input : 'config.h.in',
   configuration : conf_data)
 config_inc = include_directories('.')
 
-loadleveller_sources = files([
+loadleveller_sources = files(
   'evalable.cpp',
   'iodump.cpp',
   'jobinfo.cpp',
@@ -27,9 +27,9 @@ loadleveller_sources = files([
   'runner_single.cpp',
   'runner_task.cpp',
   'util.cpp',
-])
+)
 
-loadleveller_headers = files([
+loadleveller_headers = files(
   'evalable.h',
   'iodump.h',
   'jobinfo.h',
@@ -49,7 +49,7 @@ loadleveller_headers = files([
   'runner_single.h',
   'runner_task.h',
   'util.h',
-])
+)
 
 libloadleveller = library('loadleveller',
   loadleveller_sources,
