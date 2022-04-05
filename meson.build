@@ -4,7 +4,6 @@ project('load-leveller', 'c', 'cpp',
   default_options : [
     'cpp_std=c++17',
     'warning_level=3',
-    'cpp_std=c++17'
   ]
 )
 
@@ -25,8 +24,7 @@ if mkl_dep.found()
 	loadleveller_deps += mkl_dep
 endif
 
-
-should_install = not meson.is_subproject()
+should_install = not meson.is_subproject() or get_option('default_library') == 'static'
 
 subdir('src')
 
