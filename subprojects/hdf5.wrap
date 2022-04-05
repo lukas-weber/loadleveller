@@ -1,4 +1,0 @@
-[wrap-git]
-directory = hdf5
-url = https://git.rwth-aachen.de/lukas.weber2/hdf5.git
-revision = 1.10/master
