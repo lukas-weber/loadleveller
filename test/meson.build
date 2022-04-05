@@ -1,7 +1,9 @@
 
+catch2_dep = dependency('catch2', fallback : ['catch2', 'catch2_dep'])
+
 t1 = executable('tests',
   ['duration_parser.cpp', 'monotone_interpolator.cpp', 'observable_names.cpp', 'jackknifing.cpp'],
-  dependencies : loadleveller_dep,
+  dependencies : [loadleveller_dep, catch2_dep],
   include_directories : include_directories('../src')
 )
 
