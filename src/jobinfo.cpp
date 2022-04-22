@@ -25,7 +25,7 @@ static int parse_duration(const std::string &str) {
 
 			if(idx == str1.size()) {
 				return 60 * i1 + i2;
-			} else if(str[idx] == ':') {
+			} else if(str1[idx] == ':') {
 				std::string str2 = str1.substr(idx + 1);
 				int i3 = std::stoi(str2, &idx, 10);
 				if(idx != str2.size()) {
