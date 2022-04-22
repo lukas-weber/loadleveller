@@ -19,7 +19,7 @@ def JobConfig(filename):
 
 class TaskMaker:
     def __init__(self, name, jobconfig):
-        self._tm_name = name
+        self._tm_name = os.path.basename(name)
         self._tm_tasks = []
         if type(jobconfig) == dict:
             self._tm_jobconfig = jobconfig
