@@ -388,7 +388,6 @@ int runner_pt_master::start() {
 		}
 	}
 
-	
 	job_.log(fmt::format("master: stopping due to {}", all_done ? "completion" : "time limit"));
 	return !all_done;
 }

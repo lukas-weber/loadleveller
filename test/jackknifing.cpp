@@ -1,7 +1,7 @@
-#include <catch2/catch.hpp>
 #include "evalable.h"
-#include "results.h"
 #include "random.h"
+#include "results.h"
+#include <catch2/catch.hpp>
 #include <fmt/format.h>
 
 using namespace loadl;
@@ -24,20 +24,22 @@ TEST_CASE("square of uniform distribution") {
 			for(auto &s : samples) {
 				s = rng.random_double();
 				sum += s;
-				squared_sum += s*s;
+				squared_sum += s * s;
 			}
 
-			double mean = sum/nsamples;
-			double error = sqrt((squared_sum-nsamples*mean*mean)/(nsamples-1));
+			double mean = sum / nsamples;
+			double error = sqrt((squared_sum - nsamples * mean * mean) / (nsamples - 1));
 
 			std::string name = fmt::format("Uniform{}", var);
-			res.observables[name] = observable_result{name, 1, nsamples, samples, nsamples, 0, {mean}, {error}, {0.}};
+			res.observables[name] =
+			    observable_result{name, 1, nsamples, samples, nsamples, 0, {mean}, {error}, {0.}};
 		}
 
 		evaluator eval{res};
-		eval.evaluate("UniformSquared", {"Uniform0", "Uniform1"}, [](const std::vector<std::vector<double>> &obs) {
-			return std::vector<double>{obs[0][0]*obs[1][0]};
-		});
+		eval.evaluate("UniformSquared", {"Uniform0", "Uniform1"},
+		              [](const std::vector<std::vector<double>> &obs) {
+			              return std::vector<double>{obs[0][0] * obs[1][0]};
+		              });
 
 		eval.append_results();
 
@@ -50,13 +52,13 @@ TEST_CASE("square of uniform distribution") {
 
 	for(const auto &r : tries) {
 		sum_of_tries += r;
-		sum_of_tries_squared += r*r;
+		sum_of_tries_squared += r * r;
 	}
 
-	double tries_mean = sum_of_tries/ntries;
-	double tries_std = sqrt((sum_of_tries_squared - ntries*tries_mean*tries_mean)/(ntries-1));
+	double tries_mean = sum_of_tries / ntries;
+	double tries_std =
+	    sqrt((sum_of_tries_squared - ntries * tries_mean * tries_mean) / (ntries - 1));
 
 	REQUIRE(tries_mean == Approx(0.25).epsilon(0.05));
 	REQUIRE(tries_std == Approx(jackknife_error).epsilon(0.05));
-
 }

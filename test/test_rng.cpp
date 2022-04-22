@@ -1,5 +1,5 @@
-#include <random>
 #include <iostream>
+#include <random>
 
 #include <loadleveller/random/mt19937.h>
 
@@ -21,5 +21,5 @@ int main(int, char **) {
 			return 1;
 		}
 	}
-	return 0;	
+	return 0;
 }

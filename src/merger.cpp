@@ -4,8 +4,8 @@
 #include "measurements.h"
 
 #include <fmt/format.h>
-#include <string>
 #include <iostream>
+#include <string>
 #include <vector>
 
 namespace loadl {
@@ -13,11 +13,10 @@ namespace loadl {
 results merge(const std::vector<std::filesystem::path> &filenames, size_t rebinning_bin_length,
               size_t sample_skip) {
 	results res;
-	
+
 	class merge_error : public std::runtime_error {
 	public:
-		merge_error(const std::string &msg) : std::runtime_error{msg} {
-		}
+		merge_error(const std::string &msg) : std::runtime_error{msg} {}
 	};
 
 	// This thing reads the complete time series of an observable which will
@@ -69,7 +68,8 @@ results merge(const std::vector<std::filesystem::path> &filenames, size_t rebinn
 				obs.error.resize(vector_length);
 				obs.autocorrelation_time.resize(vector_length);
 			} catch(const merge_error &e) {
-				std::cerr << fmt::format("merge: Observable {}:{} corrupted: {}. Skipping...\n", filename.string(), obs_name, e.what());
+				std::cerr << fmt::format("merge: Observable {}:{} corrupted: {}. Skipping...\n",
+				                         filename.string(), obs_name, e.what());
 			} catch(const iodump_exception &e) {
 				std::cerr << fmt::format("merge: {}. Skipping...\n", e.what());
 			}

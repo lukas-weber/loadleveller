@@ -1,9 +1,9 @@
 #pragma once
 
 #include <array>
-#include <vector>
-#include <cstdint>
 #include <cassert>
+#include <cstdint>
+#include <vector>
 
 // This is a very simple implementation of the MT19937 RNG
 // based on the implementation of the original authors

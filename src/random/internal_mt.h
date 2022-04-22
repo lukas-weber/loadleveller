@@ -1,10 +1,10 @@
 #pragma once
 
-#include "mt19937.h"
 #include "iodump.h"
+#include "mt19937.h"
 
 namespace loadl {
-	
+
 class rng_internal_mersenne {
 private:
 	mt19937 mtrand_;

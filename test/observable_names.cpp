@@ -1,5 +1,5 @@
-#include <catch2/catch.hpp>
 #include "measurements.h"
+#include <catch2/catch.hpp>
 
 using namespace loadl;
 

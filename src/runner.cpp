@@ -61,7 +61,7 @@ int runner_master::start() {
 
 	bool all_done = current_task_id_ < 0;
 	job_.log(fmt::format("master: stopping due to {}", all_done ? "completion" : "time limit"));
-	
+
 	return !all_done;
 }
 
