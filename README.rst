@@ -1,6 +1,9 @@
 loadleveller
 ============
 
+**Notice: Consider using `Carlo.jl <https://github.com/lukas-weber/Carlo.jl`, an updated Julia framework that does something very similar to this project. 
+This older C++ code is provided without maintenance or support for interested people who are unable to use Julia. Feel free to fork!**
+
 loadleveller is a C++ framework for creating MPI distributed Monte Carlo simulations. It takes care of data storage and error handling and other functionalities common to all MC codes. The only thing you have to implement is the actual update and measurement code. 
 It uses HDF5 and YAML as data storage formats and provides a python package containing helpers for launching jobs and accessing the results of simulations.
 
