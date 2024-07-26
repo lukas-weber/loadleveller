@@ -1,6 +1,9 @@
 loadleveller
 ============
 
+.. image:: https://zenodo.org/badge/496172243.svg
+  :target: https://zenodo.org/doi/10.5281/zenodo.12982244
+
 
 **Notice: Consider using https://github.com/lukas-weber/Carlo.jl, an updated Julia framework that does something very similar to this project. 
 This older C++ code is provided without maintenance or support for interested people who are unable to use Julia. Feel free to fork!**
